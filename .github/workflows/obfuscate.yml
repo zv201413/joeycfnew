@@ -33,24 +33,22 @@ jobs:
               process.exit(1);
             }
 
+            // --- 性能优先的混淆配置 ---
             const obfuscationOptions = {
                 compact: true,
-                controlFlowFlattening: true,
-                controlFlowFlatteningThreshold: 0.75, // Lowered from 1
-                deadCodeInjection: true,
-                deadCodeInjectionThreshold: 0.4, // Lowered from 1
-                debugProtection: false, // Disabled
-                debugProtectionInterval: 0,
+                // 已禁用：以下是导致 CPU 超时的主要原因
+                controlFlowFlattening: false,
+                deadCodeInjection: false,
+                debugProtection: false,
+                selfDefending: false,
+
+                // 依然保留的核心保护功能
                 disableConsoleOutput: true,
                 identifierNamesGenerator: 'hexadecimal',
-                log: false,
-                numbersToExpressions: true,
                 renameGlobals: true,
-                selfDefending: false, // Disabled
-                simplify: true,
                 stringArray: true,
                 stringArrayEncoding: ['base64'],
-                stringArrayThreshold: 0.75, // Lowered from 1
+                stringArrayThreshold: 1, // 100% 的字符串都将被隐藏
                 transformObjectKeys: true,
                 unicodeEscapeSequence: false
             };
