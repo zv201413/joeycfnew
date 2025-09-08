@@ -33,8 +33,54 @@ jobs:
               process.exit(1);
             }
 
-            // --- 性能优先的混淆配置 ---
+            // --- 混合动力混淆配置 (参考新配置优化) ---
             const obfuscationOptions = {
+                compact: true,
+                minify: true, // 启用代码压缩
+                
+                // 禁用最高消耗的功能
+                controlFlowFlattening: false,
+                deadCodeInjection: false,
+
+                // 启用借鉴自新配置的高效保护功能
+                stringArray: true,
+                stringArrayEncoding: ['base64'],
+                stringArrayThreshold: 0.8,
+                
+                renameGlobals: true, // 重命名全局变量
+                identifierNamesGenerator: 'mangled', // 使用更短的混淆名称
+                
+                transformObjectKeys: true,
+                unicodeEscapeSequence: false,
+                
+                // 新增：借鉴自新配置的轻量级混淆技术
+                numbersToExpressions: true, // 数字转为表达式
+                splitStrings: true, // 分割字符串
+                splitStringsChunkLength: 10,
+                
+                // 禁用对性能有潜在影响的选项
+                selfDefending: false,
+                debugProtection: false
+            };
+
+            const obfuscatedCode = JavaScriptObfuscator.obfuscate(originalCode, obfuscationOptions).getObfuscatedCode();
+            
+            fs.writeFileSync('./少年你相信光吗', obfuscatedCode, 'utf8');
+          "
+        env:
+          SOURCE_CODE: ${{ secrets.WORKER_SOURCE_CODE }}
+
+      - name: Commit and push the obfuscated file
+        run: |
+          git config --global user.name 'GitHub Actions Bot'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add '少年你相信光吗'
+          if git diff --staged --quiet; then
+            echo "No changes to commit, the obfuscated file is already up-to-date."
+          else
+            git commit -m "build: Generate and obfuscate worker script"
+            git push
+          fi            const obfuscationOptions = {
                 compact: true,
                 // 已禁用：以下是导致 CPU 超时的主要原因
                 controlFlowFlattening: false,
