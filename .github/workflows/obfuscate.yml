@@ -33,25 +33,22 @@ jobs:
               process.exit(1);
             }
 
-            // --- 轻量级混淆配置 ---
+            // --- 性能优先的混淆配置 ---
             const obfuscationOptions = {
                 compact: true,
-                // 禁用所有高消耗功能以确保性能
+                // 已禁用：以下是导致 CPU 超时的主要原因
                 controlFlowFlattening: false,
+                deadCodeInjection: false,
                 debugProtection: false,
                 selfDefending: false,
 
-                // 保留少量僵尸代码增加分析难度
-                deadCodeInjection: true,
-                deadCodeInjectionThreshold: 0.2, 
-
-                // 保留的核心保护功能
+                // 依然保留的核心保护功能
                 disableConsoleOutput: true,
                 identifierNamesGenerator: 'hexadecimal',
                 renameGlobals: true,
                 stringArray: true,
                 stringArrayEncoding: ['base64'],
-                stringArrayThreshold: 1, // 100% 隐藏字符串
+                stringArrayThreshold: 1, // 100% 的字符串都将被隐藏
                 transformObjectKeys: true,
                 unicodeEscapeSequence: false
             };
