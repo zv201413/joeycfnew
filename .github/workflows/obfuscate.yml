@@ -33,8 +33,43 @@ jobs:
               process.exit(1);
             }
 
-            // --- 混合动力混淆配置 (参考新配置优化) ---
             const obfuscationOptions = {
+                compact: true,
+                minify: true,
+                controlFlowFlattening: false,
+                deadCodeInjection: false,
+                stringArray: true,
+                stringArrayEncoding: ['base64'],
+                stringArrayThreshold: 0.8,
+                renameGlobals: true,
+                identifierNamesGenerator: 'mangled',
+                transformObjectKeys: true,
+                unicodeEscapeSequence: false,
+                numbersToExpressions: true,
+                splitStrings: true,
+                splitStringsChunkLength: 10,
+                selfDefending: false,
+                debugProtection: false
+            };
+
+            const obfuscatedCode = JavaScriptObfuscator.obfuscate(originalCode, obfuscationOptions).getObfuscatedCode();
+            
+            fs.writeFileSync('./少年你相信光吗', obfuscatedCode, 'utf8');
+          "
+        env:
+          SOURCE_CODE: ${{ secrets.WORKER_SOURCE_CODE }}
+
+      - name: Commit and push the obfuscated file
+        run: |
+          git config --global user.name 'GitHub Actions Bot'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add '少年你相信光吗'
+          if git diff --staged --quiet; then
+            echo "No changes to commit, the obfuscated file is already up-to-date."
+          else
+            git commit -m "build: Generate and obfuscate worker script"
+            git push
+          fi            const obfuscationOptions = {
                 compact: true,
                 minify: true, // 启用代码压缩
                 
