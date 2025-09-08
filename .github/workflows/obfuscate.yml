@@ -1,0 +1,75 @@
+name: Generate and Obfuscate Worker Script
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'
+
+jobs:
+  build-and-obfuscate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Obfuscator
+        run: npm install javascript-obfuscator
+
+      - name: Create source file and obfuscate
+        run: |
+          node -e "
+            const JavaScriptObfuscator = require('javascript-obfuscator');
+            const fs = require('fs');
+            
+            const originalCode = process.env.SOURCE_CODE;
+            if (!originalCode || originalCode.length < 50) {
+              console.error('Error: Source code from secrets is missing or empty.');
+              process.exit(1);
+            }
+
+            const obfuscationOptions = {
+                compact: true,
+                controlFlowFlattening: true,
+                controlFlowFlatteningThreshold: 1,
+                deadCodeInjection: true,
+                deadCodeInjectionThreshold: 1,
+                debugProtection: true,
+                debugProtectionInterval: 4000,
+                disableConsoleOutput: true,
+                identifierNamesGenerator: 'hexadecimal',
+                log: false,
+                numbersToExpressions: true,
+                renameGlobals: true,
+                selfDefending: true,
+                simplify: true,
+                stringArray: true,
+                stringArrayEncoding: ['base64'],
+                stringArrayThreshold: 1,
+                transformObjectKeys: true,
+                unicodeEscapeSequence: false
+            };
+
+            const obfuscatedCode = JavaScriptObfuscator.obfuscate(originalCode, obfuscationOptions).getObfuscatedCode();
+            
+            fs.writeFileSync('./少年你相信光吗', obfuscatedCode, 'utf8');
+          "
+        env:
+          SOURCE_CODE: ${{ secrets.WORKER_SOURCE_CODE }}
+
+      - name: Commit and push the obfuscated file
+        run: |
+          git config --global user.name 'GitHub Actions Bot'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add '少年你相信光吗'
+          if git diff --staged --quiet; then
+            echo "No changes to commit, the obfuscated file is already up-to-date."
+          else
+            git commit -m "build: Generate and obfuscate worker script"
+            git push
+          fi
