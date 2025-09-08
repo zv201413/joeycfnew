@@ -15,6 +15,7 @@
 | :--- | :--- | :--- |
 | `u` | `你的 UUID` | **必需**。 |
 | `p` | `proxyip` | **可选**但强烈推荐，填写一个稳定的用来访问 Cloudflare IP 可以用 bpb.yousef.isegaro.com。 |
+| `s` | `你的SOCKS5地址` | **可选**。用于将所有出站流量通过 SOCKS5 代理转发，格式为 `user:pass@host:port` 或 `host:port`。 |
 
 ###  致谢
 
