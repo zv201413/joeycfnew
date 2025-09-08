@@ -33,18 +33,17 @@ jobs:
               process.exit(1);
             }
 
-            // --- 平衡型混淆配置 ---
+            // --- 轻量级混淆配置 ---
             const obfuscationOptions = {
                 compact: true,
-                // 重新启用，但强度适中
-                controlFlowFlattening: true,
-                controlFlowFlatteningThreshold: 0.75,
+                // 禁用所有高消耗功能以确保性能
+                controlFlowFlattening: false,
+                debugProtection: false,
+                selfDefending: false,
+
+                // 保留少量僵尸代码增加分析难度
                 deadCodeInjection: true,
-                deadCodeInjectionThreshold: 0.4,
-                
-                // 重新启用，增加反调试和反格式化能力
-                debugProtection: true, 
-                selfDefending: true,
+                deadCodeInjectionThreshold: 0.2, 
 
                 // 保留的核心保护功能
                 disableConsoleOutput: true,
@@ -52,7 +51,7 @@ jobs:
                 renameGlobals: true,
                 stringArray: true,
                 stringArrayEncoding: ['base64'],
-                stringArrayThreshold: 0.8,
+                stringArrayThreshold: 1, // 100% 隐藏字符串
                 transformObjectKeys: true,
                 unicodeEscapeSequence: false
             };
