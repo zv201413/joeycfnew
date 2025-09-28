@@ -1,25 +1,27 @@
 import { connect } from 'cloudflare:sockets';
 
 // --- 硬编码配置 ---
-// UUID，同时用作订阅路径。
 const authToken = 'f64bdc57-0f54-4705-bf75-cfd646d98c06';
-// 用来访问cloudflare托管的网站
 const fallbackAddress = 'ProxyIP.cmliussss.net';
-// 备用端口。
 const fallbackPort = '443';
-// SOCKS5 代理配置。留空则禁用。格式: user:pass@host:port
 const socks5Config = '';
-
+// API地址配置
+const apiBaseUrl = 'https://s.jhb.edu.kg/sub';
 
 const directDomains = [
-    { name: "cloudflare.182682.xyz", domain: "cloudflare.182682.xyz" }, { name: "speed.marisalnc.com", domain: "speed.marisalnc.com" },
-    { domain: "freeyx.cloudflare88.eu.org" }, { domain: "bestcf.top" }, { domain: "cdn.2020111.xyz" }, { domain: "cfip.cfcdn.vip" },
-    { domain: "cf.0sm.com" }, { domain: "cf.090227.xyz" }, { domain: "cf.zhetengsha.eu.org" }, { domain: "cloudflare.9jy.cc" },
-    { domain: "cf.zerone-cdn.pp.ua" }, { domain: "cfip.1323123.xyz" }, { domain: "cnamefuckxxs.yuchen.icu" }, { domain: "cloudflare-ip.mofashi.ltd" },
-    { domain: "115155.xyz" }, { domain: "cname.xirancdn.us" }, { domain: "f3058171cad.002404.xyz" }, { domain: "8.889288.xyz" },
-    { domain: "cdn.tzpro.xyz" }, { domain: "cf.877771.xyz" }, { domain: "xn--b6gac.eu.org" }
+    { name: "cloudflare.182682.xyz", domain: "cloudflare.182682.xyz" }, 
+    { name: "speed.marisalnc.com", domain: "speed.marisalnc.com" },
+    { domain: "freeyx.cloudflare88.eu.org" }, { domain: "bestcf.top" }, 
+    { domain: "cdn.2020111.xyz" }, { domain: "cfip.cfcdn.vip" },
+    { domain: "cf.0sm.com" }, { domain: "cf.090227.xyz" }, 
+    { domain: "cf.zhetengsha.eu.org" }, { domain: "cloudflare.9jy.cc" },
+    { domain: "cf.zerone-cdn.pp.ua" }, { domain: "cfip.1323123.xyz" }, 
+    { domain: "cnamefuckxxs.yuchen.icu" }, { domain: "cloudflare-ip.mofashi.ltd" },
+    { domain: "115155.xyz" }, { domain: "cname.xirancdn.us" }, 
+    { domain: "f3058171cad.002404.xyz" }, { domain: "8.889288.xyz" },
+    { domain: "cdn.tzpro.xyz" }, { domain: "cf.877771.xyz" }, 
+    { domain: "xn--b6gac.eu.org" }
 ];
-
 
 const parsedSocks5Config = {};
 const isSocksEnabled = false;
@@ -45,17 +47,34 @@ const ADDRESS_TYPE_IPV6 = 3;
 export default {
 	async fetch(request, env, ctx) {
 		try {
-			const subPath = authToken;
 			const url = new URL(request.url);
 
 			if (request.headers.get('Upgrade') === 'websocket') {
 				return await handleWsRequest(request);
 			} else if (request.method === 'GET') {
 				if (url.pathname === '/') {
-					const successHtml = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale-1.0"><title>部署成功</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background-color:#121212;color:#e0e0e0;text-align:center;}.container{padding:2rem;border-radius:8px;background-color:#1e1e1e;box-shadow:0 4px 6px rgba(0,0,0,0.1);}h1{color:#4caf50;}</style></head><body><div class="container"><h1>✅ 部署成功</h1><p>代理与动态订阅功能均已启用。</p></div></body></html>`;
+					const successHtml = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>部署成功</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background-color:#121212;color:#e0e0e0;text-align:center;}.container{padding:2rem;border-radius:8px;background-color:#1e1e1e;box-shadow:0 4px 6px rgba(0,0,0,0.1);}h1{color:#4caf50;}</style></head><body><div class="container"><h1>✅ 部署成功</h1><p>代理与动态订阅功能均已启用。</p></div></body></html>`;
 					return new Response(successHtml, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
 				}
-				if (url.pathname.toLowerCase().includes(`/${subPath}`)) {
+				// 支持UUID路径：/uuid - 显示图形化界面
+				if (url.pathname.length > 1 && url.pathname !== '/' && !url.pathname.includes('/sub')) {
+					const uuid = url.pathname.replace(/\/$/, '').substring(1); // 移除末尾斜杠
+					if (isValidFormat(uuid)) {
+						return await handleSubscriptionPage(request, uuid);
+					}
+				}
+				// 支持UUID/sub路径：/uuid/sub - 返回订阅
+				if (url.pathname.includes('/sub')) {
+					const pathParts = url.pathname.split('/');
+					if (pathParts.length === 2 && pathParts[1] === 'sub') {
+						const uuid = pathParts[0].substring(1);
+						if (isValidFormat(uuid)) {
+							return await handleSubscriptionRequest(request, uuid, url);
+						}
+					}
+				}
+				// 保持向后兼容
+				if (url.pathname.toLowerCase().includes(`/${authToken}`)) {
 					return await handleSubscriptionRequest(request, authToken);
 				}
 			}
@@ -66,10 +85,196 @@ export default {
 	},
 };
 
-async function handleSubscriptionRequest(request, uuid) {
-    const url = new URL(request.url);
+async function handleSubscriptionPage(request, uuid = null) {
+	if (!uuid) uuid = authToken;
+	
+	const pageHtml = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>矩阵订阅中心</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Courier New", monospace;
+            background: #000; color: #00ff00; min-height: 100vh;
+            overflow-x: hidden; position: relative;
+        }
+        .matrix-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(45deg, #000 0%, #001100 50%, #000 100%);
+            z-index: -1;
+        }
+        .matrix-rain {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,0,0.03) 2px, rgba(0,255,0,0.03) 4px);
+            animation: matrix-fall 20s linear infinite;
+            z-index: -1;
+        }
+        @keyframes matrix-fall {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100vh); }
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; position: relative; z-index: 1; }
+        .header { text-align: center; margin-bottom: 40px; }
+        .title {
+            font-size: 3rem; font-weight: bold;
+            text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00, 0 0 30px #00ff00;
+            margin-bottom: 10px;
+            animation: matrix-glow 2s ease-in-out infinite alternate;
+        }
+        @keyframes matrix-glow {
+            from { text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00, 0 0 30px #00ff00; }
+            to { text-shadow: 0 0 20px #00ff00, 0 0 30px #00ff00, 0 0 40px #00ff00; }
+        }
+        .subtitle { color: #00aa00; margin-bottom: 30px; font-size: 1.2rem; }
+        .card {
+            background: rgba(0, 20, 0, 0.8);
+            border: 2px solid #00ff00;
+            border-radius: 0; padding: 30px; margin-bottom: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+            position: relative;
+        }
+        .card::before {
+            content: ""; position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(45deg, transparent 49%, #00ff00 50%, transparent 51%);
+            opacity: 0.1; pointer-events: none;
+        }
+        .card-title {
+            font-size: 1.8rem; margin-bottom: 20px;
+            color: #00ff00; text-shadow: 0 0 5px #00ff00;
+        }
+        .client-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px; margin: 20px 0;
+        }
+        .client-btn {
+            background: rgba(0, 20, 0, 0.6);
+            border: 2px solid #00ff00;
+            padding: 15px 20px; color: #00ff00;
+            font-family: "Courier New", monospace; font-weight: bold;
+            cursor: pointer; transition: all 0.3s ease;
+            text-align: center; position: relative;
+            overflow: hidden;
+        }
+        .client-btn::before {
+            content: ""; position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0,255,0,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        .client-btn:hover::before { left: 100%; }
+        .client-btn:hover {
+            background: rgba(0, 255, 0, 0.2);
+            box-shadow: 0 0 15px #00ff00;
+            transform: translateY(-2px);
+        }
+        .generate-btn {
+            background: rgba(0, 255, 0, 0.1);
+            border: 2px solid #00ff00; padding: 15px 30px;
+            color: #00ff00; font-family: "Courier New", monospace;
+            font-weight: bold; cursor: pointer;
+            transition: all 0.3s ease; margin-right: 15px;
+        }
+        .generate-btn:hover {
+            background: rgba(0, 255, 0, 0.3);
+            box-shadow: 0 0 20px #00ff00;
+            transform: translateY(-2px);
+        }
+        .subscription-url {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00ff00; padding: 15px;
+            word-break: break-all; font-family: "Courier New", monospace;
+            color: #00ff00; margin-top: 20px; display: none;
+            box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+        .matrix-text {
+            position: fixed; top: 20px; right: 20px;
+            color: #00ff00; font-family: "Courier New", monospace;
+            font-size: 0.8rem; opacity: 0.6;
+            animation: matrix-flicker 3s infinite;
+        }
+        @keyframes matrix-flicker {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="matrix-bg"></div>
+    <div class="matrix-rain"></div>
+    <div class="matrix-text">代理订阅中心 v0.1</div>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">代理订阅中心</h1>
+            <p class="subtitle">客户端协议支持 • 智能优选 • 一键生成</p>
+        </div>
+        <div class="card">
+            <h2 class="card-title">[ 选择客户端 ]</h2>
+            <div class="client-grid">
+                <button class="client-btn" onclick="generateClientLink('clash')">CLASH</button>
+                <button class="client-btn" onclick="generateClientLink('surge3')">SURGE 3</button>
+                <button class="client-btn" onclick="generateClientLink('surge4')">SURGE 4</button>
+                <button class="client-btn" onclick="generateClientLink('quantumultx')">QUANTUMULTX</button>
+                <button class="client-btn" onclick="generateClientLink('loon')">LOON</button>
+                <button class="client-btn" onclick="generateClientLink('v2ray')">V2RAY</button>
+            </div>
+            <div class="subscription-url" id="clientSubscriptionUrl"></div>
+        </div>
+        <div class="card">
+            <h2 class="card-title">[ 快速获取 ]</h2>
+            <button class="generate-btn" onclick="getBase64Subscription()">获取订阅链接</button>
+            <div class="subscription-url" id="base64SubscriptionUrl"></div>
+        </div>
+        <div class="card">
+            <h2 class="card-title">[ 相关链接 ]</h2>
+            <div style="text-align: center; margin: 20px 0;">
+                <a href="https://github.com/byJoey/cfnew" target="_blank" style="color: #00ff00; text-decoration: none; margin: 0 20px; font-size: 1.2rem; text-shadow: 0 0 5px #00ff00;">GitHub 项目</a>
+                <a href="https://www.youtube.com/@joeyblog" target="_blank" style="color: #00ff00; text-decoration: none; margin: 0 20px; font-size: 1.2rem; text-shadow: 0 0 5px #00ff00;">YouTube @joeyblog</a>
+            </div>
+        </div>
+    </div>
+    <script>
+        function generateClientLink(clientType) {
+            var currentUrl = window.location.href;
+            var subscriptionUrl = currentUrl + "/sub";
+            var encodedUrl = encodeURIComponent(subscriptionUrl);
+            var apiUrl = "https://long-dawn-cd81.admin-4e2.workers.dev/sub?target=" + clientType + "&url=" + encodedUrl + "&insert=false";
+            document.getElementById("clientSubscriptionUrl").textContent = apiUrl;
+            document.getElementById("clientSubscriptionUrl").style.display = "block";
+            navigator.clipboard.writeText(apiUrl).then(function() {
+                alert(clientType.toUpperCase() + " 订阅链接已复制");
+            });
+        }
+        function getBase64Subscription() {
+            var currentUrl = window.location.href;
+            var subscriptionUrl = currentUrl + "/sub";
+            var encodedUrl = encodeURIComponent(subscriptionUrl);
+            var apiUrl = "https://long-dawn-cd81.admin-4e2.workers.dev/sub?target=base64&url=" + encodedUrl + "&insert=false";
+            document.getElementById("base64SubscriptionUrl").textContent = apiUrl;
+            document.getElementById("base64SubscriptionUrl").style.display = "block";
+            navigator.clipboard.writeText(apiUrl).then(function() {
+                alert("订阅链接已复制");
+            });
+        }
+    </script>
+</body>
+</html>`;
+	
+	return new Response(pageHtml, { 
+		status: 200, 
+		headers: { 'Content-Type': 'text/html; charset=utf-8' } 
+	});
+}
+
+async function handleSubscriptionRequest(request, uuid, url = null) {
+    if (!url) url = new URL(request.url);
+    
     const finalLinks = [];
     const workerDomain = url.hostname;
+    const target = url.searchParams.get('target') || 'clash';
 
     const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
     finalLinks.push(...generateLinksFromSource(nativeList, uuid, workerDomain));
@@ -88,16 +293,46 @@ async function handleSubscriptionRequest(request, uuid) {
     }
 
     if (finalLinks.length === 0) {
-        const errorRemark = "所有节点获取失败-请到CF后台查看Worker日志";
+        const errorRemark = "所有节点获取失败";
         const errorLink = `vless://00000000-0000-0000-0000-000000000000@127.0.0.1:80?encryption=none&security=none&type=ws&host=error.com&path=%2F#${encodeURIComponent(errorRemark)}`;
         finalLinks.push(errorLink);
     }
 
-    const subscriptionContent = btoa(finalLinks.join('\n'));
+    let subscriptionContent;
+    let contentType = 'text/plain; charset=utf-8';
+    
+    switch (target.toLowerCase()) {
+        case 'clash':
+        case 'clashr':
+            subscriptionContent = await generateClashConfig(finalLinks);
+            contentType = 'text/yaml; charset=utf-8';
+            break;
+        case 'surge2':
+        case 'surge3':
+        case 'surge4':
+            subscriptionContent = generateSurgeConfig(finalLinks);
+            break;
+        case 'quantumult':
+        case 'quantumultx':
+            subscriptionContent = generateQuantumultConfig(finalLinks);
+            break;
+        case 'ss':
+        case 'ssr':
+            subscriptionContent = generateSSConfig(finalLinks);
+            break;
+        case 'v2ray':
+            subscriptionContent = generateV2RayConfig(finalLinks);
+            break;
+        case 'loon':
+            subscriptionContent = generateLoonConfig(finalLinks);
+            break;
+        default:
+            subscriptionContent = btoa(finalLinks.join('\n'));
+    }
     
     return new Response(subscriptionContent, {
         headers: { 
-            'Content-Type': 'text/plain; charset=utf-8',
+            'Content-Type': contentType,
             'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
         },
     });
@@ -144,29 +379,12 @@ function generateLinksFromSource(list, uuid, workerDomain) {
 }
 
 async function fetchDynamicIPs() {
-    const v4Url1 = "https://www.wetest.vip/page/cloudflare/address_v4.html";
-    let results = [];
-
-    try {
-        const ipv4List = await fetchAndParseWetest(v4Url1);
-        results = [...ipv4List];
-        if (results.length > 0) {
-            console.log(`[Wetest] Successfully fetched ${results.length} IPs from wetest.vip`);
-            return results;
-        }
-    } catch (e) {
-        console.error("[Wetest] Failed to fetch from wetest.vip:", e);
-    }
-
-    console.log("[Wetest] wetest.vip failed, trying fallback IP source...");
     const fallbackUrl = "https://stock.hostmonit.com/CloudFlareYes";
     try {
         const response = await fetch(fallbackUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-        if (!response.ok) {
-            console.error(`[Hostmonit] Fallback source failed with status: ${response.status}`);
-            return [];
-        }
+        if (!response.ok) return [];
         const html = await response.text();
+        const results = [];
         const rowRegex = /<tr><td>([\d.:a-fA-F]+)<\/td><td>.*?<\/td><td>.*?<\/td><td>.*?<\/td><td>(.*?)<\/td>.*?<\/tr>/g;
         
         let match;
@@ -178,72 +396,25 @@ async function fetchDynamicIPs() {
                 });
             }
         }
-
-        if (results.length > 0) {
-             console.log(`[Hostmonit] Successfully fetched ${results.length} IPs from fallback source.`);
-        } else {
-            console.warn(`[Hostmonit] Warning: Could not parse any IPs from fallback source.`);
-        }
-       
         return results;
     } catch (e) {
-        console.error("[Hostmonit] Failed to fetch from fallback source:", e);
-        return [];
-    }
-}
-
-async function fetchAndParseWetest(url) {
-    try {
-        const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-        if (!response.ok) {
-            console.error(`[Wetest] Failed to fetch ${url}, status: ${response.status}`);
-            return [];
-        }
-        const html = await response.text();
-        const results = [];
-        const rowRegex = /<tr[\s\S]*?<\/tr>/g;
-        const cellRegex = /<td data-label="线路名称">(.+?)<\/td>[\s\S]*?<td data-label="优选地址">([\d.:a-fA-F]+)<\/td>/;
-
-        let match;
-        while ((match = rowRegex.exec(html)) !== null) {
-            const rowHtml = match[0];
-            const cellMatch = rowHtml.match(cellRegex);
-            if (cellMatch && cellMatch[1] && cellMatch[2]) {
-                results.push({
-                    isp: cellMatch[1].trim().replace(/<.*?>/g, ''),
-                    ip: cellMatch[2].trim()
-                });
-            }
-        }
-        
-        if (results.length === 0) {
-            console.warn(`[Wetest] Warning: Could not parse any IPs from ${url}.`);
-        }
-
-        return results;
-    } catch (error) {
-        console.error(`[Wetest] Error parsing ${url}:`, error);
         return [];
     }
 }
 
 async function fetchAndParseNewIPs() {
     const url = "https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt";
-    let results = [];
     try {
         const response = await fetch(url);
-        if (!response.ok) {
-            console.error(`[GitHub Source] Failed to fetch new IPs, status: ${response.status}`);
-            return [];
-        }
+        if (!response.ok) return [];
         const text = await response.text();
+        const results = [];
         const lines = text.trim().replace(/\r/g, "").split('\n');
         const regex = /^([^:]+):(\d+)#(.*)$/;
 
         for (const line of lines) {
             const trimmedLine = line.trim();
             if (!trimmedLine) continue;
-
             const match = trimmedLine.match(regex);
             if (match) {
                 results.push({
@@ -251,14 +422,10 @@ async function fetchAndParseNewIPs() {
                     port: parseInt(match[2], 10),
                     name: match[3].trim() || match[1]
                 });
-            } else {
-                console.warn(`[GitHub Source] Line did not match format: "${trimmedLine}"`);
             }
         }
-        console.log(`[GitHub Source] Successfully parsed ${results.length} IPs.`);
         return results;
     } catch (error) {
-        console.error("[GitHub Source] Error fetching or parsing new IPs:", error);
         return [];
     }
 }
@@ -271,7 +438,6 @@ function generateLinksFromNewIPs(list, uuid, workerDomain) {
     list.forEach(item => {
         const nodeName = item.name;
         const safeIP = item.ip.includes(':') ? `[${item.ip}]` : item.ip;
-
         const params = {
             encryption: 'none',
             security: 'tls',
@@ -281,14 +447,173 @@ function generateLinksFromNewIPs(list, uuid, workerDomain) {
             host: workerDomain,
             path: wsPath
         };
-
         const wsParams = new URLSearchParams(params);
         links.push(`${proto}://${uuid}@${safeIP}:${item.port}?${wsParams.toString()}#${encodeURIComponent(nodeName)}`);
     });
     return links;
 }
 
+// 简化的客户端格式生成函数
+async function generateClashConfig(links) {
+    const config = {
+        port: 7890,
+        'socks-port': 7891,
+        mode: 'rule',
+        proxies: [],
+        'proxy-groups': [
+            { name: 'PROXY', type: 'select', proxies: ['auto'] },
+            { name: 'auto', type: 'url-test', proxies: [], url: 'http://www.gstatic.com/generate_204', interval: 300 }
+        ],
+        rules: ['GEOIP,CN,DIRECT', 'MATCH,PROXY']
+    };
+    
+    for (const link of links) {
+        if (link.startsWith('vless://')) {
+            const proxy = parseVlessLink(link);
+            if (proxy) {
+                config.proxies.push(proxy);
+                config['proxy-groups'][1].proxies.push(proxy.name);
+            }
+        }
+    }
+    
+    return JSON.stringify(config, null, 2);
+}
 
+function parseVlessLink(link) {
+    try {
+        const url = new URL(link);
+        const params = new URLSearchParams(url.search);
+        const name = decodeURIComponent(url.hash.substring(1));
+        
+        return {
+            name: name,
+            type: 'vless',
+            server: url.hostname,
+            port: parseInt(url.port),
+            uuid: url.username,
+            network: params.get('type') || 'ws',
+            tls: params.get('security') === 'tls',
+            'ws-opts': {
+                path: params.get('path') || '/',
+                headers: { Host: params.get('host') || url.hostname }
+            }
+        };
+    } catch (e) {
+        return null;
+    }
+}
+
+function generateSurgeConfig(links) {
+    let config = `[General]
+loglevel = notify
+dns-server = 8.8.8.8, 1.1.1.1
+
+[Proxy]`;
+
+    for (const link of links) {
+        if (link.startsWith('vless://')) {
+            const proxy = parseVlessForSurge(link);
+            if (proxy) config += `\n${proxy}`;
+        }
+    }
+
+    config += `\n\n[Proxy Group]
+节点选择 = select, auto
+auto = url-test, `;
+
+    const nodeNames = [];
+    for (const link of links) {
+        if (link.startsWith('vless://')) {
+            const name = decodeURIComponent(link.split('#')[1] || '节点');
+            nodeNames.push(name);
+        }
+    }
+    config += nodeNames.join(', ');
+
+    config += `\nurl = http://www.gstatic.com/generate_204
+interval = 300
+
+[Rule]
+GEOIP,CN,DIRECT
+FINAL,节点选择`;
+
+    return config;
+}
+
+function parseVlessForSurge(link) {
+    try {
+        const url = new URL(link);
+        const params = new URLSearchParams(url.search);
+        const name = decodeURIComponent(url.hash.substring(1));
+        return `${name} = vless, ${url.hostname}, ${url.port}, username=${url.username}, ws=true, ws-path=${params.get('path') || '/'}, ws-headers=host:${params.get('host') || url.hostname}`;
+    } catch (e) {
+        return null;
+    }
+}
+
+function generateQuantumultConfig(links) {
+    let config = `[general]
+server_remote = `;
+    for (const link of links) {
+        if (link.startsWith('vless://')) {
+            config += `${link}, `;
+        }
+    }
+    config += `\n\n[policy]
+static = 节点选择, `;
+    
+    const nodeNames = [];
+    for (const link of links) {
+        if (link.startsWith('vless://')) {
+            const name = decodeURIComponent(link.split('#')[1] || '节点');
+            nodeNames.push(name);
+        }
+    }
+    config += nodeNames.join(', ');
+    config += `\n\n[filter]
+FINAL, 节点选择`;
+    
+    return config;
+}
+
+function generateSSConfig(links) {
+    let config = `[General]
+loglevel = notify
+
+[Proxy]`;
+    for (const link of links) {
+        if (link.startsWith('vless://')) {
+            const url = new URL(link);
+            const name = decodeURIComponent(url.hash.substring(1));
+            config += `\n${name} = vless, ${url.hostname}, ${url.port}, ${url.username}`;
+        }
+    }
+    return config;
+}
+
+function generateV2RayConfig(links) {
+    return btoa(links.join('\n'));
+}
+
+function generateLoonConfig(links) {
+    let config = `[General]
+skip-proxy = 127.0.0.1, 192.168.0.0/16, 10.0.0.0/8, 172.16.0.0/12
+dns-server = 8.8.8.8, 1.1.1.1
+
+[Proxy]`;
+    for (const link of links) {
+        if (link.startsWith('vless://')) {
+            const url = new URL(link);
+            const params = new URLSearchParams(url.search);
+            const name = decodeURIComponent(url.hash.substring(1));
+            config += `\n${name} = vless, ${url.hostname}, ${url.port}, username=${url.username}, ws=true, ws-path=${params.get('path') || '/'}, ws-headers=host:${params.get('host') || url.hostname}`;
+        }
+    }
+    return config;
+}
+
+// WebSocket处理函数（简化版）
 async function handleWsRequest(request) {
     const wsPair = new WebSocketPair();
     const [clientSock, serverSock] = Object.values(wsPair);
@@ -320,7 +645,6 @@ async function handleWsRequest(request) {
             const rawData = chunk.slice(rawIndex);
 
             if (isDnsQuery) return forwardUDP(rawData, serverSock, respHeader);
-
             await forwardTCP(addressType, hostname, port, rawData, serverSock, respHeader, remoteConnWrapper);
         },
     })).catch((err) => { console.log('WS Stream Error:', err); });
@@ -330,18 +654,14 @@ async function handleWsRequest(request) {
 
 async function forwardTCP(addrType, host, portNum, rawData, ws, respHeader, remoteConnWrapper) {
     async function connectAndSend(address, port) {
-        const remoteSock = isSocksEnabled ?
-            await establishSocksConnection(addrType, address, port) :
-            connect({ hostname: address, port: port });
+        const remoteSock = connect({ hostname: address, port: port });
         const writer = remoteSock.writable.getWriter();
         await writer.write(rawData);
         writer.releaseLock();
         return remoteSock;
     }
     async function retryConnection() {
-        const newSocket = isSocksEnabled ?
-            await connectAndSend(host, portNum) :
-            await connectAndSend(fallbackAddress || host, parseInt(fallbackPort, 10) || portNum);
+        const newSocket = await connectAndSend(fallbackAddress || host, parseInt(fallbackPort, 10) || portNum);
         remoteConnWrapper.socket = newSocket;
         newSocket.closed.catch(() => {}).finally(() => closeSocketQuietly(ws));
         connectStreams(newSocket, ws, respHeader, null);
@@ -424,44 +744,6 @@ async function forwardUDP(udpChunk, webSocket, respHeader) {
 			},
 		}));
 	} catch (error) { console.error(`DNS forward error: ${error.message}`); }
-}
-
-async function establishSocksConnection(addrType, address, port) {
-	const { username, password, hostname, socksPort } = parsedSocks5Config;
-	const socket = connect({ hostname, port: socksPort });
-	const writer = socket.writable.getWriter();
-	await writer.write(new Uint8Array(username ? [5, 2, 0, 2] : [5, 1, 0]));
-	const reader = socket.readable.getReader();
-	let res = (await reader.read()).value;
-	if (res[0] !== 5 || res[1] === 255) throw new Error(E_SOCKS_NO_METHOD);
-	if (res[1] === 2) {
-		if (!username || !password) throw new Error(E_SOCKS_AUTH_NEEDED);
-		const encoder = new TextEncoder();
-		const authRequest = new Uint8Array([1, username.length, ...encoder.encode(username), password.length, ...encoder.encode(password)]);
-		await writer.write(authRequest);
-		res = (await reader.read()).value;
-		if (res[0] !== 1 || res[1] !== 0) throw new Error(E_SOCKS_AUTH_FAIL);
-	}
-	const encoder = new TextEncoder(); let DSTADDR;
-	switch (addrType) {
-		case ADDRESS_TYPE_IPV4: DSTADDR = new Uint8Array([1, ...address.split('.').map(Number)]); break;
-		case ADDRESS_TYPE_URL: DSTADDR = new Uint8Array([3, address.length, ...encoder.encode(address)]); break;
-		case ADDRESS_TYPE_IPV6: DSTADDR = new Uint8Array([4, ...address.split(':').flatMap(x => [parseInt(x.slice(0, 2), 16), parseInt(x.slice(2), 16)])]); break;
-		default: throw new Error(E_INVALID_ADDR_TYPE);
-	}
-	await writer.write(new Uint8Array([5, 1, 0, ...DSTADDR, port >> 8, port & 255]));
-	res = (await reader.read()).value;
-	if (res[1] !== 0) throw new Error(E_SOCKS_CONN_FAIL);
-	writer.releaseLock(); reader.releaseLock();
-	return socket;
-}
-
-function parseSocksConfig(address) {
-    let [latter, former] = address.split("@").reverse(); let username, password, hostname, socksPort;
-    if (former) { const formers = former.split(":"); if (formers.length !== 2) throw new Error(E_INVALID_SOCKS_ADDR);[username, password] = formers; }
-    const latters = latter.split(":"); socksPort = Number(latters.pop()); if (isNaN(socksPort)) throw new Error(E_INVALID_SOCKS_ADDR);
-    hostname = latters.join(":"); if (hostname.includes(":") && !/^\[.*\]$/.test(hostname)) throw new Error(E_INVALID_SOCKS_ADDR);
-    return { username, password, hostname, socksPort };
 }
 
 function base64ToArray(b64Str) {
