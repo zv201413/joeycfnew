@@ -215,9 +215,8 @@ async function handleSubscriptionPage(request, uuid = null) {
             <h2 class="card-title">[ 选择客户端 ]</h2>
             <div class="client-grid">
                 <button class="client-btn" onclick="generateClientLink('clash')">CLASH</button>
-                <button class="client-btn" onclick="generateClientLink('surge3')">SURGE 3</button>
-                <button class="client-btn" onclick="generateClientLink('surge4')">SURGE 4</button>
-                <button class="client-btn" onclick="generateClientLink('quantumultx')">QUANTUMULTX</button>
+                <button class="client-btn" onclick="generateClientLink('surge')">SURGE</button>
+                <button class="client-btn" onclick="generateClientLink('singbox')">SING-BOX</button>
                 <button class="client-btn" onclick="generateClientLink('loon')">LOON</button>
                 <button class="client-btn" onclick="generateClientLink('v2ray')">V2RAY</button>
             </div>
@@ -255,7 +254,10 @@ async function handleSubscriptionPage(request, uuid = null) {
                 document.getElementById("clientSubscriptionUrl").textContent = apiUrl;
                 document.getElementById("clientSubscriptionUrl").style.display = "block";
                 navigator.clipboard.writeText(apiUrl).then(function() {
-                    alert(clientType.toUpperCase() + " 订阅链接已复制");
+                    var displayName = clientType.toUpperCase();
+                    if (clientType === 'surge') displayName = 'SURGE';
+                    if (clientType === 'singbox') displayName = 'SING-BOX';
+                    alert(displayName + " 订阅链接已复制");
                 });
             }
         }
