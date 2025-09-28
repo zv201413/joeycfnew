@@ -93,7 +93,7 @@ async function handleSubscriptionPage(request, uuid = null) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>矩阵订阅中心</title>
+    <title>订阅中心</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -209,7 +209,7 @@ async function handleSubscriptionPage(request, uuid = null) {
     <div class="container">
         <div class="header">
             <h1 class="title">代理订阅中心</h1>
-            <p class="subtitle">客户端协议支持 • 智能优选 • 一键生成</p>
+            <p class="subtitle">多客户端支持 • 智能优选 • 一键生成</p>
         </div>
         <div class="card">
             <h2 class="card-title">[ 选择客户端 ]</h2>
@@ -240,22 +240,32 @@ async function handleSubscriptionPage(request, uuid = null) {
         function generateClientLink(clientType) {
             var currentUrl = window.location.href;
             var subscriptionUrl = currentUrl + "/sub";
-            var encodedUrl = encodeURIComponent(subscriptionUrl);
-            var apiUrl = "https://s.jhb.edu.kg/sub?target=" + clientType + "&url=" + encodedUrl + "&insert=false";
-            document.getElementById("clientSubscriptionUrl").textContent = apiUrl;
-            document.getElementById("clientSubscriptionUrl").style.display = "block";
-            navigator.clipboard.writeText(apiUrl).then(function() {
-                alert(clientType.toUpperCase() + " 订阅链接已复制");
-            });
+            
+            // V2RAY 不需要转换，直接返回原始订阅
+            if (clientType === 'v2ray') {
+                document.getElementById("clientSubscriptionUrl").textContent = subscriptionUrl;
+                document.getElementById("clientSubscriptionUrl").style.display = "block";
+                navigator.clipboard.writeText(subscriptionUrl).then(function() {
+                    alert("V2Ray 订阅链接已复制");
+                });
+            } else {
+                // 其他客户端需要通过API转换
+                var encodedUrl = encodeURIComponent(subscriptionUrl);
+                var apiUrl = "https://s.jhb.edu.kg/sub?target=" + clientType + "&url=" + encodedUrl + "&insert=false";
+                document.getElementById("clientSubscriptionUrl").textContent = apiUrl;
+                document.getElementById("clientSubscriptionUrl").style.display = "block";
+                navigator.clipboard.writeText(apiUrl).then(function() {
+                    alert(clientType.toUpperCase() + " 订阅链接已复制");
+                });
+            }
         }
         function getBase64Subscription() {
             var currentUrl = window.location.href;
             var subscriptionUrl = currentUrl + "/sub";
-            var encodedUrl = encodeURIComponent(subscriptionUrl);
-            var apiUrl = "https://s.jhb.edu.kg/sub?target=base64&url=" + encodedUrl + "&insert=false";
-            document.getElementById("base64SubscriptionUrl").textContent = apiUrl;
+            // 直接返回原始订阅，不需要转换
+            document.getElementById("base64SubscriptionUrl").textContent = subscriptionUrl;
             document.getElementById("base64SubscriptionUrl").style.display = "block";
-            navigator.clipboard.writeText(apiUrl).then(function() {
+            navigator.clipboard.writeText(subscriptionUrl).then(function() {
                 alert("订阅链接已复制");
             });
         }
