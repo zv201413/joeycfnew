@@ -10,6 +10,7 @@ const fallbackPort = '443';
 // SOCKS5 代理配置。留空则禁用。格式: user:pass@host:port
 const socks5Config = '';
 
+
 const directDomains = [
     { name: "cloudflare.182682.xyz", domain: "cloudflare.182682.xyz" }, { name: "speed.marisalnc.com", domain: "speed.marisalnc.com" },
     { domain: "freeyx.cloudflare88.eu.org" }, { domain: "bestcf.top" }, { domain: "cdn.2020111.xyz" }, { domain: "cfip.cfcdn.vip" },
@@ -51,7 +52,7 @@ export default {
 				return await handleWsRequest(request);
 			} else if (request.method === 'GET') {
 				if (url.pathname === '/') {
-					const successHtml = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>部署成功</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background-color:#121212;color:#e0e0e0;text-align:center;}.container{padding:2rem;border-radius:8px;background-color:#1e1e1e;box-shadow:0 4px 6px rgba(0,0,0,0.1);}h1{color:#4caf50;}</style></head><body><div class="container"><h1>✅ 部署成功</h1><p>代理与动态订阅功能均已启用。</p></div></body></html>`;
+					const successHtml = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale-1.0"><title>部署成功</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background-color:#121212;color:#e0e0e0;text-align:center;}.container{padding:2rem;border-radius:8px;background-color:#1e1e1e;box-shadow:0 4px 6px rgba(0,0,0,0.1);}h1{color:#4caf50;}</style></head><body><div class="container"><h1>✅ 部署成功</h1><p>代理与动态订阅功能均已启用。</p></div></body></html>`;
 					return new Response(successHtml, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
 				}
 				if (url.pathname.toLowerCase().includes(`/${subPath}`)) {
@@ -103,8 +104,8 @@ async function handleSubscriptionRequest(request, uuid) {
 }
 
 function generateLinksFromSource(list, uuid, workerDomain) {
-    const httpsPorts = [443, 2053, 2083, 2087, 2096, 8443];
-    const httpPorts = [80, 8080, 8880, 2052, 2082, 2086, 2095];
+    const httpsPorts = [443];
+    const httpPorts = [80];
     const links = [];
     const wsPath = encodeURIComponent('/?ed=2048');
     const proto = 'vless';
@@ -263,30 +264,23 @@ async function fetchAndParseNewIPs() {
 }
 
 function generateLinksFromNewIPs(list, uuid, workerDomain) {
-    const tlsPorts = new Set([443, 2053, 2083, 2087, 2096, 8443]);
     const links = [];
     const wsPath = encodeURIComponent('/?ed=2048');
     const proto = 'vless';
 
     list.forEach(item => {
-        const isTls = tlsPorts.has(item.port);
-        const security = isTls ? 'tls' : 'none';
-        
         const nodeName = item.name;
         const safeIP = item.ip.includes(':') ? `[${item.ip}]` : item.ip;
 
         const params = {
             encryption: 'none',
-            security: security,
+            security: 'tls',
+            sni: workerDomain,
+            fp: 'randomized',
             type: 'ws',
             host: workerDomain,
             path: wsPath
         };
-
-        if (isTls) {
-            params.sni = workerDomain;
-            params.fp = 'randomized';
-        }
 
         const wsParams = new URLSearchParams(params);
         links.push(`${proto}://${uuid}@${safeIP}:${item.port}?${wsParams.toString()}#${encodeURIComponent(nodeName)}`);
