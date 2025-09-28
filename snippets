@@ -241,7 +241,7 @@ async function handleSubscriptionPage(request, uuid = null) {
             var currentUrl = window.location.href;
             var subscriptionUrl = currentUrl + "/sub";
             var encodedUrl = encodeURIComponent(subscriptionUrl);
-            var apiUrl = "https://long-dawn-cd81.admin-4e2.workers.dev/sub?target=" + clientType + "&url=" + encodedUrl + "&insert=false";
+            var apiUrl = "https://s.jhb.edu.kg/sub?target=" + clientType + "&url=" + encodedUrl + "&insert=false";
             document.getElementById("clientSubscriptionUrl").textContent = apiUrl;
             document.getElementById("clientSubscriptionUrl").style.display = "block";
             navigator.clipboard.writeText(apiUrl).then(function() {
@@ -252,7 +252,7 @@ async function handleSubscriptionPage(request, uuid = null) {
             var currentUrl = window.location.href;
             var subscriptionUrl = currentUrl + "/sub";
             var encodedUrl = encodeURIComponent(subscriptionUrl);
-            var apiUrl = "https://long-dawn-cd81.admin-4e2.workers.dev/sub?target=base64&url=" + encodedUrl + "&insert=false";
+            var apiUrl = "https://s.jhb.edu.kg/sub?target=base64&url=" + encodedUrl + "&insert=false";
             document.getElementById("base64SubscriptionUrl").textContent = apiUrl;
             document.getElementById("base64SubscriptionUrl").style.display = "block";
             navigator.clipboard.writeText(apiUrl).then(function() {
