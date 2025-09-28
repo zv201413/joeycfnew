@@ -2,9 +2,10 @@ import { connect } from 'cloudflare:sockets';
 
 // --- 硬编码配置 ---
 // UUID，同时用作订阅路径。
-const authToken = '351c9981-04b6-4103-aa4b-864aa9c91469';
+const authToken = 'f64bdc57-0f54-4705-bf75-cfd646d98c06';
 // 用来访问cloudflare托管的网站
 const fallbackAddress = 'ProxyIP.cmliussss.net';
+// 备用端口。
 const fallbackPort = '443';
 // SOCKS5 代理配置。留空则禁用。格式: user:pass@host:port
 const socks5Config = '';
@@ -17,6 +18,7 @@ const directDomains = [
     { domain: "115155.xyz" }, { domain: "cname.xirancdn.us" }, { domain: "f3058171cad.002404.xyz" }, { domain: "8.889288.xyz" },
     { domain: "cdn.tzpro.xyz" }, { domain: "cf.877771.xyz" }, { domain: "xn--b6gac.eu.org" }
 ];
+
 
 const parsedSocks5Config = {};
 const isSocksEnabled = false;
@@ -79,6 +81,17 @@ async function handleSubscriptionRequest(request, uuid) {
         finalLinks.push(...generateLinksFromSource(dynamicIPList, uuid, workerDomain));
     }
 
+    const newIPList = await fetchAndParseNewIPs();
+    if (newIPList.length > 0) {
+        finalLinks.push(...generateLinksFromNewIPs(newIPList, uuid, workerDomain));
+    }
+
+    if (finalLinks.length === 0) {
+        const errorRemark = "所有节点获取失败-请到CF后台查看Worker日志";
+        const errorLink = `vless://00000000-0000-0000-0000-000000000000@127.0.0.1:80?encryption=none&security=none&type=ws&host=error.com&path=%2F#${encodeURIComponent(errorRemark)}`;
+        finalLinks.push(errorLink);
+    }
+
     const subscriptionContent = btoa(finalLinks.join('\n'));
     
     return new Response(subscriptionContent, {
@@ -131,29 +144,25 @@ function generateLinksFromSource(list, uuid, workerDomain) {
 
 async function fetchDynamicIPs() {
     const v4Url1 = "https://www.wetest.vip/page/cloudflare/address_v4.html";
-    const v6Url1 = "https://www.wetest.vip/page/cloudflare/address_v6.html";
     let results = [];
 
     try {
-        const [ipv4List, ipv6List] = await Promise.all([
-            fetchAndParseWetest(v4Url1),
-            fetchAndParseWetest(v6Url1)
-        ]);
-        results = [...ipv4List, ...ipv6List];
+        const ipv4List = await fetchAndParseWetest(v4Url1);
+        results = [...ipv4List];
         if (results.length > 0) {
-            console.log(`Successfully fetched ${results.length} IPs from wetest.vip`);
+            console.log(`[Wetest] Successfully fetched ${results.length} IPs from wetest.vip`);
             return results;
         }
     } catch (e) {
-        console.error("Failed to fetch from wetest.vip:", e);
+        console.error("[Wetest] Failed to fetch from wetest.vip:", e);
     }
 
-    console.log("wetest.vip failed, trying fallback IP source...");
+    console.log("[Wetest] wetest.vip failed, trying fallback IP source...");
     const fallbackUrl = "https://stock.hostmonit.com/CloudFlareYes";
     try {
         const response = await fetch(fallbackUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
         if (!response.ok) {
-            console.error(`Fallback source failed with status: ${response.status}`);
+            console.error(`[Hostmonit] Fallback source failed with status: ${response.status}`);
             return [];
         }
         const html = await response.text();
@@ -170,14 +179,14 @@ async function fetchDynamicIPs() {
         }
 
         if (results.length > 0) {
-             console.log(`Successfully fetched ${results.length} IPs from fallback source.`);
+             console.log(`[Hostmonit] Successfully fetched ${results.length} IPs from fallback source.`);
         } else {
-            console.warn(`Warning: Could not parse any IPs from fallback source. The site structure might have changed.`);
+            console.warn(`[Hostmonit] Warning: Could not parse any IPs from fallback source.`);
         }
        
         return results;
     } catch (e) {
-        console.error("Failed to fetch from fallback source:", e);
+        console.error("[Hostmonit] Failed to fetch from fallback source:", e);
         return [];
     }
 }
@@ -186,7 +195,7 @@ async function fetchAndParseWetest(url) {
     try {
         const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
         if (!response.ok) {
-            console.error(`Failed to fetch ${url}, status: ${response.status}`);
+            console.error(`[Wetest] Failed to fetch ${url}, status: ${response.status}`);
             return [];
         }
         const html = await response.text();
@@ -207,15 +216,84 @@ async function fetchAndParseWetest(url) {
         }
         
         if (results.length === 0) {
-            console.warn(`Warning: Could not parse any IPs from ${url}. The site structure might have changed.`);
+            console.warn(`[Wetest] Warning: Could not parse any IPs from ${url}.`);
         }
 
         return results;
     } catch (error) {
-        console.error(`Error parsing ${url}:`, error);
+        console.error(`[Wetest] Error parsing ${url}:`, error);
         return [];
     }
 }
+
+async function fetchAndParseNewIPs() {
+    const url = "https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt";
+    let results = [];
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            console.error(`[GitHub Source] Failed to fetch new IPs, status: ${response.status}`);
+            return [];
+        }
+        const text = await response.text();
+        const lines = text.trim().replace(/\r/g, "").split('\n');
+        const regex = /^([^:]+):(\d+)#(.*)$/;
+
+        for (const line of lines) {
+            const trimmedLine = line.trim();
+            if (!trimmedLine) continue;
+
+            const match = trimmedLine.match(regex);
+            if (match) {
+                results.push({
+                    ip: match[1],
+                    port: parseInt(match[2], 10),
+                    name: match[3].trim() || match[1]
+                });
+            } else {
+                console.warn(`[GitHub Source] Line did not match format: "${trimmedLine}"`);
+            }
+        }
+        console.log(`[GitHub Source] Successfully parsed ${results.length} IPs.`);
+        return results;
+    } catch (error) {
+        console.error("[GitHub Source] Error fetching or parsing new IPs:", error);
+        return [];
+    }
+}
+
+function generateLinksFromNewIPs(list, uuid, workerDomain) {
+    const tlsPorts = new Set([443, 2053, 2083, 2087, 2096, 8443]);
+    const links = [];
+    const wsPath = encodeURIComponent('/?ed=2048');
+    const proto = 'vless';
+
+    list.forEach(item => {
+        const isTls = tlsPorts.has(item.port);
+        const security = isTls ? 'tls' : 'none';
+        
+        const nodeName = item.name;
+        const safeIP = item.ip.includes(':') ? `[${item.ip}]` : item.ip;
+
+        const params = {
+            encryption: 'none',
+            security: security,
+            type: 'ws',
+            host: workerDomain,
+            path: wsPath
+        };
+
+        if (isTls) {
+            params.sni = workerDomain;
+            params.fp = 'randomized';
+        }
+
+        const wsParams = new URLSearchParams(params);
+        links.push(`${proto}://${uuid}@${safeIP}:${item.port}?${wsParams.toString()}#${encodeURIComponent(nodeName)}`);
+    });
+    return links;
+}
+
 
 async function handleWsRequest(request) {
     const wsPair = new WebSocketPair();
