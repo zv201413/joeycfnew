@@ -5,7 +5,9 @@
 ###  Snippets
 
 <img width="1128" height="801" alt="image" src="https://github.com/user-attachments/assets/ae108dd2-c543-4a63-b448-d56d4d520e1d" />
-加入多客户端支持 域名/你的uuid即可看见
+
+#### 加入多客户端支持 域名/你的uuid即可看见
+
 ###  配套工具
 
 | 类型 | 描述 | 链接 |
