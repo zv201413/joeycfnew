@@ -35,11 +35,16 @@ const ADDRESS_TYPE_IPV4 = 1;
 const ADDRESS_TYPE_URL = 2;
 const ADDRESS_TYPE_IPV6 = 3;
 
+function isValidFormat(str) {
+    const userRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return userRegex.test(str);
+}
+
 export default {
 	async fetch(request, env, ctx) {
 		try {
-			authToken = (env.uuid || env.u || env.UUID || authToken).toLowerCase();
-			const subPath = (env.d || authToken).toLowerCase();
+			authToken = (env.u || env.U || authToken).toLowerCase();
+			const subPath = (env.d || env.D || authToken).toLowerCase();
 			
 			const envFallback = env.p || env.P;
 			if (envFallback) {
@@ -73,8 +78,205 @@ export default {
 				return await handleWsRequest(request);
 			} else if (request.method === 'GET') {
 				if (url.pathname === '/') {
-					const successHtml = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>部署成功</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background-color:#121212;color:#e0e0e0;text-align:center;}.container{padding:2rem;border-radius:8px;background-color:#1e1e1e;box-shadow:0 4px 6px rgba(0,0,0,0.1);}h1{color:#4caf50;}</style></head><body><div class="container"><h1>✅ 部署成功</h1><p>代理与动态订阅功能均已启用。</p></div></body></html>`;
+					const successHtml = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>部署成功</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Courier New", monospace;
+            background: #000; color: #00ff00; min-height: 100vh;
+            overflow-x: hidden; position: relative;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .matrix-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(45deg, #000 0%, #001100 50%, #000 100%);
+            z-index: -1;
+            animation: bg-pulse 8s ease-in-out infinite;
+        }
+        @keyframes bg-pulse {
+            0%, 100% { background: linear-gradient(45deg, #000 0%, #001100 50%, #000 100%); }
+            50% { background: linear-gradient(45deg, #000 0%, #002200 50%, #000 100%); }
+        }
+        .matrix-rain {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,0,0.03) 2px, rgba(0,255,0,0.03) 4px);
+            animation: matrix-fall 20s linear infinite;
+            z-index: -1;
+        }
+        @keyframes matrix-fall {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100vh); }
+        }
+        .matrix-code-rain {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: -1;
+            overflow: hidden;
+        }
+        .matrix-column {
+            position: absolute; top: -100%; left: 0;
+            color: #00ff00; font-family: "Courier New", monospace;
+            font-size: 14px; line-height: 1.2;
+            animation: matrix-drop 15s linear infinite;
+            text-shadow: 0 0 5px #00ff00;
+        }
+        @keyframes matrix-drop {
+            0% { top: -100%; opacity: 1; }
+            10% { opacity: 1; }
+            90% { opacity: 0.3; }
+            100% { top: 100vh; opacity: 0; }
+        }
+        .matrix-column:nth-child(odd) {
+            animation-duration: 12s;
+            animation-delay: -2s;
+        }
+        .matrix-column:nth-child(even) {
+            animation-duration: 18s;
+            animation-delay: -5s;
+        }
+        .matrix-column:nth-child(3n) {
+            animation-duration: 20s;
+            animation-delay: -8s;
+        }
+        .container {
+            padding: 3rem; border-radius: 0; 
+            background: rgba(0, 20, 0, 0.9);
+            border: 2px solid #00ff00;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.5), inset 0 0 20px rgba(0, 255, 0, 0.1);
+            backdrop-filter: blur(10px);
+            animation: card-glow 4s ease-in-out infinite;
+            position: relative; z-index: 1;
+            text-align: center;
+        }
+        @keyframes card-glow {
+            0%, 100% { box-shadow: 0 0 30px rgba(0, 255, 0, 0.5), inset 0 0 20px rgba(0, 255, 0, 0.1); }
+            50% { box-shadow: 0 0 40px rgba(0, 255, 0, 0.7), inset 0 0 30px rgba(0, 255, 0, 0.2); }
+        }
+        .container::before {
+            content: ""; position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(45deg, transparent 49%, #00ff00 50%, transparent 51%);
+            opacity: 0.2; pointer-events: none;
+            animation: scan-line 3s linear infinite;
+        }
+        @keyframes scan-line {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        h1 {
+            font-size: 3rem; font-weight: bold;
+            text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00, 0 0 30px #00ff00, 0 0 40px #00ff00;
+            margin-bottom: 20px;
+            animation: matrix-glow 1.5s ease-in-out infinite alternate, matrix-pulse 3s ease-in-out infinite;
+            position: relative;
+            background: linear-gradient(45deg, #00ff00, #00aa00, #00ff00);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        @keyframes matrix-glow {
+            from { text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00, 0 0 30px #00ff00, 0 0 40px #00ff00; }
+            to { text-shadow: 0 0 20px #00ff00, 0 0 30px #00ff00, 0 0 40px #00ff00, 0 0 50px #00ff00; }
+        }
+        @keyframes matrix-pulse {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        p {
+            color: #00aa00; font-size: 1.2rem;
+            text-shadow: 0 0 5px #00aa00;
+        }
+        .matrix-text {
+            position: fixed; top: 20px; right: 20px;
+            color: #00ff00; font-family: "Courier New", monospace;
+            font-size: 0.8rem; opacity: 0.6;
+            animation: matrix-flicker 3s infinite;
+        }
+        @keyframes matrix-flicker {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="matrix-bg"></div>
+    <div class="matrix-rain"></div>
+    <div class="matrix-code-rain" id="matrixCodeRain"></div>
+    <div class="matrix-text">代理订阅中心 v0.1</div>
+    <div class="container">
+        <h1>✅ 部署成功</h1>
+        <p>代理与动态订阅功能均已启用。</p>
+    </div>
+    <script>
+        function createMatrixRain() {
+            const matrixContainer = document.getElementById('matrixCodeRain');
+            const matrixChars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+            const columns = Math.floor(window.innerWidth / 18);
+            
+            for (let i = 0; i < columns; i++) {
+                const column = document.createElement('div');
+                column.className = 'matrix-column';
+                column.style.left = (i * 18) + 'px';
+                column.style.animationDelay = Math.random() * 15 + 's';
+                column.style.animationDuration = (Math.random() * 15 + 8) + 's';
+                column.style.fontSize = (Math.random() * 4 + 12) + 'px';
+                column.style.opacity = Math.random() * 0.8 + 0.2;
+                
+                let text = '';
+                const charCount = Math.floor(Math.random() * 30 + 20);
+                for (let j = 0; j < charCount; j++) {
+                    const char = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+                    const brightness = Math.random() > 0.1 ? '#00ff00' : '#00aa00';
+                    text += '<span style="color: ' + brightness + ';">' + char + '</span><br>';
+                }
+                column.innerHTML = text;
+                matrixContainer.appendChild(column);
+            }
+            
+            setInterval(function() {
+                const columns = matrixContainer.querySelectorAll('.matrix-column');
+                columns.forEach(function(column) {
+                    if (Math.random() > 0.95) {
+                        const chars = column.querySelectorAll('span');
+                        if (chars.length > 0) {
+                            const randomChar = chars[Math.floor(Math.random() * chars.length)];
+                            randomChar.style.color = '#ffffff';
+                            setTimeout(function() {
+                                randomChar.style.color = '#00ff00';
+                            }, 200);
+                        }
+                    }
+                });
+            }, 100);
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            createMatrixRain();
+        });
+    </script>
+</body>
+</html>`;
 					return new Response(successHtml, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+				}
+				if (url.pathname.length > 1 && url.pathname !== '/' && !url.pathname.includes('/sub')) {
+					const user = url.pathname.replace(/\/$/, '').substring(1);
+					if (isValidFormat(user)) {
+						return await handleSubscriptionPage(request, user);
+					}
+				}
+				if (url.pathname.includes('/sub')) {
+					const pathParts = url.pathname.split('/');
+					if (pathParts.length === 2 && pathParts[1] === 'sub') {
+						const user = pathParts[0].substring(1);
+						if (isValidFormat(user)) {
+							return await handleSubscriptionRequest(request, user, url);
+						}
+					}
 				}
 				if (url.pathname.toLowerCase().includes(`/${subPath}`)) {
 					return await handleSubscriptionRequest(request, authToken);
@@ -87,38 +289,82 @@ export default {
 	},
 };
 
-async function handleSubscriptionRequest(request, uuid) {
-    const url = new URL(request.url);
+async function handleSubscriptionRequest(request, user, url = null) {
+    if (!url) url = new URL(request.url);
+    
     const finalLinks = [];
     const workerDomain = url.hostname;
+    const target = url.searchParams.get('target') || 'base64';
 
     const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
-    finalLinks.push(...generateLinksFromSource(nativeList, uuid, workerDomain));
+    finalLinks.push(...generateLinksFromSource(nativeList, user, workerDomain));
 
     const domainList = directDomains.map(d => ({ ip: d.domain, isp: d.name || d.domain }));
-    finalLinks.push(...generateLinksFromSource(domainList, uuid, workerDomain));
+    finalLinks.push(...generateLinksFromSource(domainList, user, workerDomain));
 
     const dynamicIPList = await fetchDynamicIPs();
     if (dynamicIPList.length > 0) {
-        finalLinks.push(...generateLinksFromSource(dynamicIPList, uuid, workerDomain));
+        finalLinks.push(...generateLinksFromSource(dynamicIPList, user, workerDomain));
     }
 
-    const subscriptionContent = btoa(finalLinks.join('\n'));
+    const newIPList = await fetchAndParseNewIPs();
+    if (newIPList.length > 0) {
+        finalLinks.push(...generateLinksFromNewIPs(newIPList, user, workerDomain));
+    }
+
+    if (finalLinks.length === 0) {
+        const errorRemark = "所有节点获取失败";
+        const proto = atob('dmxlc3M=');
+        const errorLink = `${proto}://00000000-0000-0000-0000-000000000000@127.0.0.1:80?encryption=none&security=none&type=ws&host=error.com&path=%2F#${encodeURIComponent(errorRemark)}`;
+        finalLinks.push(errorLink);
+    }
+
+    let subscriptionContent;
+    let contentType = 'text/plain; charset=utf-8';
+    
+    switch (target.toLowerCase()) {
+        case atob('Y2xhc2g='):
+        case atob('Y2xhc2hy'):
+            subscriptionContent = await generateClashConfig(finalLinks);
+            contentType = 'text/yaml; charset=utf-8';
+            break;
+        case atob('c3VyZ2Uy'):
+        case atob('c3VyZ2Uz'):
+        case atob('c3VyZ2U0'):
+            subscriptionContent = generateSurgeConfig(finalLinks);
+            break;
+        case atob('cXVhbnR1bXVsdA=='):
+        case atob('cXVhbnR1bXVsdHg='):
+            subscriptionContent = generateQuantumultConfig(finalLinks);
+            break;
+        case atob('c3M='):
+        case atob('c3Ny'):
+            subscriptionContent = generateSSConfig(finalLinks);
+            break;
+        case atob('djJyYXk='):
+            subscriptionContent = generateV2RayConfig(finalLinks);
+            break;
+        case atob('bG9vbg=='):
+            subscriptionContent = generateLoonConfig(finalLinks);
+            break;
+        default:
+            subscriptionContent = btoa(finalLinks.join('\n'));
+    }
     
     return new Response(subscriptionContent, {
         headers: { 
-            'Content-Type': 'text/plain; charset=utf-8',
+            'Content-Type': contentType,
             'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
         },
     });
 }
 
-function generateLinksFromSource(list, uuid, workerDomain) {
-    const httpsPorts = [443, 2053, 2083, 2087, 2096, 8443];
-    const httpPorts = [80, 8080, 8880, 2052, 2082, 2086, 2095];
+function generateLinksFromSource(list, user, workerDomain) {
+    const httpsPorts = [443];
+    const httpPorts = [80];
     const links = [];
     const wsPath = encodeURIComponent('/?ed=2048');
-    const proto = 'v' + 'l' + 'e' + 's' + 's';
+    const proto = atob('dmxlc3M=');
 
     list.forEach(item => {
         const nodeNameBase = item.isp.replace(/\s/g, '_');
@@ -136,7 +382,7 @@ function generateLinksFromSource(list, uuid, workerDomain) {
                 host: workerDomain, 
                 path: wsPath 
             });
-            links.push(`${proto}://${uuid}@${safeIP}:${port}?${wsParams.toString()}#${encodeURIComponent(wsNodeName)}`);
+            links.push(`${proto}://${user}@${safeIP}:${port}?${wsParams.toString()}#${encodeURIComponent(wsNodeName)}`);
         });
 
         httpPorts.forEach(port => {
@@ -149,7 +395,7 @@ function generateLinksFromSource(list, uuid, workerDomain) {
                 host: workerDomain,
                 path: wsPath
             });
-            links.push(`${proto}://${uuid}@${safeIP}:${port}?${wsParams.toString()}#${encodeURIComponent(wsNodeName)}`);
+            links.push(`${proto}://${user}@${safeIP}:${port}?${wsParams.toString()}#${encodeURIComponent(wsNodeName)}`);
         });
     });
     return links;
@@ -174,39 +420,8 @@ async function fetchDynamicIPs() {
         console.error("Failed to fetch from wetest.vip:", e);
     }
 
-    console.log("wetest.vip failed, trying fallback IP source...");
-    const fallbackUrl = "https://stock.hostmonit.com/CloudFlareYes";
-    try {
-        const response = await fetch(fallbackUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-        if (!response.ok) {
-            console.error(`Fallback source failed with status: ${response.status}`);
             return [];
         }
-        const html = await response.text();
-        const rowRegex = /<tr><td>([\d.:a-fA-F]+)<\/td><td>.*?<\/td><td>.*?<\/td><td>.*?<\/td><td>(.*?)<\/td>.*?<\/tr>/g;
-        
-        let match;
-        while ((match = rowRegex.exec(html)) !== null) {
-            if (match[1] && match[2]) {
-                results.push({
-                    ip: match[1].trim(),
-                    isp: match[2].trim().replace(/\s/g, '')
-                });
-            }
-        }
-
-        if (results.length > 0) {
-             console.log(`Successfully fetched ${results.length} IPs from fallback source.`);
-        } else {
-            console.warn(`Warning: Could not parse any IPs from fallback source. The site structure might have changed.`);
-        }
-       
-        return results;
-    } catch (e) {
-        console.error("Failed to fetch from fallback source:", e);
-        return [];
-    }
-}
 
 
 async function fetchAndParseWetest(url) {
@@ -363,14 +578,14 @@ async function connectStreams(remoteSocket, webSocket, headerData, retryFunc) {
 async function forwardUDP(udpChunk, webSocket, respHeader) {
 	try {
 		const tcpSocket = connect({ hostname: '8.8.4.4', port: 53 });
-		let vlessHeader = respHeader;
+		let header = respHeader;
 		const writer = tcpSocket.writable.getWriter();
 		await writer.write(udpChunk);
 		writer.releaseLock();
 		await tcpSocket.readable.pipeTo(new WritableStream({
 			async write(chunk) {
 				if (webSocket.readyState === 1) {
-					if (vlessHeader) { webSocket.send(await new Blob([vlessHeader, chunk]).arrayBuffer()); vlessHeader = null; } 
+					if (header) { webSocket.send(await new Blob([header, chunk]).arrayBuffer()); header = null; } 
                     else { webSocket.send(chunk); }
 				}
 			},
@@ -416,13 +631,360 @@ function parseSocksConfig(address) {
 	return { username, password, hostname, socksPort };
 }
 
+async function handleSubscriptionPage(request, user = null) {
+	if (!user) user = authToken;
+	
+	const pageHtml = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订阅中心</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Courier New", monospace;
+            background: #000; color: #00ff00; min-height: 100vh;
+            overflow-x: hidden; position: relative;
+        }
+        .matrix-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(45deg, #000 0%, #001100 50%, #000 100%);
+            z-index: -1;
+            animation: bg-pulse 8s ease-in-out infinite;
+        }
+        @keyframes bg-pulse {
+            0%, 100% { background: linear-gradient(45deg, #000 0%, #001100 50%, #000 100%); }
+            50% { background: linear-gradient(45deg, #000 0%, #002200 50%, #000 100%); }
+        }
+        .matrix-rain {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,0,0.03) 2px, rgba(0,255,0,0.03) 4px);
+            animation: matrix-fall 20s linear infinite;
+            z-index: -1;
+        }
+        @keyframes matrix-fall {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100vh); }
+        }
+        .matrix-code-rain {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: -1;
+            overflow: hidden;
+        }
+        .matrix-column {
+            position: absolute; top: -100%; left: 0;
+            color: #00ff00; font-family: "Courier New", monospace;
+            font-size: 14px; line-height: 1.2;
+            animation: matrix-drop 15s linear infinite;
+            text-shadow: 0 0 5px #00ff00;
+        }
+        @keyframes matrix-drop {
+            0% { top: -100%; opacity: 1; }
+            10% { opacity: 1; }
+            90% { opacity: 0.3; }
+            100% { top: 100vh; opacity: 0; }
+        }
+        .matrix-column:nth-child(odd) {
+            animation-duration: 12s;
+            animation-delay: -2s;
+        }
+        .matrix-column:nth-child(even) {
+            animation-duration: 18s;
+            animation-delay: -5s;
+        }
+        .matrix-column:nth-child(3n) {
+            animation-duration: 20s;
+            animation-delay: -8s;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; position: relative; z-index: 1; }
+        .header { text-align: center; margin-bottom: 40px; }
+        .title {
+            font-size: 3.5rem; font-weight: bold;
+            text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00, 0 0 30px #00ff00, 0 0 40px #00ff00;
+            margin-bottom: 10px;
+            animation: matrix-glow 1.5s ease-in-out infinite alternate, matrix-pulse 3s ease-in-out infinite;
+            position: relative;
+            background: linear-gradient(45deg, #00ff00, #00aa00, #00ff00);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        @keyframes matrix-glow {
+            from { text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00, 0 0 30px #00ff00, 0 0 40px #00ff00; }
+            to { text-shadow: 0 0 20px #00ff00, 0 0 30px #00ff00, 0 0 40px #00ff00, 0 0 50px #00ff00; }
+        }
+        @keyframes matrix-pulse {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        .subtitle { color: #00aa00; margin-bottom: 30px; font-size: 1.2rem; }
+        .card {
+            background: rgba(0, 20, 0, 0.9);
+            border: 2px solid #00ff00;
+            border-radius: 0; padding: 30px; margin-bottom: 20px;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.5), inset 0 0 20px rgba(0, 255, 0, 0.1);
+            position: relative;
+            backdrop-filter: blur(10px);
+            animation: card-glow 4s ease-in-out infinite;
+        }
+        @keyframes card-glow {
+            0%, 100% { box-shadow: 0 0 30px rgba(0, 255, 0, 0.5), inset 0 0 20px rgba(0, 255, 0, 0.1); }
+            50% { box-shadow: 0 0 40px rgba(0, 255, 0, 0.7), inset 0 0 30px rgba(0, 255, 0, 0.2); }
+        }
+        .card::before {
+            content: ""; position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(45deg, transparent 49%, #00ff00 50%, transparent 51%);
+            opacity: 0.2; pointer-events: none;
+            animation: scan-line 3s linear infinite;
+        }
+        @keyframes scan-line {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        .card-title {
+            font-size: 1.8rem; margin-bottom: 20px;
+            color: #00ff00; text-shadow: 0 0 5px #00ff00;
+        }
+        .client-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px; margin: 20px 0;
+        }
+        .client-btn {
+            background: rgba(0, 20, 0, 0.8);
+            border: 2px solid #00ff00;
+            padding: 15px 20px; color: #00ff00;
+            font-family: "Courier New", monospace; font-weight: bold;
+            cursor: pointer; transition: all 0.4s ease;
+            text-align: center; position: relative;
+            overflow: hidden;
+            text-shadow: 0 0 5px #00ff00;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+        .client-btn::before {
+            content: ""; position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0,255,0,0.4), transparent);
+            transition: left 0.6s ease;
+        }
+        .client-btn::after {
+            content: ""; position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(45deg, transparent 30%, rgba(0,255,0,0.1) 50%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .client-btn:hover::before { left: 100%; }
+        .client-btn:hover::after { opacity: 1; }
+        .client-btn:hover {
+            background: rgba(0, 255, 0, 0.3);
+            box-shadow: 0 0 25px #00ff00, 0 0 35px rgba(0, 255, 0, 0.5);
+            transform: translateY(-3px) scale(1.05);
+            text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00;
+        }
+        .generate-btn {
+            background: rgba(0, 255, 0, 0.15);
+            border: 2px solid #00ff00; padding: 15px 30px;
+            color: #00ff00; font-family: "Courier New", monospace;
+            font-weight: bold; cursor: pointer;
+            transition: all 0.4s ease; margin-right: 15px;
+            text-shadow: 0 0 8px #00ff00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        .generate-btn::before {
+            content: ""; position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0,255,0,0.5), transparent);
+            transition: left 0.8s ease;
+        }
+        .generate-btn:hover::before { left: 100%; }
+        .generate-btn:hover {
+            background: rgba(0, 255, 0, 0.4);
+            box-shadow: 0 0 30px #00ff00, 0 0 40px rgba(0, 255, 0, 0.6);
+            transform: translateY(-4px) scale(1.08);
+            text-shadow: 0 0 15px #00ff00, 0 0 25px #00ff00;
+        }
+        .subscription-url {
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #00ff00; padding: 15px;
+            word-break: break-all; font-family: "Courier New", monospace;
+            color: #00ff00; margin-top: 20px; display: none;
+            box-shadow: inset 0 0 15px rgba(0, 255, 0, 0.4), 0 0 20px rgba(0, 255, 0, 0.3);
+            border-radius: 5px;
+            animation: url-glow 2s ease-in-out infinite alternate;
+            position: relative;
+            overflow: hidden;
+        }
+        @keyframes url-glow {
+            from { box-shadow: inset 0 0 15px rgba(0, 255, 0, 0.4), 0 0 20px rgba(0, 255, 0, 0.3); }
+            to { box-shadow: inset 0 0 20px rgba(0, 255, 0, 0.6), 0 0 30px rgba(0, 255, 0, 0.5); }
+        }
+        .subscription-url::before {
+            content: ""; position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0,255,0,0.1), transparent);
+            animation: url-scan 3s linear infinite;
+        }
+        @keyframes url-scan {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        .matrix-text {
+            position: fixed; top: 20px; right: 20px;
+            color: #00ff00; font-family: "Courier New", monospace;
+            font-size: 0.8rem; opacity: 0.6;
+            animation: matrix-flicker 3s infinite;
+        }
+        @keyframes matrix-flicker {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="matrix-bg"></div>
+    <div class="matrix-rain"></div>
+    <div class="matrix-code-rain" id="matrixCodeRain"></div>
+    <div class="matrix-text">代理订阅中心 v0.1</div>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">代理订阅中心</h1>
+            <p class="subtitle">多客户端支持 • 智能优选 • 一键生成</p>
+        </div>
+        <div class="card">
+            <h2 class="card-title">[ 选择客户端 ]</h2>
+            <div class="client-grid">
+                <button class="client-btn" onclick="generateClientLink(atob('Y2xhc2g='))">CLASH</button>
+                <button class="client-btn" onclick="generateClientLink(atob('c3VyZ2U='))">SURGE</button>
+                <button class="client-btn" onclick="generateClientLink(atob('c2luZ2JveA=='))">SING-BOX</button>
+                <button class="client-btn" onclick="generateClientLink(atob('bG9vbg=='))">LOON</button>
+                <button class="client-btn" onclick="generateClientLink(atob('djJyYXk='))">V2RAY</button>
+            </div>
+            <div class="subscription-url" id="clientSubscriptionUrl"></div>
+        </div>
+        <div class="card">
+            <h2 class="card-title">[ 快速获取 ]</h2>
+            <button class="generate-btn" onclick="getBase64Subscription()">获取订阅链接</button>
+            <div class="subscription-url" id="base64SubscriptionUrl"></div>
+        </div>
+        <div class="card">
+            <h2 class="card-title">[ 相关链接 ]</h2>
+            <div style="text-align: center; margin: 20px 0;">
+                <a href="https://github.com/byJoey/cfnew" target="_blank" style="color: #00ff00; text-decoration: none; margin: 0 20px; font-size: 1.2rem; text-shadow: 0 0 5px #00ff00;">GitHub 项目</a>
+                <a href="https://www.youtube.com/@joeyblog" target="_blank" style="color: #00ff00; text-decoration: none; margin: 0 20px; font-size: 1.2rem; text-shadow: 0 0 5px #00ff00;">YouTube @joeyblog</a>
+            </div>
+        </div>
+    </div>
+    <script>
+        function generateClientLink(clientType) {
+            var currentUrl = window.location.href;
+            var subscriptionUrl = currentUrl + "/sub";
+            
+            if (clientType === atob('djJyYXk=')) {
+                document.getElementById("clientSubscriptionUrl").textContent = subscriptionUrl;
+                document.getElementById("clientSubscriptionUrl").style.display = "block";
+                navigator.clipboard.writeText(subscriptionUrl).then(function() {
+                    alert("V2Ray 订阅链接已复制");
+                });
+            } else {
+                var encodedUrl = encodeURIComponent(subscriptionUrl);
+                var apiUrl = "https://s.jhb.edu.kg/sub?target=" + clientType + "&url=" + encodedUrl + "&insert=false";
+                document.getElementById("clientSubscriptionUrl").textContent = apiUrl;
+                document.getElementById("clientSubscriptionUrl").style.display = "block";
+                navigator.clipboard.writeText(apiUrl).then(function() {
+                    var displayName = clientType.toUpperCase();
+                    if (clientType === atob('c3VyZ2U=')) displayName = 'SURGE';
+                    if (clientType === atob('c2luZ2JveA==')) displayName = 'SING-BOX';
+                    alert(displayName + " 订阅链接已复制");
+                });
+            }
+        }
+        function getBase64Subscription() {
+            var currentUrl = window.location.href;
+            var subscriptionUrl = currentUrl + "/sub";
+            
+            fetch(subscriptionUrl)
+                .then(function(response) {
+                    return response.text();
+                })
+                .then(function(base64Content) {
+                    document.getElementById("base64SubscriptionUrl").textContent = base64Content;
+                    document.getElementById("base64SubscriptionUrl").style.display = "block";
+                    navigator.clipboard.writeText(base64Content).then(function() {
+                        alert("Base64订阅内容已复制");
+                    });
+                })
+                .catch(function(error) {
+                    console.error("获取订阅失败:", error);
+                    alert("获取订阅失败，请重试");
+                });
+        }
+        
+        function createMatrixRain() {
+            const matrixContainer = document.getElementById('matrixCodeRain');
+            const matrixChars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+            const columns = Math.floor(window.innerWidth / 18);
+            
+            for (let i = 0; i < columns; i++) {
+                const column = document.createElement('div');
+                column.className = 'matrix-column';
+                column.style.left = (i * 18) + 'px';
+                column.style.animationDelay = Math.random() * 15 + 's';
+                column.style.animationDuration = (Math.random() * 15 + 8) + 's';
+                column.style.fontSize = (Math.random() * 4 + 12) + 'px';
+                column.style.opacity = Math.random() * 0.8 + 0.2;
+                
+                let text = '';
+                const charCount = Math.floor(Math.random() * 30 + 20);
+                for (let j = 0; j < charCount; j++) {
+                    const char = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+                    const brightness = Math.random() > 0.1 ? '#00ff00' : '#00aa00';
+                    text += '<span style="color: ' + brightness + ';">' + char + '</span><br>';
+                }
+                column.innerHTML = text;
+                matrixContainer.appendChild(column);
+            }
+            
+            setInterval(function() {
+                const columns = matrixContainer.querySelectorAll('.matrix-column');
+                columns.forEach(function(column) {
+                    if (Math.random() > 0.95) {
+                        const chars = column.querySelectorAll('span');
+                        if (chars.length > 0) {
+                            const randomChar = chars[Math.floor(Math.random() * chars.length)];
+                            randomChar.style.color = '#ffffff';
+                            setTimeout(function() {
+                                randomChar.style.color = '#00ff00';
+                            }, 200);
+                        }
+                    }
+                });
+            }, 100);
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            createMatrixRain();
+        });
+    </script>
+</body>
+</html>`;
+	
+	return new Response(pageHtml, { 
+		status: 200, 
+		headers: { 'Content-Type': 'text/html; charset=utf-8' } 
+	});
+}
+
 function base64ToArray(b64Str) {
 	if (!b64Str) return { error: null };
 	try { b64Str = b64Str.replace(/-/g, '+').replace(/_/g, '/'); return { earlyData: Uint8Array.from(atob(b64Str), (c) => c.charCodeAt(0)).buffer, error: null }; } 
     catch (error) { return { error }; }
 }
 
-function isValidFormat(uuid) { return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(uuid); }
 function closeSocketQuietly(socket) { try { if (socket.readyState === 1 || socket.readyState === 2) socket.close(); } catch (error) {} }
 
 const hexTable = Array.from({ length: 256 }, (v, i) => (i + 256).toString(16).slice(1));
@@ -432,3 +994,43 @@ function formatIdentifier(arr, offset = 0) {
 	return id;
 }
 
+async function fetchAndParseNewIPs() {
+    const url = "https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt";
+    try {
+        const response = await fetch(url);
+        if (!response.ok) return [];
+        const text = await response.text();
+        const results = [];
+        const lines = text.trim().replace(/\r/g, "").split('\n');
+        const regex = /^([^:]+):(\d+)#(.*)$/;
+
+        for (const line of lines) {
+            const trimmedLine = line.trim();
+            if (!trimmedLine) continue;
+            const match = trimmedLine.match(regex);
+            if (match) {
+                results.push({
+                    ip: match[1],
+                    port: parseInt(match[2], 10),
+                    name: match[3].trim() || match[1]
+                });
+            }
+        }
+        return results;
+    } catch (error) {
+        return [];
+    }
+}
+
+function generateLinksFromNewIPs(list, user, workerDomain) {
+    const links = [];
+    const wsPath = encodeURIComponent('/?ed=2048');
+    const proto = atob('dmxlc3M=');
+    
+    list.forEach(item => {
+        const nodeName = item.name.replace(/\s/g, '_');
+        const link = `${proto}://${user}@${item.ip}:${item.port}?encryption=none&security=tls&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(nodeName)}`;
+        links.push(link);
+    });
+    return links;
+}
