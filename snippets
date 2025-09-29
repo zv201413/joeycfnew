@@ -264,12 +264,23 @@ async function handleSubscriptionPage(request, uuid = null) {
         function getBase64Subscription() {
             var currentUrl = window.location.href;
             var subscriptionUrl = currentUrl + "/sub";
-            // 直接返回原始订阅，不需要转换
-            document.getElementById("base64SubscriptionUrl").textContent = subscriptionUrl;
-            document.getElementById("base64SubscriptionUrl").style.display = "block";
-            navigator.clipboard.writeText(subscriptionUrl).then(function() {
-                alert("订阅链接已复制");
-            });
+            
+            // 直接获取Base64订阅内容
+            fetch(subscriptionUrl)
+                .then(function(response) {
+                    return response.text();
+                })
+                .then(function(base64Content) {
+                    document.getElementById("base64SubscriptionUrl").textContent = base64Content;
+                    document.getElementById("base64SubscriptionUrl").style.display = "block";
+                    navigator.clipboard.writeText(base64Content).then(function() {
+                        alert("Base64订阅内容已复制");
+                    });
+                })
+                .catch(function(error) {
+                    console.error("获取订阅失败:", error);
+                    alert("获取订阅失败，请重试");
+                });
         }
     </script>
 </body>
