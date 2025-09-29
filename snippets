@@ -286,7 +286,7 @@ async function handleSubscriptionRequest(request, uuid, url = null) {
     
     const finalLinks = [];
     const workerDomain = url.hostname;
-    const target = url.searchParams.get('target') || 'clash';
+    const target = url.searchParams.get('target') || 'base64';
 
     const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
     finalLinks.push(...generateLinksFromSource(nativeList, uuid, workerDomain));
