@@ -83,7 +83,7 @@ export default {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>代理订阅终端</title>
+    <title>终端</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -332,9 +332,9 @@ export default {
                 addTerminalLine('connect ' + uuid, 'output');
                 
                 if (isValidUUID(uuid)) {
-                    addTerminalLine('正在连接订阅服务...', 'output');
+                    addTerminalLine('正在入侵...', 'output');
                     setTimeout(() => {
-                        addTerminalLine('连接成功！正在跳转...', 'success');
+                        addTerminalLine('连接成功！返回结果...', 'success');
                         setTimeout(() => {
                             window.location.href = '/' + uuid;
                         }, 1000);
