@@ -1,7 +1,7 @@
 import { connect } from 'cloudflare:sockets';
 
 let authToken = '351c9981-04b6-4103-aa4b-864aa9c91469';
-let fallbackAddress = 'ProxyIP.cmliussss.net';
+let fallbackAddress = 'bpb.yousef.isegaro.com';
 let fallbackPort = '443';
 let socks5Config = '';
 
@@ -78,12 +78,12 @@ export default {
 				return await handleWsRequest(request);
 			} else if (request.method === 'GET') {
 				if (url.pathname === '/') {
-					const successHtml = `<!DOCTYPE html>
+					const terminalHtml = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>部署成功</title>
+    <title>代理订阅终端</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -142,54 +142,73 @@ export default {
             animation-duration: 20s;
             animation-delay: -8s;
         }
-        .container {
-            padding: 3rem; border-radius: 0; 
-            background: rgba(0, 20, 0, 0.9);
+        .terminal {
+            width: 90%; max-width: 800px; height: 500px;
+            background: rgba(0, 0, 0, 0.9);
             border: 2px solid #00ff00;
+            border-radius: 8px;
             box-shadow: 0 0 30px rgba(0, 255, 0, 0.5), inset 0 0 20px rgba(0, 255, 0, 0.1);
             backdrop-filter: blur(10px);
-            animation: card-glow 4s ease-in-out infinite;
             position: relative; z-index: 1;
-            text-align: center;
+            overflow: hidden;
         }
-        @keyframes card-glow {
-            0%, 100% { box-shadow: 0 0 30px rgba(0, 255, 0, 0.5), inset 0 0 20px rgba(0, 255, 0, 0.1); }
-            50% { box-shadow: 0 0 40px rgba(0, 255, 0, 0.7), inset 0 0 30px rgba(0, 255, 0, 0.2); }
+        .terminal-header {
+            background: rgba(0, 20, 0, 0.8);
+            padding: 10px 15px;
+            border-bottom: 1px solid #00ff00;
+            display: flex; align-items: center;
         }
-        .container::before {
-            content: ""; position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: linear-gradient(45deg, transparent 49%, #00ff00 50%, transparent 51%);
-            opacity: 0.2; pointer-events: none;
-            animation: scan-line 3s linear infinite;
+        .terminal-buttons {
+            display: flex; gap: 8px;
         }
-        @keyframes scan-line {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
+        .terminal-button {
+            width: 12px; height: 12px; border-radius: 50%;
+            background: #ff5f57; border: none;
         }
-        h1 {
-            font-size: 3rem; font-weight: bold;
-            text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00, 0 0 30px #00ff00, 0 0 40px #00ff00;
-            margin-bottom: 20px;
-            animation: matrix-glow 1.5s ease-in-out infinite alternate, matrix-pulse 3s ease-in-out infinite;
-            position: relative;
-            background: linear-gradient(45deg, #00ff00, #00aa00, #00ff00);
-            background-size: 200% 200%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        .terminal-button:nth-child(2) { background: #ffbd2e; }
+        .terminal-button:nth-child(3) { background: #28ca42; }
+        .terminal-title {
+            margin-left: 15px; color: #00ff00;
+            font-size: 14px; font-weight: bold;
         }
-        @keyframes matrix-glow {
-            from { text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00, 0 0 30px #00ff00, 0 0 40px #00ff00; }
-            to { text-shadow: 0 0 20px #00ff00, 0 0 30px #00ff00, 0 0 40px #00ff00, 0 0 50px #00ff00; }
+        .terminal-body {
+            padding: 20px; height: calc(100% - 50px);
+            overflow-y: auto; font-size: 14px;
+            line-height: 1.4;
         }
-        @keyframes matrix-pulse {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
+        .terminal-line {
+            margin-bottom: 8px; display: flex; align-items: center;
         }
-        p {
-            color: #00aa00; font-size: 1.2rem;
-            text-shadow: 0 0 5px #00aa00;
+        .terminal-prompt {
+            color: #00ff00; margin-right: 10px;
+            font-weight: bold;
+        }
+        .terminal-input {
+            background: transparent; border: none; outline: none;
+            color: #00ff00; font-family: "Courier New", monospace;
+            font-size: 14px; flex: 1;
+            caret-color: #00ff00;
+        }
+        .terminal-input::placeholder {
+            color: #00aa00; opacity: 0.7;
+        }
+        .terminal-cursor {
+            display: inline-block; width: 8px; height: 16px;
+            background: #00ff00; animation: blink 1s infinite;
+            margin-left: 2px;
+        }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        .terminal-output {
+            color: #00aa00; margin: 5px 0;
+        }
+        .terminal-error {
+            color: #ff4444; margin: 5px 0;
+        }
+        .terminal-success {
+            color: #44ff44; margin: 5px 0;
         }
         .matrix-text {
             position: fixed; top: 20px; right: 20px;
@@ -207,10 +226,35 @@ export default {
     <div class="matrix-bg"></div>
     <div class="matrix-rain"></div>
     <div class="matrix-code-rain" id="matrixCodeRain"></div>
-    <div class="matrix-text">代理订阅中心 v0.1</div>
-    <div class="container">
-        <h1>✅ 部署成功</h1>
-        <p>代理与动态订阅功能均已启用。</p>
+    <div class="matrix-text">终端</div>
+    <div class="terminal">
+        <div class="terminal-header">
+            <div class="terminal-buttons">
+                <div class="terminal-button"></div>
+                <div class="terminal-button"></div>
+                <div class="terminal-button"></div>
+            </div>
+            <div class="terminal-title">终端</div>
+        </div>
+        <div class="terminal-body" id="terminalBody">
+            <div class="terminal-line">
+                <span class="terminal-prompt">root:~$</span>
+                <span class="terminal-output">恭喜你来到这</span>
+            </div>
+            <div class="terminal-line">
+                <span class="terminal-prompt">root:~$</span>
+                <span class="terminal-output">请输入你破解得到的uuid</span>
+            </div>
+            <div class="terminal-line">
+                <span class="terminal-prompt">root:~$</span>
+                <span class="terminal-output">命令: connect [UUID]</span>
+            </div>
+            <div class="terminal-line">
+                <span class="terminal-prompt">root@proxy:~$</span>
+                <input type="text" class="terminal-input" id="uuidInput" placeholder="输入UUID并按回车..." autofocus>
+                <span class="terminal-cursor"></span>
+            </div>
+        </div>
     </div>
     <script>
         function createMatrixRain() {
@@ -255,13 +299,69 @@ export default {
             }, 100);
         }
         
+        function isValidUUID(uuid) {
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            return uuidRegex.test(uuid);
+        }
+        
+        function addTerminalLine(content, type = 'output') {
+            const terminalBody = document.getElementById('terminalBody');
+            const line = document.createElement('div');
+            line.className = 'terminal-line';
+            
+            const prompt = document.createElement('span');
+            prompt.className = 'terminal-prompt';
+            prompt.textContent = 'root@proxy:~$';
+            
+            const output = document.createElement('span');
+            output.className = 'terminal-' + type;
+            output.textContent = content;
+            
+            line.appendChild(prompt);
+            line.appendChild(output);
+            terminalBody.appendChild(line);
+            
+            terminalBody.scrollTop = terminalBody.scrollHeight;
+        }
+        
+        function handleUUIDInput() {
+            const input = document.getElementById('uuidInput');
+            const uuid = input.value.trim();
+            
+            if (uuid) {
+                addTerminalLine('connect ' + uuid, 'output');
+                
+                if (isValidUUID(uuid)) {
+                    addTerminalLine('正在连接订阅服务...', 'output');
+                    setTimeout(() => {
+                        addTerminalLine('连接成功！正在跳转...', 'success');
+                        setTimeout(() => {
+                            window.location.href = '/' + uuid;
+                        }, 1000);
+                    }, 500);
+                } else {
+                    addTerminalLine('错误: 无效的UUID格式', 'error');
+                    addTerminalLine('请重新输入有效的UUID', 'output');
+                }
+                
+                input.value = '';
+            }
+        }
+        
         document.addEventListener('DOMContentLoaded', function() {
             createMatrixRain();
+            
+            const input = document.getElementById('uuidInput');
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    handleUUIDInput();
+                }
+            });
         });
     </script>
 </body>
 </html>`;
-					return new Response(successHtml, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+					return new Response(terminalHtml, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
 				}
 				if (url.pathname.length > 1 && url.pathname !== '/' && !url.pathname.includes('/sub')) {
 					const user = url.pathname.replace(/\/$/, '').substring(1);
