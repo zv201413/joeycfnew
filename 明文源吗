@@ -311,7 +311,7 @@ export default {
             
             const prompt = document.createElement('span');
             prompt.className = 'terminal-prompt';
-            prompt.textContent = 'root@proxy:~$';
+            prompt.textContent = 'root:~$';
             
             const output = document.createElement('span');
             output.className = 'terminal-' + type;
