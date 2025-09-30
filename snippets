@@ -4,8 +4,8 @@ import { connect } from 'cloudflare:sockets';
 const authToken = 'f64bdc57-0f54-4705-bf75-cfd646d98c06';
 const fallbackAddress = 'ProxyIP.cmliussss.net';
 const fallbackPort = '443';
-// SOCKS5 代理配置。留空则禁用。格式: user:pass@host:port
 const socks5Config = '';
+// API地址配置
 const apiBaseUrl = 'https://s.jhb.edu.kg/sub';
 
 const directDomains = [
@@ -60,7 +60,11 @@ export default {
 				if (url.pathname.length > 1 && url.pathname !== '/' && !url.pathname.includes('/sub')) {
 					const uuid = url.pathname.replace(/\/$/, '').substring(1); // 移除末尾斜杠
 					if (isValidFormat(uuid)) {
-						return await handleSubscriptionPage(request, uuid);
+						if (uuid === authToken) {
+							return await handleSubscriptionPage(request, uuid);
+						} else {
+							return new Response('UUID错误', { status: 403 });
+						}
 					}
 				}
 				// 支持UUID/sub路径：/uuid/sub - 返回订阅
@@ -69,7 +73,11 @@ export default {
 					if (pathParts.length === 2 && pathParts[1] === 'sub') {
 						const uuid = pathParts[0].substring(1);
 						if (isValidFormat(uuid)) {
-							return await handleSubscriptionRequest(request, uuid, url);
+							if (uuid === authToken) {
+								return await handleSubscriptionRequest(request, uuid, url);
+							} else {
+								return new Response('UUID错误', { status: 403 });
+							}
 						}
 					}
 				}
