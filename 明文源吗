@@ -1,7 +1,7 @@
 import { connect } from 'cloudflare:sockets';
 
 let authToken = '351c9981-04b6-4103-aa4b-864aa9c91469';
-let fallbackAddress = 'bpb.yousef.isegaro.com';
+let fallbackAddress = 'ProxyIP.cmliussss.net';
 let fallbackPort = '443';
 let socks5Config = '';
 
@@ -266,7 +266,11 @@ export default {
 				if (url.pathname.length > 1 && url.pathname !== '/' && !url.pathname.includes('/sub')) {
 					const user = url.pathname.replace(/\/$/, '').substring(1);
 					if (isValidFormat(user)) {
-						return await handleSubscriptionPage(request, user);
+						if (user === authToken) {
+							return await handleSubscriptionPage(request, user);
+						} else {
+							return new Response('UUID错误', { status: 403 });
+						}
 					}
 				}
 				if (url.pathname.includes('/sub')) {
@@ -274,7 +278,11 @@ export default {
 					if (pathParts.length === 2 && pathParts[1] === 'sub') {
 						const user = pathParts[0].substring(1);
 						if (isValidFormat(user)) {
-							return await handleSubscriptionRequest(request, user, url);
+							if (user === authToken) {
+								return await handleSubscriptionRequest(request, user, url);
+							} else {
+								return new Response('UUID错误', { status: 403 });
+							}
 						}
 					}
 				}
