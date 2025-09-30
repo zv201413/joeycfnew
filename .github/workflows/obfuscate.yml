@@ -33,7 +33,7 @@ jobs:
             const sourceFilePath = path.join(process.cwd(), sourceFileName);
 
             if (!fs.existsSync(sourceFilePath)) {
-              console.error(`错误：在路径 '$\{sourceFilePath\}' 未找到源文件。请确保您的仓库根目录有名为 '明文源吗' 的文件。`);
+              console.error('错误：在路径 \'' + sourceFilePath + '\' 未找到源文件。请确保您的仓库根目录有名为 \'明文源吗\' 的文件。');
               process.exit(1);
             }
 
@@ -67,7 +67,7 @@ jobs:
             const obfuscatedCode = JavaScriptObfuscator.obfuscate(originalCode, obfuscationOptions).getObfuscatedCode();
             
             fs.writeFileSync(path.join(process.cwd(), outputFileName), obfuscatedCode, 'utf8');
-            console.log(`成功将 '$\{sourceFileName\}' 混淆并保存至 '$\{outputFileName\}'。`);
+            console.log('成功将 \'' + sourceFileName + '\' 混淆并保存至 \'' + outputFileName + '\'。');
           "
 
       - name: Commit and push the obfuscated file
