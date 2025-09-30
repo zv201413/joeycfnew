@@ -243,15 +243,15 @@ export default {
             </div>
             <div class="terminal-line">
                 <span class="terminal-prompt">root:~$</span>
-                <span class="terminal-output">请输入你破解得到的uuid</span>
+                <span class="terminal-output">请输入你U变量的值</span>
             </div>
             <div class="terminal-line">
                 <span class="terminal-prompt">root:~$</span>
                 <span class="terminal-output">命令: connect [UUID]</span>
             </div>
             <div class="terminal-line">
-                <span class="terminal-prompt">root@proxy:~$</span>
-                <input type="text" class="terminal-input" id="uuidInput" placeholder="输入UUID并按回车..." autofocus>
+                <span class="terminal-prompt">root:~$</span>
+                <input type="text" class="terminal-input" id="uuidInput" placeholder="输入U变量的内容并且回车..." autofocus>
                 <span class="terminal-cursor"></span>
             </div>
         </div>
@@ -369,7 +369,7 @@ export default {
 						if (user === authToken) {
 							return await handleSubscriptionPage(request, user);
 						} else {
-							return new Response('UUID错误', { status: 403 });
+							return new Response('UUID错误 请注意变量名称是u不是uuid', { status: 403 });
 						}
 					}
 				}
