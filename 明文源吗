@@ -718,17 +718,17 @@ async function forwardTCP(addrType, host, portNum, rawData, ws, respHeader, remo
     }
     
     async function retryConnection() {
-        try {
-            if (enableSocksDowngrade && isSocksEnabled) {
+        if (enableSocksDowngrade && isSocksEnabled) {
+            try {
                 console.log('尝试SOCKS5连接');
                 const socksSocket = await connectAndSend(host, portNum, true);
                 remoteConnWrapper.socket = socksSocket;
                 socksSocket.closed.catch(() => {}).finally(() => closeSocketQuietly(ws));
                 connectStreams(socksSocket, ws, respHeader, null);
                 return;
+            } catch (socksErr) {
+                console.log('SOCKS5连接失败，尝试fallback地址:', socksErr);
             }
-        } catch (socksErr) {
-            console.log('SOCKS5连接失败，尝试fallback地址:', socksErr);
         }
         
         try {
