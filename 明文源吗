@@ -4,6 +4,9 @@ let authToken = '351c9981-04b6-4103-aa4b-864aa9c91469';
 let fallbackAddress = 'bpb.yousef.isegaro.com';
 let fallbackPort = '443';
 let socks5Config = '';
+let customPreferredIPs = [];
+let customPreferredDomains = [];
+let enableSocksDowngrade = false;
 
 const directDomains = [
     { name: "cloudflare.182682.xyz", domain: "cloudflare.182682.xyz" }, { name: "speed.marisalnc.com", domain: "speed.marisalnc.com" },
@@ -40,6 +43,52 @@ function isValidFormat(str) {
     return userRegex.test(str);
 }
 
+function isValidIP(ip) {
+    // IPv4 验证
+    const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+    if (ipv4Regex.test(ip)) return true;
+    
+    // IPv6 验证
+    const ipv6Regex = /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
+    if (ipv6Regex.test(ip)) return true;
+    
+    // 简化的IPv6验证
+    const ipv6ShortRegex = /^::1$|^::$|^(?:[0-9a-fA-F]{1,4}:)*::(?:[0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4}$/;
+    if (ipv6ShortRegex.test(ip)) return true;
+    
+    return false;
+}
+
+function parseAddressAndPort(input) {
+    // 处理IPv6地址（可能包含端口）
+    if (input.includes('[') && input.includes(']')) {
+        // IPv6格式: [::1]:8080
+        const match = input.match(/^\[([^\]]+)\](?::(\d+))?$/);
+        if (match) {
+            return {
+                address: match[1],
+                port: match[2] ? parseInt(match[2], 10) : null
+            };
+        }
+    }
+    
+    // 处理普通格式: ip:port 或 domain:port
+    const lastColonIndex = input.lastIndexOf(':');
+    if (lastColonIndex > 0) {
+        const address = input.substring(0, lastColonIndex);
+        const portStr = input.substring(lastColonIndex + 1);
+        const port = parseInt(portStr, 10);
+        
+        // 验证端口号是否有效
+        if (!isNaN(port) && port > 0 && port <= 65535) {
+            return { address, port };
+        }
+    }
+    
+    // 没有端口或端口无效，返回原地址
+    return { address: input, port: null };
+}
+
 export default {
 	async fetch(request, env, ctx) {
 		try {
@@ -70,6 +119,49 @@ export default {
 					console.log(`Invalid SOCKS5 config: ${err.toString()}`);
 					isSocksEnabled = false;
 				}
+			}
+
+			// 解析自定义优选IP和域名 (yx变量)
+			const customPreferred = env.yx || env.YX;
+			if (customPreferred) {
+				try {
+					const preferredList = customPreferred.split(',').map(item => item.trim()).filter(item => item);
+					customPreferredIPs = [];
+					customPreferredDomains = [];
+					
+					preferredList.forEach(item => {
+						// 解析IP/域名和端口
+						const { address, port } = parseAddressAndPort(item);
+						
+						// 检查是否为IP地址
+						if (isValidIP(address)) {
+							customPreferredIPs.push({ 
+								ip: address, 
+								port: port,
+								isp: `自定义优选-${address}${port ? ':' + port : ''}` 
+							});
+						} else {
+							// 作为域名处理
+							customPreferredDomains.push({ 
+								domain: address, 
+								port: port,
+								name: `自定义优选-${address}${port ? ':' + port : ''}` 
+							});
+						}
+					});
+					console.log(`自定义优选配置: IPs=${customPreferredIPs.length}, Domains=${customPreferredDomains.length}`);
+				} catch (err) {
+					console.log(`Invalid custom preferred config: ${err.toString()}`);
+					customPreferredIPs = [];
+					customPreferredDomains = [];
+				}
+			}
+
+			// 解析SOCKS5降级控制 (qj变量)
+			const downgradeControl = env.qj || env.QJ;
+			if (downgradeControl && downgradeControl.toLowerCase() === 'no') {
+				enableSocksDowngrade = true;
+				console.log('SOCKS5降级模式已启用');
 			}
 
 			const url = new URL(request.url);
@@ -407,17 +499,37 @@ async function handleSubscriptionRequest(request, user, url = null) {
     const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
     finalLinks.push(...generateLinksFromSource(nativeList, user, workerDomain));
 
-    const domainList = directDomains.map(d => ({ ip: d.domain, isp: d.name || d.domain }));
-    finalLinks.push(...generateLinksFromSource(domainList, user, workerDomain));
+    // 检查是否有自定义优选配置
+    const hasCustomPreferred = customPreferredIPs.length > 0 || customPreferredDomains.length > 0;
+    
+    if (hasCustomPreferred) {
+        // 当自定义优选存在时，只保留原生地址，不生成写死的优选域IP反代
+        console.log('检测到自定义优选配置，跳过默认优选IP和域名生成');
+        
+        // 添加自定义优选IP
+        if (customPreferredIPs.length > 0) {
+            finalLinks.push(...generateLinksFromSource(customPreferredIPs, user, workerDomain));
+        }
+        
+        // 添加自定义优选域名
+        if (customPreferredDomains.length > 0) {
+            const customDomainList = customPreferredDomains.map(d => ({ ip: d.domain, isp: d.name || d.domain }));
+            finalLinks.push(...generateLinksFromSource(customDomainList, user, workerDomain));
+        }
+    } else {
+        // 没有自定义优选时，使用默认的优选IP和域名
+        const domainList = directDomains.map(d => ({ ip: d.domain, isp: d.name || d.domain }));
+        finalLinks.push(...generateLinksFromSource(domainList, user, workerDomain));
 
-    const dynamicIPList = await fetchDynamicIPs();
-    if (dynamicIPList.length > 0) {
-        finalLinks.push(...generateLinksFromSource(dynamicIPList, user, workerDomain));
-    }
+        const dynamicIPList = await fetchDynamicIPs();
+        if (dynamicIPList.length > 0) {
+            finalLinks.push(...generateLinksFromSource(dynamicIPList, user, workerDomain));
+        }
 
-    const newIPList = await fetchAndParseNewIPs();
-    if (newIPList.length > 0) {
-        finalLinks.push(...generateLinksFromNewIPs(newIPList, user, workerDomain));
+        const newIPList = await fetchAndParseNewIPs();
+        if (newIPList.length > 0) {
+            finalLinks.push(...generateLinksFromNewIPs(newIPList, user, workerDomain));
+        }
     }
 
     if (finalLinks.length === 0) {
@@ -468,8 +580,8 @@ async function handleSubscriptionRequest(request, user, url = null) {
 }
 
 function generateLinksFromSource(list, user, workerDomain) {
-    const httpsPorts = [443];
-    const httpPorts = [80];
+    const defaultHttpsPorts = [443];
+    const defaultHttpPorts = [80];
     const links = [];
     const wsPath = encodeURIComponent('/?ed=2048');
     const proto = atob('dmxlc3M=');
@@ -477,6 +589,18 @@ function generateLinksFromSource(list, user, workerDomain) {
     list.forEach(item => {
         const nodeNameBase = item.isp.replace(/\s/g, '_');
         const safeIP = item.ip.includes(':') ? `[${item.ip}]` : item.ip;
+        
+        // 确定要使用的端口
+        let httpsPorts, httpPorts;
+        if (item.port) {
+            // 如果指定了端口，只使用该端口
+            httpsPorts = [item.port];
+            httpPorts = [item.port];
+        } else {
+            // 使用默认端口
+            httpsPorts = defaultHttpsPorts;
+            httpPorts = defaultHttpPorts;
+        }
 
         httpsPorts.forEach(port => {
             const wsNodeName = `${nodeNameBase}-${port}-WS-TLS`;
@@ -604,25 +728,62 @@ async function handleWsRequest(request) {
 }
 
 async function forwardTCP(addrType, host, portNum, rawData, ws, respHeader, remoteConnWrapper) {
-    async function connectAndSend(address, port) {
-        const remoteSock = isSocksEnabled ?
-            await establishSocksConnection(addrType, address, port) :
-            connect({ hostname: address, port: port });
-        const writer = remoteSock.writable.getWriter();
-        await writer.write(rawData);
-        writer.releaseLock();
-        return remoteSock;
+    async function connectAndSend(address, port, useSocks = isSocksEnabled) {
+        try {
+            const remoteSock = useSocks ?
+                await establishSocksConnection(addrType, address, port) :
+                connect({ hostname: address, port: port });
+            const writer = remoteSock.writable.getWriter();
+            await writer.write(rawData);
+            writer.releaseLock();
+            return remoteSock;
+        } catch (err) {
+            // 如果SOCKS5连接失败且启用了降级模式，尝试直连
+            if (useSocks && enableSocksDowngrade && isSocksEnabled) {
+                console.log('SOCKS5连接失败，降级到直连:', err);
+                return await connectAndSend(address, port, false);
+            }
+            throw err;
+        }
     }
+    
     async function retryConnection() {
-        const newSocket = isSocksEnabled ?
-            await connectAndSend(host, portNum) :
-            await connectAndSend(fallbackAddress || host, parseInt(fallbackPort, 10) || portNum);
-        remoteConnWrapper.socket = newSocket;
-        newSocket.closed.catch(() => {}).finally(() => closeSocketQuietly(ws));
-        connectStreams(newSocket, ws, respHeader, null);
+        try {
+            // 首先尝试SOCKS5连接
+            const newSocket = await connectAndSend(host, portNum, isSocksEnabled);
+            remoteConnWrapper.socket = newSocket;
+            newSocket.closed.catch(() => {}).finally(() => closeSocketQuietly(ws));
+            connectStreams(newSocket, ws, respHeader, null);
+        } catch (err) {
+            console.log('SOCKS5连接失败，尝试fallback地址:', err);
+            try {
+                // 如果SOCKS5失败，尝试fallback地址
+                const fallbackSocket = await connectAndSend(fallbackAddress || host, parseInt(fallbackPort, 10) || portNum, isSocksEnabled);
+                remoteConnWrapper.socket = fallbackSocket;
+                fallbackSocket.closed.catch(() => {}).finally(() => closeSocketQuietly(ws));
+                connectStreams(fallbackSocket, ws, respHeader, null);
+            } catch (fallbackErr) {
+                console.log('Fallback连接也失败:', fallbackErr);
+                // 如果fallback也失败，尝试直连
+                if (enableSocksDowngrade && isSocksEnabled) {
+                    try {
+                        const directSocket = await connectAndSend(fallbackAddress || host, parseInt(fallbackPort, 10) || portNum, false);
+                        remoteConnWrapper.socket = directSocket;
+                        directSocket.closed.catch(() => {}).finally(() => closeSocketQuietly(ws));
+                        connectStreams(directSocket, ws, respHeader, null);
+                    } catch (directErr) {
+                        console.log('直连也失败:', directErr);
+                        closeSocketQuietly(ws);
+                    }
+                } else {
+                    closeSocketQuietly(ws);
+                }
+            }
+        }
     }
+    
     try {
-        const initialSocket = await connectAndSend(host, portNum);
+        const initialSocket = await connectAndSend(host, portNum, isSocksEnabled);
         remoteConnWrapper.socket = initialSocket;
         connectStreams(initialSocket, ws, respHeader, retryConnection);
     } catch (err) {
@@ -957,7 +1118,7 @@ async function handleSubscriptionPage(request, user = null) {
     <div class="matrix-bg"></div>
     <div class="matrix-rain"></div>
     <div class="matrix-code-rain" id="matrixCodeRain"></div>
-    <div class="matrix-text">代理订阅中心 v0.1</div>
+    <div class="matrix-text">代理订阅中心 v1.1</div>
     <div class="container">
         <div class="header">
             <h1 class="title">代理订阅中心</h1>
