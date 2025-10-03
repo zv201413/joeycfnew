@@ -1,7 +1,7 @@
 import { connect } from 'cloudflare:sockets';
 
 let authToken = '351c9981-04b6-4103-aa4b-864aa9c91469';
-let fallbackAddress = 'ProxyIP.cmliussss.net';
+let fallbackAddress = 'bpb.yousef.isegaro.com';
 let fallbackPort = '443';
 let socks5Config = '';
 let customPreferredIPs = [];
@@ -719,21 +719,29 @@ async function forwardTCP(addrType, host, portNum, rawData, ws, respHeader, remo
                 connectStreams(socksSocket, ws, respHeader, null);
                 return;
             } catch (socksErr) {
+                try {
+                    const fallbackSocket = await connectAndSend(fallbackAddress || host, parseInt(fallbackPort, 10) || portNum, false);
+                    remoteConnWrapper.socket = fallbackSocket;
+                    fallbackSocket.closed.catch(() => {}).finally(() => closeSocketQuietly(ws));
+                    connectStreams(fallbackSocket, ws, respHeader, null);
+                } catch (fallbackErr) {
+                    closeSocketQuietly(ws);
+                }
             }
-        }
-        
-        try {
-            const fallbackSocket = await connectAndSend(fallbackAddress || host, parseInt(fallbackPort, 10) || portNum, false);
-            remoteConnWrapper.socket = fallbackSocket;
-            fallbackSocket.closed.catch(() => {}).finally(() => closeSocketQuietly(ws));
-            connectStreams(fallbackSocket, ws, respHeader, null);
-        } catch (fallbackErr) {
-            closeSocketQuietly(ws);
+        } else {
+            try {
+                const fallbackSocket = await connectAndSend(fallbackAddress || host, parseInt(fallbackPort, 10) || portNum, isSocksEnabled);
+                remoteConnWrapper.socket = fallbackSocket;
+                fallbackSocket.closed.catch(() => {}).finally(() => closeSocketQuietly(ws));
+                connectStreams(fallbackSocket, ws, respHeader, null);
+            } catch (fallbackErr) {
+                closeSocketQuietly(ws);
+            }
         }
     }
     
     try {
-        const initialSocket = await connectAndSend(host, portNum, isSocksEnabled);
+        const initialSocket = await connectAndSend(host, portNum, enableSocksDowngrade ? false : isSocksEnabled);
         remoteConnWrapper.socket = initialSocket;
         connectStreams(initialSocket, ws, respHeader, retryConnection);
     } catch (err) {
