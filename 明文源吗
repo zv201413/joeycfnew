@@ -743,11 +743,11 @@ async function forwardTCP(addrType, host, portNum, rawData, ws, respHeader, remo
     }
     
     try {
-        const initialSocket = await connectAndSend(host, portNum, false);
+        const initialSocket = await connectAndSend(host, portNum, isSocksEnabled);
         remoteConnWrapper.socket = initialSocket;
         connectStreams(initialSocket, ws, respHeader, retryConnection);
     } catch (err) {
-        console.log('CF直连失败，尝试降级连接:', err);
+        console.log('初始连接失败，尝试降级连接:', err);
         retryConnection();
     }
 }
