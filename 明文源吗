@@ -44,15 +44,12 @@ function isValidFormat(str) {
 }
 
 function isValidIP(ip) {
-    // IPv4 验证
     const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
     if (ipv4Regex.test(ip)) return true;
     
-    // IPv6 验证
     const ipv6Regex = /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
     if (ipv6Regex.test(ip)) return true;
     
-    // 简化的IPv6验证
     const ipv6ShortRegex = /^::1$|^::$|^(?:[0-9a-fA-F]{1,4}:)*::(?:[0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4}$/;
     if (ipv6ShortRegex.test(ip)) return true;
     
@@ -60,9 +57,7 @@ function isValidIP(ip) {
 }
 
 function parseAddressAndPort(input) {
-    // 处理IPv6地址（可能包含端口）
     if (input.includes('[') && input.includes(']')) {
-        // IPv6格式: [::1]:8080
         const match = input.match(/^\[([^\]]+)\](?::(\d+))?$/);
         if (match) {
             return {
@@ -72,20 +67,17 @@ function parseAddressAndPort(input) {
         }
     }
     
-    // 处理普通格式: ip:port 或 domain:port
     const lastColonIndex = input.lastIndexOf(':');
     if (lastColonIndex > 0) {
         const address = input.substring(0, lastColonIndex);
         const portStr = input.substring(lastColonIndex + 1);
         const port = parseInt(portStr, 10);
         
-        // 验证端口号是否有效
         if (!isNaN(port) && port > 0 && port <= 65535) {
             return { address, port };
         }
     }
     
-    // 没有端口或端口无效，返回原地址
     return { address: input, port: null };
 }
 
@@ -121,7 +113,6 @@ export default {
 				}
 			}
 
-			// 解析自定义优选IP和域名 (yx变量)
 			const customPreferred = env.yx || env.YX;
 			if (customPreferred) {
 				try {
@@ -130,10 +121,8 @@ export default {
 					customPreferredDomains = [];
 					
 					preferredList.forEach(item => {
-						// 解析IP/域名和端口
 						const { address, port } = parseAddressAndPort(item);
 						
-						// 检查是否为IP地址
 						if (isValidIP(address)) {
 							customPreferredIPs.push({ 
 								ip: address, 
@@ -141,7 +130,6 @@ export default {
 								isp: `自定义优选-${address}${port ? ':' + port : ''}` 
 							});
 						} else {
-							// 作为域名处理
 							customPreferredDomains.push({ 
 								domain: address, 
 								port: port,
@@ -157,7 +145,6 @@ export default {
 				}
 			}
 
-			// 解析SOCKS5降级控制 (qj变量)
 			const downgradeControl = env.qj || env.QJ;
 			if (downgradeControl && downgradeControl.toLowerCase() === 'no') {
 				enableSocksDowngrade = true;
@@ -499,25 +486,20 @@ async function handleSubscriptionRequest(request, user, url = null) {
     const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
     finalLinks.push(...generateLinksFromSource(nativeList, user, workerDomain));
 
-    // 检查是否有自定义优选配置
     const hasCustomPreferred = customPreferredIPs.length > 0 || customPreferredDomains.length > 0;
     
     if (hasCustomPreferred) {
-        // 当自定义优选存在时，只保留原生地址，不生成写死的优选域IP反代
         console.log('检测到自定义优选配置，跳过默认优选IP和域名生成');
         
-        // 添加自定义优选IP
         if (customPreferredIPs.length > 0) {
             finalLinks.push(...generateLinksFromSource(customPreferredIPs, user, workerDomain));
         }
         
-        // 添加自定义优选域名
         if (customPreferredDomains.length > 0) {
             const customDomainList = customPreferredDomains.map(d => ({ ip: d.domain, isp: d.name || d.domain }));
             finalLinks.push(...generateLinksFromSource(customDomainList, user, workerDomain));
         }
     } else {
-        // 没有自定义优选时，使用默认的优选IP和域名
         const domainList = directDomains.map(d => ({ ip: d.domain, isp: d.name || d.domain }));
         finalLinks.push(...generateLinksFromSource(domainList, user, workerDomain));
 
@@ -590,14 +572,11 @@ function generateLinksFromSource(list, user, workerDomain) {
         const nodeNameBase = item.isp.replace(/\s/g, '_');
         const safeIP = item.ip.includes(':') ? `[${item.ip}]` : item.ip;
         
-        // 确定要使用的端口
         let httpsPorts, httpPorts;
         if (item.port) {
-            // 如果指定了端口，只使用该端口
             httpsPorts = [item.port];
             httpPorts = [item.port];
         } else {
-            // 使用默认端口
             httpsPorts = defaultHttpsPorts;
             httpPorts = defaultHttpPorts;
         }
@@ -728,66 +707,47 @@ async function handleWsRequest(request) {
 }
 
 async function forwardTCP(addrType, host, portNum, rawData, ws, respHeader, remoteConnWrapper) {
-    async function connectAndSend(address, port, useSocks = isSocksEnabled) {
-        try {
-            const remoteSock = useSocks ?
-                await establishSocksConnection(addrType, address, port) :
-                connect({ hostname: address, port: port });
-            const writer = remoteSock.writable.getWriter();
-            await writer.write(rawData);
-            writer.releaseLock();
-            return remoteSock;
-        } catch (err) {
-            // 如果SOCKS5连接失败且启用了降级模式，尝试直连
-            if (useSocks && enableSocksDowngrade && isSocksEnabled) {
-                console.log('SOCKS5连接失败，降级到直连:', err);
-                return await connectAndSend(address, port, false);
-            }
-            throw err;
-        }
+    async function connectAndSend(address, port, useSocks = false) {
+        const remoteSock = useSocks ?
+            await establishSocksConnection(addrType, address, port) :
+            connect({ hostname: address, port: port });
+        const writer = remoteSock.writable.getWriter();
+        await writer.write(rawData);
+        writer.releaseLock();
+        return remoteSock;
     }
     
     async function retryConnection() {
         try {
-            // 首先尝试SOCKS5连接
-            const newSocket = await connectAndSend(host, portNum, isSocksEnabled);
-            remoteConnWrapper.socket = newSocket;
-            newSocket.closed.catch(() => {}).finally(() => closeSocketQuietly(ws));
-            connectStreams(newSocket, ws, respHeader, null);
-        } catch (err) {
-            console.log('SOCKS5连接失败，尝试fallback地址:', err);
-            try {
-                // 如果SOCKS5失败，尝试fallback地址
-                const fallbackSocket = await connectAndSend(fallbackAddress || host, parseInt(fallbackPort, 10) || portNum, isSocksEnabled);
-                remoteConnWrapper.socket = fallbackSocket;
-                fallbackSocket.closed.catch(() => {}).finally(() => closeSocketQuietly(ws));
-                connectStreams(fallbackSocket, ws, respHeader, null);
-            } catch (fallbackErr) {
-                console.log('Fallback连接也失败:', fallbackErr);
-                // 如果fallback也失败，尝试直连
-                if (enableSocksDowngrade && isSocksEnabled) {
-                    try {
-                        const directSocket = await connectAndSend(fallbackAddress || host, parseInt(fallbackPort, 10) || portNum, false);
-                        remoteConnWrapper.socket = directSocket;
-                        directSocket.closed.catch(() => {}).finally(() => closeSocketQuietly(ws));
-                        connectStreams(directSocket, ws, respHeader, null);
-                    } catch (directErr) {
-                        console.log('直连也失败:', directErr);
-                        closeSocketQuietly(ws);
-                    }
-                } else {
-                    closeSocketQuietly(ws);
-                }
+            if (enableSocksDowngrade && isSocksEnabled) {
+                console.log('尝试SOCKS5连接');
+                const socksSocket = await connectAndSend(host, portNum, true);
+                remoteConnWrapper.socket = socksSocket;
+                socksSocket.closed.catch(() => {}).finally(() => closeSocketQuietly(ws));
+                connectStreams(socksSocket, ws, respHeader, null);
+                return;
             }
+        } catch (socksErr) {
+            console.log('SOCKS5连接失败，尝试fallback地址:', socksErr);
+        }
+        
+        try {
+            const fallbackSocket = await connectAndSend(fallbackAddress || host, parseInt(fallbackPort, 10) || portNum, false);
+            remoteConnWrapper.socket = fallbackSocket;
+            fallbackSocket.closed.catch(() => {}).finally(() => closeSocketQuietly(ws));
+            connectStreams(fallbackSocket, ws, respHeader, null);
+        } catch (fallbackErr) {
+            console.log('Fallback连接也失败:', fallbackErr);
+            closeSocketQuietly(ws);
         }
     }
     
     try {
-        const initialSocket = await connectAndSend(host, portNum, isSocksEnabled);
+        const initialSocket = await connectAndSend(host, portNum, false);
         remoteConnWrapper.socket = initialSocket;
         connectStreams(initialSocket, ws, respHeader, retryConnection);
     } catch (err) {
-        console.log('Initial connection failed, trying fallback:', err);
+        console.log('CF直连失败，尝试降级连接:', err);
         retryConnection();
     }
 }
