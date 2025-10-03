@@ -1,7 +1,7 @@
 import { connect } from 'cloudflare:sockets';
 
 let authToken = '351c9981-04b6-4103-aa4b-864aa9c91469';
-let fallbackAddress = 'bpb.yousef.isegaro.com';
+let fallbackAddress = 'ProxyIP.cmliussss.net';
 let fallbackPort = '443';
 let socks5Config = '';
 let customPreferredIPs = [];
@@ -105,12 +105,9 @@ export default {
 			socks5Config = env.s || env.S || socks5Config;
 			if (socks5Config) {
 				try {
-					console.log(`Parsing SOCKS5 config: ${socks5Config}`);
-					parsedSocks5Config = parseSocksConfig(socks5Config.toLowerCase());
-					console.log(`Parsed SOCKS5 config:`, parsedSocks5Config);
+					parsedSocks5Config = parseSocksConfig(socks5Config);
 					isSocksEnabled = true;
 				} catch (err) {
-					console.log(`Invalid SOCKS5 config: ${err.toString()}`);
 					isSocksEnabled = false;
 				}
 			}
@@ -139,9 +136,7 @@ export default {
 							});
 						}
 					});
-					console.log(`自定义优选配置: IPs=${customPreferredIPs.length}, Domains=${customPreferredDomains.length}`);
 				} catch (err) {
-					console.log(`Invalid custom preferred config: ${err.toString()}`);
 					customPreferredIPs = [];
 					customPreferredDomains = [];
 				}
@@ -150,7 +145,6 @@ export default {
 			const downgradeControl = env.qj || env.QJ;
 			if (downgradeControl && downgradeControl.toLowerCase() === 'no') {
 				enableSocksDowngrade = true;
-				console.log('SOCKS5降级模式已启用');
 			}
 
 			const url = new URL(request.url);
@@ -491,8 +485,6 @@ async function handleSubscriptionRequest(request, user, url = null) {
     const hasCustomPreferred = customPreferredIPs.length > 0 || customPreferredDomains.length > 0;
     
     if (hasCustomPreferred) {
-        console.log('检测到自定义优选配置，跳过默认优选IP和域名生成');
-        
         if (customPreferredIPs.length > 0) {
             finalLinks.push(...generateLinksFromSource(customPreferredIPs, user, workerDomain));
         }
@@ -626,7 +618,6 @@ async function fetchDynamicIPs() {
         ]);
         results = [...ipv4List, ...ipv6List];
         if (results.length > 0) {
-            console.log(`Successfully fetched ${results.length} IPs from wetest.vip`);
             return results;
         }
     } catch (e) {
@@ -703,7 +694,7 @@ async function handleWsRequest(request) {
             if (isDnsQuery) return forwardUDP(rawData, serverSock, respHeader);
             await forwardTCP(addressType, hostname, port, rawData, serverSock, respHeader, remoteConnWrapper);
         },
-    })).catch((err) => { console.log('WS Stream Error:', err); });
+    })).catch((err) => { });
 
     return new Response(null, { status: 101, webSocket: clientSock });
 }
@@ -722,14 +713,12 @@ async function forwardTCP(addrType, host, portNum, rawData, ws, respHeader, remo
     async function retryConnection() {
         if (enableSocksDowngrade && isSocksEnabled) {
             try {
-                console.log('尝试SOCKS5连接');
                 const socksSocket = await connectAndSend(host, portNum, true);
                 remoteConnWrapper.socket = socksSocket;
                 socksSocket.closed.catch(() => {}).finally(() => closeSocketQuietly(ws));
                 connectStreams(socksSocket, ws, respHeader, null);
                 return;
             } catch (socksErr) {
-                console.log('SOCKS5连接失败，尝试fallback地址:', socksErr);
             }
         }
         
@@ -739,7 +728,6 @@ async function forwardTCP(addrType, host, portNum, rawData, ws, respHeader, remo
             fallbackSocket.closed.catch(() => {}).finally(() => closeSocketQuietly(ws));
             connectStreams(fallbackSocket, ws, respHeader, null);
         } catch (fallbackErr) {
-            console.log('Fallback连接也失败:', fallbackErr);
             closeSocketQuietly(ws);
         }
     }
@@ -749,7 +737,6 @@ async function forwardTCP(addrType, host, portNum, rawData, ws, respHeader, remo
         remoteConnWrapper.socket = initialSocket;
         connectStreams(initialSocket, ws, respHeader, retryConnection);
     } catch (err) {
-        console.log('初始连接失败，尝试降级连接:', err);
         retryConnection();
     }
 }
