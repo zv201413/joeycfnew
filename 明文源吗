@@ -105,7 +105,9 @@ export default {
 			socks5Config = env.s || env.S || socks5Config;
 			if (socks5Config) {
 				try {
+					console.log(`Parsing SOCKS5 config: ${socks5Config}`);
 					parsedSocks5Config = parseSocksConfig(socks5Config.toLowerCase());
+					console.log(`Parsed SOCKS5 config:`, parsedSocks5Config);
 					isSocksEnabled = true;
 				} catch (err) {
 					console.log(`Invalid SOCKS5 config: ${err.toString()}`);
@@ -853,10 +855,22 @@ async function establishSocksConnection(addrType, address, port) {
 }
 
 function parseSocksConfig(address) {
-	let [latter, former] = address.split("@").reverse(); let username, password, hostname, socksPort;
-	if (former) { const formers = former.split(":"); if (formers.length !== 2) throw new Error(E_INVALID_SOCKS_ADDR);[username, password] = formers; }
-	const latters = latter.split(":"); socksPort = Number(latters.pop()); if (isNaN(socksPort)) throw new Error(E_INVALID_SOCKS_ADDR);
-	hostname = latters.join(":"); if (hostname.includes(":") && !/^\[.*\]$/.test(hostname)) throw new Error(E_INVALID_SOCKS_ADDR);
+	let [latter, former] = address.split("@").reverse(); 
+	let username, password, hostname, socksPort;
+	
+	if (former) { 
+		const formers = former.split(":"); 
+		if (formers.length !== 2) throw new Error(E_INVALID_SOCKS_ADDR);
+		[username, password] = formers; 
+	}
+	
+	const latters = latter.split(":"); 
+	socksPort = Number(latters.pop()); 
+	if (isNaN(socksPort)) throw new Error(E_INVALID_SOCKS_ADDR);
+	
+	hostname = latters.join(":"); 
+	if (hostname.includes(":") && !/^\[.*\]$/.test(hostname)) throw new Error(E_INVALID_SOCKS_ADDR);
+	
 	return { username, password, hostname, socksPort };
 }
 
