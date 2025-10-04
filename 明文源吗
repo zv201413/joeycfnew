@@ -1,12 +1,14 @@
 import { connect } from 'cloudflare:sockets';
 
 let authToken = '351c9981-04b6-4103-aa4b-864aa9c91469';
-let fallbackAddress = 'bpb.yousef.isegaro.com';
+let fallbackAddress = 'ProxyIP.SG.CMLiussss.net';
 let fallbackPort = '443';
 let socks5Config = '';
 let customPreferredIPs = [];
 let customPreferredDomains = [];
 let enableSocksDowngrade = false;
+let disablePort80 = false;
+let disablePreferred = false;
 
 const directDomains = [
     { name: "cloudflare.182682.xyz", domain: "cloudflare.182682.xyz" }, { name: "speed.marisalnc.com", domain: "speed.marisalnc.com" },
@@ -145,6 +147,16 @@ export default {
 			const downgradeControl = env.qj || env.QJ;
 			if (downgradeControl && downgradeControl.toLowerCase() === 'no') {
 				enableSocksDowngrade = true;
+			}
+
+			const dkbyControl = env.dkby || env.DKBY;
+			if (dkbyControl && dkbyControl.toLowerCase() === 'yes') {
+				disablePort80 = true;
+			}
+
+			const yxbyControl = env.yxby || env.YXBY;
+			if (yxbyControl && yxbyControl.toLowerCase() === 'yes') {
+				disablePreferred = true;
 			}
 
 			const url = new URL(request.url);
@@ -484,7 +496,9 @@ async function handleSubscriptionRequest(request, user, url = null) {
 
     const hasCustomPreferred = customPreferredIPs.length > 0 || customPreferredDomains.length > 0;
     
-    if (hasCustomPreferred) {
+    if (disablePreferred) {
+        // 如果禁用优选，只使用原生地址，不再添加其他节点
+    } else if (hasCustomPreferred) {
         if (customPreferredIPs.length > 0) {
             finalLinks.push(...generateLinksFromSource(customPreferredIPs, user, workerDomain));
         }
@@ -557,7 +571,7 @@ async function handleSubscriptionRequest(request, user, url = null) {
 
 function generateLinksFromSource(list, user, workerDomain) {
     const defaultHttpsPorts = [443];
-    const defaultHttpPorts = [80];
+    const defaultHttpPorts = disablePort80 ? [] : [80];
     const links = [];
     const wsPath = encodeURIComponent('/?ed=2048');
     const proto = atob('dmxlc3M=');
@@ -569,7 +583,7 @@ function generateLinksFromSource(list, user, workerDomain) {
         let httpsPorts, httpPorts;
         if (item.port) {
             httpsPorts = [item.port];
-            httpPorts = [item.port];
+            httpPorts = disablePort80 && item.port === 80 ? [] : [item.port];
         } else {
             httpsPorts = defaultHttpsPorts;
             httpPorts = defaultHttpPorts;
