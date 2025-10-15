@@ -24,10 +24,10 @@ const regionMapping = {
     'NL': ['🇳🇱 荷兰', 'NL', 'Netherlands'],
     'FI': ['🇫🇮 芬兰', 'FI', 'Finland'],
     'GB': ['🇬🇧 英国', 'GB', 'United Kingdom'],
-    'Oracle': ['☁ 甲骨文', 'Oracle'],
-    'DigitalOcean': ['☁ 数码海', 'DigitalOcean'],
-    'Vultr': ['☁ Vultr', 'Vultr'],
-    'Multacom': ['☁ Multacom', 'Multacom']
+    'Oracle': ['甲骨文', 'Oracle'],
+    'DigitalOcean': ['数码海', 'DigitalOcean'],
+    'Vultr': ['Vultr', 'Vultr'],
+    'Multacom': ['Multacom', 'Multacom']
 };
 
 let backupIPs = [
@@ -1486,50 +1486,14 @@ async function handleSubscriptionPage(request, user = null) {
         </div>
         <div class="card">
             <h2 class="card-title">[ 系统状态 ]</h2>
-            <div id="systemStatus" style="margin: 20px 0; padding: 15px; background: rgba(0, 0, 0, 0.5); border: 1px solid #00ff00; border-radius: 5px;">
-                <div style="color: #00aa00; margin-bottom: 10px;">🔍 正在检测系统状态...</div>
-                <!-- 移除CF IP验证显示 -->
-                <div id="regionStatus" style="margin: 5px 0;">Worker地区: 检测中...</div>
-                <div id="geoInfo" style="margin: 5px 0; font-size: 0.9rem; color: #00aa00;">检测方式: 检测中...</div>
-                <div id="backupStatus" style="margin: 5px 0;">ProxyIP状态: 检测中...</div>
-                <div id="currentIP" style="margin: 5px 0;">当前使用IP: 检测中...</div>
-                <div id="regionMatch" style="margin: 5px 0;">地区匹配: 检测中...</div>
-                <div id="selectionLogic" style="margin: 5px 0; font-size: 0.9rem; color: #00aa00;">选择逻辑: 同地区 → 邻近地区 → 其他地区</div>
-            </div>
-        </div>
-        <div class="card">
-            <h2 class="card-title">[ 地区选择逻辑 ]</h2>
-            <div style="margin: 20px 0; padding: 15px; background: rgba(0, 0, 0, 0.3); border: 1px solid #00ff00; border-radius: 5px;">
-                <div style="color: #00aa00; margin-bottom: 10px; font-weight: bold;">🎯 智能地区匹配策略</div>
-                <div style="margin: 8px 0; color: #00ff00;">1️⃣ <strong>同地区优先</strong>: 优先使用与Worker同地区的IP</div>
-                <div style="margin: 8px 0; color: #ffaa00;">2️⃣ <strong>邻近地区</strong>: 无同地区IP时，选择地理距离最近的地区</div>
-                <div style="margin: 8px 0; color: #ffaa00;">3️⃣ <strong>其他地区</strong>: 最后选择任意可用IP</div>
-                <div style="margin: 15px 0; padding: 10px; background: rgba(0, 255, 0, 0.1); border-left: 3px solid #00ff00;">
-                    <div style="color: #00ff00; font-weight: bold;">💡 优势</div>
-                    <div style="color: #00aa00; margin-top: 5px;">• 最低延迟: 同地区IP确保最佳性能</div>
-                    <div style="color: #00aa00;">• 智能降级: 自动选择最优备用方案</div>
-                    <div style="color: #00aa00;">• 高可用性: 多重备用保证服务稳定</div>
-                </div>
-                <div style="margin: 15px 0; padding: 10px; background: rgba(0, 255, 255, 0.1); border-left: 3px solid #00ffff;">
-                    <div style="color: #00ffff; font-weight: bold;">🔧 技术说明</div>
-                    <div style="color: #00aaaa; margin-top: 5px;">• ProxyIP域名预设为可用状态</div>
-                    <div style="color: #00aaaa;">• 实际连接时会进行真实可用性检测</div>
-                    <div style="color: #00aaaa;">• 系统会自动选择最佳可用IP</div>
-                    <div style="color: #00aaaa;">• 支持环境变量控制检测行为</div>
-                </div>
-                <div style="margin: 15px 0; padding: 10px; background: rgba(255, 165, 0, 0.1); border-left: 3px solid #ffa500;">
-                    <div style="color: #ffa500; font-weight: bold;">🌍 智能地区检测</div>
-                    <div style="color: #ff8800; margin-top: 5px;">• 使用itdog.plus进行初步地区判断</div>
-                    <div style="color: #ff8800;">• 根据初步判断选择ProxyIP</div>
-                    <div style="color: #ff8800;">• 使用ProxyIP访问joeyblog.net确认位置</div>
-                    <div style="color: #ff8800;">• 智能回退机制确保检测成功</div>
-                    <button onclick="testAPI()" style="margin-top: 10px; padding: 8px 16px; background: #ffa500; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                        🧪 测试API检测
-                    </button>
-                    <button onclick="testIPAPI()" style="margin-top: 10px; padding: 8px 16px; background: #ff6600; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">
-                        🔍 测试智能检测
-                    </button>
-                </div>
+            <div id="systemStatus" style="margin: 20px 0; padding: 15px; background: rgba(0, 20, 0, 0.8); border: 2px solid #00ff00; box-shadow: 0 0 20px rgba(0, 255, 0, 0.3), inset 0 0 15px rgba(0, 255, 0, 0.1); position: relative; overflow: hidden;">
+                <div style="color: #00ff00; margin-bottom: 15px; font-weight: bold; text-shadow: 0 0 5px #00ff00;">[ 系统检测中... ]</div>
+                <div id="regionStatus" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00;">Worker地区: 检测中...</div>
+                <div id="geoInfo" style="margin: 8px 0; color: #00aa00; font-family: 'Courier New', monospace; font-size: 0.9rem; text-shadow: 0 0 3px #00aa00;">检测方式: 检测中...</div>
+                <div id="backupStatus" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00;">ProxyIP状态: 检测中...</div>
+                <div id="currentIP" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00;">当前使用IP: 检测中...</div>
+                <div id="regionMatch" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00;">地区匹配: 检测中...</div>
+                <div id="selectionLogic" style="margin: 8px 0; color: #00aa00; font-family: 'Courier New', monospace; font-size: 0.9rem; text-shadow: 0 0 3px #00aa00;">选择逻辑: 同地区 → 邻近地区 → 其他地区</div>
             </div>
         </div>
         <div class="card">
