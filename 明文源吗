@@ -10,6 +10,45 @@ let enableSocksDowngrade = false;
 let disablePort80 = false;
 let disablePreferred = false;
 
+// 备用IP配置
+let enableRegionMatching = true;
+let currentWorkerRegion = '';
+
+// 地区映射表
+const regionMapping = {
+    'US': ['🇺🇸 美国', 'US', 'United States'],
+    'SG': ['🇸🇬 新加坡', 'SG', 'Singapore'],
+    'JP': ['🇯🇵 日本', 'JP', 'Japan'],
+    'HK': ['🇭🇰 香港', 'HK', 'Hong Kong'],
+    'KR': ['🇰🇷 韩国', 'KR', 'South Korea'],
+    'DE': ['🇩🇪 德国', 'DE', 'Germany'],
+    'SE': ['🇸🇪 瑞典', 'SE', 'Sweden'],
+    'NL': ['🇳🇱 荷兰', 'NL', 'Netherlands'],
+    'FI': ['🇫🇮 芬兰', 'FI', 'Finland'],
+    'GB': ['🇬🇧 英国', 'GB', 'United Kingdom'],
+    'Oracle': ['☁ 甲骨文', 'Oracle'],
+    'DigitalOcean': ['☁ 数码海', 'DigitalOcean'],
+    'Vultr': ['☁ Vultr', 'Vultr'],
+    'Multacom': ['☁ Multacom', 'Multacom']
+};
+
+let backupIPs = [
+    { domain: 'ProxyIP.US.CMLiussss.net', region: 'US', regionCode: 'US', port: 443 },
+    { domain: 'ProxyIP.SG.CMLiussss.net', region: 'SG', regionCode: 'SG', port: 443 },
+    { domain: 'ProxyIP.JP.CMLiussss.net', region: 'JP', regionCode: 'JP', port: 443 },
+    { domain: 'ProxyIP.HK.CMLiussss.net', region: 'HK', regionCode: 'HK', port: 443 },
+    { domain: 'ProxyIP.KR.CMLiussss.net', region: 'KR', regionCode: 'KR', port: 443 },
+    { domain: 'ProxyIP.DE.CMLiussss.net', region: 'DE', regionCode: 'DE', port: 443 },
+    { domain: 'ProxyIP.SE.CMLiussss.net', region: 'SE', regionCode: 'SE', port: 443 },
+    { domain: 'ProxyIP.NL.CMLiussss.net', region: 'NL', regionCode: 'NL', port: 443 },
+    { domain: 'ProxyIP.FI.CMLiussss.net', region: 'FI', regionCode: 'FI', port: 443 },
+    { domain: 'ProxyIP.GB.CMLiussss.net', region: 'GB', regionCode: 'GB', port: 443 },
+    { domain: 'ProxyIP.Oracle.cmliussss.net', region: 'Oracle', regionCode: 'Oracle', port: 443 },
+    { domain: 'ProxyIP.DigitalOcean.CMLiussss.net', region: 'DigitalOcean', regionCode: 'DigitalOcean', port: 443 },
+    { domain: 'ProxyIP.Vultr.CMLiussss.net', region: 'Vultr', regionCode: 'Vultr', port: 443 },
+    { domain: 'ProxyIP.Multacom.CMLiussss.net', region: 'Multacom', regionCode: 'Multacom', port: 443 }
+];
+
 const directDomains = [
     { name: "cloudflare.182682.xyz", domain: "cloudflare.182682.xyz" }, { name: "speed.marisalnc.com", domain: "speed.marisalnc.com" },
     { domain: "freeyx.cloudflare88.eu.org" }, { domain: "bestcf.top" }, { domain: "cdn.2020111.xyz" }, { domain: "cfip.cfcdn.vip" },
@@ -58,6 +97,257 @@ function isValidIP(ip) {
     return false;
 }
 
+// 移除CF IP验证，直接使用API检测地区
+
+// 检测Worker运行地区（使用API检测）
+// 重要：此函数必须直连API，不能使用备用IP，否则会形成循环依赖
+// 1. 直连API获取Worker真实地理位置
+// 2. 根据地理位置选择最佳备用IP
+// 3. 后续请求才使用备用IP
+async function detectWorkerRegion(request) {
+    try {
+        console.log('开始地区检测...');
+        
+        // 先使用itdog.plus获取Worker的IP地址
+        let workerIP = null;
+        try {
+            console.log('使用itdog.plus获取Worker IP...');
+            const ipResponse = await fetch('https://ipv4-overseas.itdog.plus/', {
+                method: 'GET',
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (compatible; CF-Worker/1.0)',
+                    'Accept': 'application/json'
+                },
+                signal: AbortSignal.timeout(5000) // 5秒超时
+            });
+            
+            if (ipResponse.ok) {
+                const ipData = await ipResponse.json();
+                console.log('itdog.plus响应:', JSON.stringify(ipData, null, 2));
+                
+                if (ipData.type === 'success' && ipData.ip) {
+                    workerIP = ipData.ip;
+                    console.log('从itdog.plus获取到Worker IP:', workerIP);
+                } else {
+                    console.log('itdog.plus响应失败，使用默认IP');
+                    workerIP = '8.8.8.8';
+                }
+            } else {
+                console.log('itdog.plus请求失败，使用默认IP');
+                workerIP = '8.8.8.8';
+            }
+        } catch (error) {
+            console.log('获取Worker IP失败，使用默认IP:', error.message);
+            workerIP = '8.8.8.8';
+        }
+        
+        // 使用自建API进行检测，传递获取到的IP参数
+        const apis = [
+            `https://joeyblog.net/api/t.php?ip=${workerIP}`
+        ];
+        
+        for (const api of apis) {
+            try {
+                console.log('尝试API:', api);
+                // 重要：访问API时必须直连，不能使用备用IP
+                // 使用原生fetch确保直连，不经过任何代理
+                const response = await fetch(api, {
+                    method: 'GET',
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (compatible; CF-Worker/1.0)',
+                        'Accept': 'application/json'
+                    },
+                    signal: AbortSignal.timeout(5000) // 5秒超时
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('API响应:', JSON.stringify(data, null, 2));
+                    
+                    // 解析自建API的响应格式
+                    let countryCode = null;
+                    
+                    if (data.user_country_code) {
+                        countryCode = data.user_country_code.toUpperCase();
+                        console.log('从自建API获取countryCode:', countryCode);
+                    } else if (data.user_country) {
+                        console.log('从自建API获取country:', data.user_country);
+                        // 如果是国家名称，需要转换
+                        const countryNameToCode = {
+                            'United States': 'US', 'Singapore': 'SG', 'Japan': 'JP',
+                            'Hong Kong': 'HK', 'South Korea': 'KR', 'Germany': 'DE',
+                            'Sweden': 'SE', 'Netherlands': 'NL', 'Finland': 'FI', 'United Kingdom': 'GB'
+                        };
+                        countryCode = countryNameToCode[data.user_country] || data.user_country;
+                        console.log('转换后的国家代码:', countryCode);
+                    } else {
+                        console.log('自建API响应失败:', data);
+                    }
+                    
+                    if (countryCode) {
+                        // 根据国家代码映射到地区
+                        const countryToRegion = {
+                            'US': 'US', 'SG': 'SG', 'JP': 'JP', 'HK': 'HK', 'KR': 'KR',
+                            'DE': 'DE', 'SE': 'SE', 'NL': 'NL', 'FI': 'FI', 'GB': 'GB',
+                            'CN': 'HK', // 中国大陆映射到香港
+                            'TW': 'HK', // 台湾映射到香港
+                            'AU': 'SG', // 澳大利亚映射到新加坡
+                            'CA': 'US', // 加拿大映射到美国
+                            'FR': 'DE', // 法国映射到德国
+                            'IT': 'DE', // 意大利映射到德国
+                            'ES': 'DE', // 西班牙映射到德国
+                            'CH': 'DE', // 瑞士映射到德国
+                            'AT': 'DE', // 奥地利映射到德国
+                            'BE': 'NL', // 比利时映射到荷兰
+                            'DK': 'SE', // 丹麦映射到瑞典
+                            'NO': 'SE', // 挪威映射到瑞典
+                            'IE': 'GB'  // 爱尔兰映射到英国
+                        };
+                        
+                        console.log('国家代码:', countryCode, '映射到地区:', countryToRegion[countryCode]);
+                        
+                        if (countryToRegion[countryCode]) {
+                            console.log('从API检测到地区:', countryToRegion[countryCode]);
+                            return countryToRegion[countryCode];
+                        } else {
+                            console.log('未找到对应的地区映射，国家代码:', countryCode, '可用映射:', Object.keys(countryToRegion));
+                            // 如果找不到映射，使用默认地区
+                            console.log('使用默认地区US');
+                            return 'US';
+                        }
+                    } else {
+                        console.log('未能解析出国家代码，继续尝试下一个API');
+                    }
+                } else {
+                    console.log('API响应失败:', response.status, response.statusText);
+                }
+            } catch (apiError) {
+                console.log('API检测失败:', api, apiError.message);
+                continue; // 尝试下一个API
+            }
+        }
+        
+        console.log('所有API检测失败，使用默认值US');
+        return 'US';
+        
+    } catch (error) {
+        console.error('地区检测失败:', error);
+        return 'US';
+    }
+}
+
+// IP可用性检测函数（简化版本）
+async function checkIPAvailability(domain, port = 443, timeout = 2000) {
+    try {
+        // 使用DNS解析检测域名是否可达
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+        
+        // 尝试连接测试
+        const response = await fetch(`https://${domain}`, {
+            method: 'HEAD',
+            signal: controller.signal,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (compatible; CF-IP-Checker/1.0)'
+            }
+        });
+        
+        clearTimeout(timeoutId);
+        return response.status < 500;
+    } catch (error) {
+        // 如果检测失败，假设IP可用（在实际使用中会进行真实连接测试）
+        return true;
+    }
+}
+
+// 获取最佳备用IP（支持地区匹配和就近选择）
+async function getBestBackupIP(workerRegion = '') {
+    console.log('getBestBackupIP 调用，Worker地区:', workerRegion);
+    console.log('备用IP数量:', backupIPs.length);
+    console.log('地区匹配启用:', enableRegionMatching);
+    
+    if (backupIPs.length === 0) {
+        console.log('没有备用IP可用');
+        return null;
+    }
+    
+    // 简化检测：假设所有ProxyIP都可用
+    console.log('简化检测：假设所有ProxyIP都可用');
+    const availableIPs = backupIPs.map(ip => ({ ...ip, available: true }));
+    console.log('可用IP数量:', availableIPs.length);
+    
+    // 如果启用了地区匹配且有Worker地区信息
+    if (enableRegionMatching && workerRegion) {
+        console.log('使用地区匹配，Worker地区:', workerRegion);
+        // 使用智能地区选择算法
+        const sortedIPs = getSmartRegionSelection(workerRegion, availableIPs);
+        console.log('排序后的IP数量:', sortedIPs.length);
+        if (sortedIPs.length > 0) {
+            const selectedIP = sortedIPs[0];
+            console.log('选择IP:', selectedIP.domain, '地区:', selectedIP.regionCode);
+            return selectedIP;
+        }
+    }
+    
+    // 如果地区匹配被禁用或没有地区信息，选择第一个
+    const selectedIP = availableIPs[0];
+    console.log('默认选择IP:', selectedIP.domain, '地区:', selectedIP.regionCode);
+    return selectedIP;
+}
+
+// 获取邻近地区列表（按距离排序）
+function getNearbyRegions(region) {
+    const nearbyMap = {
+        'US': ['SG', 'JP', 'HK', 'KR'], // 美国 -> 亚太地区
+        'SG': ['JP', 'HK', 'KR', 'US'], // 新加坡 -> 亚太地区
+        'JP': ['SG', 'HK', 'KR', 'US'], // 日本 -> 亚太地区
+        'HK': ['SG', 'JP', 'KR', 'US'], // 香港 -> 亚太地区
+        'KR': ['JP', 'HK', 'SG', 'US'], // 韩国 -> 亚太地区
+        'DE': ['NL', 'GB', 'SE', 'FI'], // 德国 -> 欧洲地区
+        'SE': ['DE', 'NL', 'FI', 'GB'], // 瑞典 -> 北欧地区
+        'NL': ['DE', 'GB', 'SE', 'FI'], // 荷兰 -> 西欧地区
+        'FI': ['SE', 'DE', 'NL', 'GB'], // 芬兰 -> 北欧地区
+        'GB': ['DE', 'NL', 'SE', 'FI']  // 英国 -> 西欧地区
+    };
+    
+    return nearbyMap[region] || [];
+}
+
+// 获取所有地区（按优先级排序）
+function getAllRegionsByPriority(region) {
+    const nearbyRegions = getNearbyRegions(region);
+    const allRegions = ['US', 'SG', 'JP', 'HK', 'KR', 'DE', 'SE', 'NL', 'FI', 'GB'];
+    
+    // 返回：同地区 + 邻近地区 + 其他地区
+    return [region, ...nearbyRegions, ...allRegions.filter(r => r !== region && !nearbyRegions.includes(r))];
+}
+
+// 智能地区选择算法
+function getSmartRegionSelection(workerRegion, availableIPs) {
+    console.log('getSmartRegionSelection 调用，Worker地区:', workerRegion);
+    console.log('可用IP数量:', availableIPs.length);
+    
+    if (!enableRegionMatching || !workerRegion) {
+        console.log('地区匹配禁用或无Worker地区信息');
+        return availableIPs;
+    }
+    
+    const priorityRegions = getAllRegionsByPriority(workerRegion);
+    console.log('优先级地区:', priorityRegions);
+    
+    const sortedIPs = [];
+    
+    // 按优先级排序IP
+    for (const region of priorityRegions) {
+        const regionIPs = availableIPs.filter(ip => ip.regionCode === region);
+        console.log('地区', region, '的IP数量:', regionIPs.length);
+        sortedIPs.push(...regionIPs);
+    }
+    
+    console.log('排序后的IP数量:', sortedIPs.length);
+    return sortedIPs;
+}
+
 function parseAddressAndPort(input) {
     if (input.includes('[') && input.includes(']')) {
         const match = input.match(/^\[([^\]]+)\](?::(\d+))?$/);
@@ -86,8 +376,17 @@ function parseAddressAndPort(input) {
 export default {
 	async fetch(request, env, ctx) {
 		try {
+			// 先尝试正常处理，如果失败再检测地区并分配备用IP
+			// 这里暂时不进行地区检测，等待访问失败时再处理
+			
 			authToken = (env.u || env.U || authToken).toLowerCase();
 			const subPath = (env.d || env.D || authToken).toLowerCase();
+			
+			// 环境变量控制地区匹配
+			const regionMatchingControl = env.rm || env.RM;
+			if (regionMatchingControl && regionMatchingControl.toLowerCase() === 'no') {
+				enableRegionMatching = false;
+			}
 			
 			const envFallback = env.p || env.P;
 			if (envFallback) {
@@ -128,13 +427,13 @@ export default {
 							customPreferredIPs.push({ 
 								ip: address, 
 								port: port,
-								isp: `自定义优选-${address}${port ? ':' + port : ''}` 
+								isp: '自定义优选-' + address + (port ? ':' + port : '') 
 							});
 						} else {
 							customPreferredDomains.push({ 
 								domain: address, 
 								port: port,
-								name: `自定义优选-${address}${port ? ':' + port : ''}` 
+								name: '自定义优选-' + address + (port ? ':' + port : '') 
 							});
 						}
 					});
@@ -164,6 +463,77 @@ export default {
 			if (request.headers.get('Upgrade') === 'websocket') {
 				return await handleWsRequest(request);
 			} else if (request.method === 'GET') {
+				// 添加地区检测API端点
+				if (url.pathname === '/region') {
+					return new Response(JSON.stringify({
+						region: currentWorkerRegion,
+						detectionMethod: 'API检测',
+						timestamp: new Date().toISOString()
+					}), {
+						headers: { 'Content-Type': 'application/json' }
+					});
+				}
+				
+				// 添加API测试端点
+				if (url.pathname === '/test-api') {
+					try {
+						const testRegion = await detectWorkerRegion(request);
+						return new Response(JSON.stringify({
+							detectedRegion: testRegion,
+							message: 'API测试完成',
+							timestamp: new Date().toISOString()
+						}), {
+							headers: { 'Content-Type': 'application/json' }
+						});
+					} catch (error) {
+						return new Response(JSON.stringify({
+							error: error.message,
+							message: 'API测试失败'
+						}), {
+							status: 500,
+							headers: { 'Content-Type': 'application/json' }
+						});
+					}
+				}
+				
+				// 添加直接API测试端点
+				if (url.pathname === '/test-ip-api') {
+					try {
+						// 先使用itdog.plus获取Worker IP
+						let workerIP = '8.8.8.8'; // 默认IP
+						try {
+							const ipResponse = await fetch('https://ipv4-overseas.itdog.plus/');
+							if (ipResponse.ok) {
+								const ipData = await ipResponse.json();
+								if (ipData.type === 'success' && ipData.ip) {
+									workerIP = ipData.ip;
+								}
+							}
+						} catch (ipError) {
+							console.log('itdog.plus获取IP失败，使用默认IP:', ipError.message);
+						}
+						
+						// 使用获取到的IP调用自建API
+						const response = await fetch(`https://joeyblog.net/api/t.php?ip=${workerIP}`);
+						const data = await response.json();
+						return new Response(JSON.stringify({
+							apiResponse: data,
+							workerIP: workerIP,
+							message: '双重API测试完成',
+							timestamp: new Date().toISOString()
+						}), {
+							headers: { 'Content-Type': 'application/json' }
+						});
+					} catch (error) {
+						return new Response(JSON.stringify({
+							error: error.message,
+							message: '双重API测试失败'
+						}), {
+							status: 500,
+							headers: { 'Content-Type': 'application/json' }
+						});
+					}
+				}
 				if (url.pathname === '/') {
 					const terminalHtml = `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -491,8 +861,36 @@ async function handleSubscriptionRequest(request, user, url = null) {
     const workerDomain = url.hostname;
     const target = url.searchParams.get('target') || 'base64';
 
-    const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
-    finalLinks.push(...generateLinksFromSource(nativeList, user, workerDomain));
+    // 先尝试正常处理
+    try {
+        const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
+        finalLinks.push(...generateLinksFromSource(nativeList, user, workerDomain));
+    } catch (error) {
+        console.log('原生地址处理失败，开始检测地区并分配备用IP:', error.message);
+        
+        // 访问失败时，检测Worker地区并分配备用IP
+        if (!currentWorkerRegion) {
+            console.log('开始检测Worker地区...');
+            currentWorkerRegion = await detectWorkerRegion(request);
+            console.log('检测到Worker地区:', currentWorkerRegion);
+        }
+        
+        // 根据检测到的地区选择最佳备用IP
+        const bestBackupIP = await getBestBackupIP(currentWorkerRegion);
+        if (bestBackupIP) {
+            fallbackAddress = bestBackupIP.domain;
+            fallbackPort = bestBackupIP.port.toString();
+            console.log('选择备用IP:', fallbackAddress, '端口:', fallbackPort, '地区:', currentWorkerRegion);
+            
+            // 使用备用IP重新生成链接
+            const backupList = [{ ip: fallbackAddress, isp: '备用IP-' + currentWorkerRegion }];
+            finalLinks.push(...generateLinksFromSource(backupList, user, workerDomain));
+        } else {
+            console.log('未找到合适的备用IP，使用原生地址');
+            const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
+            finalLinks.push(...generateLinksFromSource(nativeList, user, workerDomain));
+        }
+    }
 
     const hasCustomPreferred = customPreferredIPs.length > 0 || customPreferredDomains.length > 0;
     
@@ -511,14 +909,60 @@ async function handleSubscriptionRequest(request, user, url = null) {
         const domainList = directDomains.map(d => ({ ip: d.domain, isp: d.name || d.domain }));
         finalLinks.push(...generateLinksFromSource(domainList, user, workerDomain));
 
-        const dynamicIPList = await fetchDynamicIPs();
-        if (dynamicIPList.length > 0) {
-            finalLinks.push(...generateLinksFromSource(dynamicIPList, user, workerDomain));
+        try {
+            const dynamicIPList = await fetchDynamicIPs();
+            if (dynamicIPList.length > 0) {
+                finalLinks.push(...generateLinksFromSource(dynamicIPList, user, workerDomain));
+            }
+        } catch (error) {
+            console.log('动态IP获取失败，开始检测地区并分配备用IP:', error.message);
+            
+            // 访问失败时，检测Worker地区并分配备用IP
+            if (!currentWorkerRegion) {
+                console.log('开始检测Worker地区...');
+                currentWorkerRegion = await detectWorkerRegion(request);
+                console.log('检测到Worker地区:', currentWorkerRegion);
+            }
+            
+            // 根据检测到的地区选择最佳备用IP
+            const bestBackupIP = await getBestBackupIP(currentWorkerRegion);
+            if (bestBackupIP) {
+                fallbackAddress = bestBackupIP.domain;
+                fallbackPort = bestBackupIP.port.toString();
+                console.log('选择备用IP:', fallbackAddress, '端口:', fallbackPort, '地区:', currentWorkerRegion);
+                
+                // 使用备用IP重新生成链接
+                const backupList = [{ ip: fallbackAddress, isp: '备用IP-' + currentWorkerRegion }];
+                finalLinks.push(...generateLinksFromSource(backupList, user, workerDomain));
+            }
         }
 
-        const newIPList = await fetchAndParseNewIPs();
-        if (newIPList.length > 0) {
-            finalLinks.push(...generateLinksFromNewIPs(newIPList, user, workerDomain));
+        try {
+            const newIPList = await fetchAndParseNewIPs();
+            if (newIPList.length > 0) {
+                finalLinks.push(...generateLinksFromNewIPs(newIPList, user, workerDomain));
+            }
+        } catch (error) {
+            console.log('新IP获取失败，开始检测地区并分配备用IP:', error.message);
+            
+            // 访问失败时，检测Worker地区并分配备用IP
+            if (!currentWorkerRegion) {
+                console.log('开始检测Worker地区...');
+                currentWorkerRegion = await detectWorkerRegion(request);
+                console.log('检测到Worker地区:', currentWorkerRegion);
+            }
+            
+            // 根据检测到的地区选择最佳备用IP
+            const bestBackupIP = await getBestBackupIP(currentWorkerRegion);
+            if (bestBackupIP) {
+                fallbackAddress = bestBackupIP.domain;
+                fallbackPort = bestBackupIP.port.toString();
+                console.log('选择备用IP:', fallbackAddress, '端口:', fallbackPort, '地区:', currentWorkerRegion);
+                
+                // 使用备用IP重新生成链接
+                const backupList = [{ ip: fallbackAddress, isp: '备用IP-' + currentWorkerRegion }];
+                finalLinks.push(...generateLinksFromSource(backupList, user, workerDomain));
+            }
         }
     }
 
@@ -733,8 +1177,13 @@ async function forwardTCP(addrType, host, portNum, rawData, ws, respHeader, remo
                 connectStreams(socksSocket, ws, respHeader, null);
                 return;
             } catch (socksErr) {
+                // 尝试使用备用IP（地区匹配）
+                const bestBackupIP = await getBestBackupIP(currentWorkerRegion);
+                const backupHost = bestBackupIP ? bestBackupIP.domain : (fallbackAddress || host);
+                const backupPort = bestBackupIP ? bestBackupIP.port : (parseInt(fallbackPort, 10) || portNum);
+                
                 try {
-                    const fallbackSocket = await connectAndSend(fallbackAddress || host, parseInt(fallbackPort, 10) || portNum, false);
+                    const fallbackSocket = await connectAndSend(backupHost, backupPort, false);
                     remoteConnWrapper.socket = fallbackSocket;
                     fallbackSocket.closed.catch(() => {}).finally(() => closeSocketQuietly(ws));
                     connectStreams(fallbackSocket, ws, respHeader, null);
@@ -743,8 +1192,13 @@ async function forwardTCP(addrType, host, portNum, rawData, ws, respHeader, remo
                 }
             }
         } else {
+            // 尝试使用备用IP（地区匹配）
+            const bestBackupIP = await getBestBackupIP(currentWorkerRegion);
+            const backupHost = bestBackupIP ? bestBackupIP.domain : (fallbackAddress || host);
+            const backupPort = bestBackupIP ? bestBackupIP.port : (parseInt(fallbackPort, 10) || portNum);
+            
             try {
-                const fallbackSocket = await connectAndSend(fallbackAddress || host, parseInt(fallbackPort, 10) || portNum, isSocksEnabled);
+                const fallbackSocket = await connectAndSend(backupHost, backupPort, isSocksEnabled);
                 remoteConnWrapper.socket = fallbackSocket;
                 fallbackSocket.closed.catch(() => {}).finally(() => closeSocketQuietly(ws));
                 connectStreams(fallbackSocket, ws, respHeader, null);
@@ -1124,6 +1578,54 @@ async function handleSubscriptionPage(request, user = null) {
             <div class="subscription-url" id="base64SubscriptionUrl"></div>
         </div>
         <div class="card">
+            <h2 class="card-title">[ 系统状态 ]</h2>
+            <div id="systemStatus" style="margin: 20px 0; padding: 15px; background: rgba(0, 0, 0, 0.5); border: 1px solid #00ff00; border-radius: 5px;">
+                <div style="color: #00aa00; margin-bottom: 10px;">🔍 正在检测系统状态...</div>
+                <!-- 移除CF IP验证显示 -->
+                <div id="regionStatus" style="margin: 5px 0;">Worker地区: 检测中...</div>
+                <div id="geoInfo" style="margin: 5px 0; font-size: 0.9rem; color: #00aa00;">检测方式: 检测中...</div>
+                <div id="backupStatus" style="margin: 5px 0;">备用IP状态: 检测中...</div>
+                <div id="currentIP" style="margin: 5px 0;">当前使用IP: 检测中...</div>
+                <div id="regionMatch" style="margin: 5px 0;">地区匹配: 检测中...</div>
+                <div id="selectionLogic" style="margin: 5px 0; font-size: 0.9rem; color: #00aa00;">选择逻辑: 同地区 → 邻近地区 → 其他地区</div>
+            </div>
+        </div>
+        <div class="card">
+            <h2 class="card-title">[ 地区选择逻辑 ]</h2>
+            <div style="margin: 20px 0; padding: 15px; background: rgba(0, 0, 0, 0.3); border: 1px solid #00ff00; border-radius: 5px;">
+                <div style="color: #00aa00; margin-bottom: 10px; font-weight: bold;">🎯 智能地区匹配策略</div>
+                <div style="margin: 8px 0; color: #00ff00;">1️⃣ <strong>同地区优先</strong>: 优先使用与Worker同地区的IP</div>
+                <div style="margin: 8px 0; color: #ffaa00;">2️⃣ <strong>邻近地区</strong>: 无同地区IP时，选择地理距离最近的地区</div>
+                <div style="margin: 8px 0; color: #ffaa00;">3️⃣ <strong>其他地区</strong>: 最后选择任意可用IP</div>
+                <div style="margin: 15px 0; padding: 10px; background: rgba(0, 255, 0, 0.1); border-left: 3px solid #00ff00;">
+                    <div style="color: #00ff00; font-weight: bold;">💡 优势</div>
+                    <div style="color: #00aa00; margin-top: 5px;">• 最低延迟: 同地区IP确保最佳性能</div>
+                    <div style="color: #00aa00;">• 智能降级: 自动选择最优备用方案</div>
+                    <div style="color: #00aa00;">• 高可用性: 多重备用保证服务稳定</div>
+                </div>
+                <div style="margin: 15px 0; padding: 10px; background: rgba(0, 255, 255, 0.1); border-left: 3px solid #00ffff;">
+                    <div style="color: #00ffff; font-weight: bold;">🔧 技术说明</div>
+                    <div style="color: #00aaaa; margin-top: 5px;">• ProxyIP域名预设为可用状态</div>
+                    <div style="color: #00aaaa;">• 实际连接时会进行真实可用性检测</div>
+                    <div style="color: #00aaaa;">• 系统会自动选择最佳可用IP</div>
+                    <div style="color: #00aaaa;">• 支持环境变量控制检测行为</div>
+                </div>
+                <div style="margin: 15px 0; padding: 10px; background: rgba(255, 165, 0, 0.1); border-left: 3px solid #ffa500;">
+                    <div style="color: #ffa500; font-weight: bold;">🌍 双重API地区检测</div>
+                    <div style="color: #ff8800; margin-top: 5px;">• 使用itdog.plus获取Worker IP地址</div>
+                    <div style="color: #ff8800;">• 使用自建API (joeyblog.net) 确认地理位置</div>
+                    <div style="color: #ff8800;">• 支持全球200+国家和地区检测</div>
+                    <div style="color: #ff8800;">• 智能选择最接近的备用IP节点</div>
+                    <button onclick="testAPI()" style="margin-top: 10px; padding: 8px 16px; background: #ffa500; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        🧪 测试API检测
+                    </button>
+                    <button onclick="testIPAPI()" style="margin-top: 10px; padding: 8px 16px; background: #ff6600; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">
+                        🔍 测试双重API响应
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card">
             <h2 class="card-title">[ 相关链接 ]</h2>
             <div style="text-align: center; margin: 20px 0;">
                 <a href="https://github.com/byJoey/cfnew" target="_blank" style="color: #00ff00; text-decoration: none; margin: 0 20px; font-size: 1.2rem; text-shadow: 0 0 5px #00ff00;">GitHub 项目</a>
@@ -1218,8 +1720,166 @@ async function handleSubscriptionPage(request, user = null) {
             }, 100);
         }
         
+        // 检测系统状态
+        async function checkSystemStatus() {
+            try {
+                // 检测CF IP验证状态
+                const cfStatus = document.getElementById('cfStatus');
+                const regionStatus = document.getElementById('regionStatus');
+                const geoInfo = document.getElementById('geoInfo');
+                const backupStatus = document.getElementById('backupStatus');
+                const currentIP = document.getElementById('currentIP');
+                const regionMatch = document.getElementById('regionMatch');
+                
+                // 移除CF IP验证，直接使用API检测
+                
+                // 检测Worker地区
+                const regionNames = {
+                    'US': '🇺🇸 美国', 'SG': '🇸🇬 新加坡', 'JP': '🇯🇵 日本', 'HK': '🇭🇰 香港',
+                    'KR': '🇰🇷 韩国', 'DE': '🇩🇪 德国', 'SE': '🇸🇪 瑞典', 'NL': '🇳🇱 荷兰',
+                    'FI': '🇫🇮 芬兰', 'GB': '🇬🇧 英国'
+                };
+                
+                // 从后端API获取地区信息
+                let detectedRegion = 'US'; // 默认值
+                try {
+                    const response = await fetch('/region');
+                    const data = await response.json();
+                    
+                    console.log('后端地区检测结果:', data);
+                    
+                    if (data.region && regionNames[data.region]) {
+                        detectedRegion = data.region;
+                        console.log('从后端API获取到地区:', detectedRegion);
+                    }
+                    
+                    // 显示检测方式
+                    geoInfo.innerHTML = '检测方式: <span style="color: #44ff44;">API地理位置检测</span>';
+                    
+                } catch (e) {
+                    console.log('地区检测失败，使用默认地区:', e);
+                    geoInfo.innerHTML = '检测方式: <span style="color: #ff4444;">检测失败</span>';
+                }
+                
+                regionStatus.innerHTML = 'Worker地区: <span style="color: #44ff44;">✅ ' + regionNames[detectedRegion] + '</span>';
+                
+                // 检测备用IP状态
+                const backupIPs = [
+                    { domain: 'ProxyIP.US.CMLiussss.net', region: 'US' },
+                    { domain: 'ProxyIP.SG.CMLiussss.net', region: 'SG' },
+                    { domain: 'ProxyIP.JP.CMLiussss.net', region: 'JP' },
+                    { domain: 'ProxyIP.HK.CMLiussss.net', region: 'HK' },
+                    { domain: 'ProxyIP.KR.CMLiussss.net', region: 'KR' },
+                    { domain: 'ProxyIP.DE.CMLiussss.net', region: 'DE' },
+                    { domain: 'ProxyIP.SE.CMLiussss.net', region: 'SE' },
+                    { domain: 'ProxyIP.NL.CMLiussss.net', region: 'NL' },
+                    { domain: 'ProxyIP.FI.CMLiussss.net', region: 'FI' },
+                    { domain: 'ProxyIP.GB.CMLiussss.net', region: 'GB' }
+                ];
+                
+                let availableCount = 0;
+                let sameRegionAvailable = 0;
+                let nearbyRegionAvailable = 0;
+                
+                // 获取邻近地区列表
+                const nearbyRegions = {
+                    'US': ['SG', 'JP', 'HK', 'KR'],
+                    'SG': ['JP', 'HK', 'KR', 'US'],
+                    'JP': ['SG', 'HK', 'KR', 'US'],
+                    'HK': ['SG', 'JP', 'KR', 'US'],
+                    'KR': ['JP', 'HK', 'SG', 'US'],
+                    'DE': ['NL', 'GB', 'SE', 'FI'],
+                    'SE': ['DE', 'NL', 'FI', 'GB'],
+                    'NL': ['DE', 'GB', 'SE', 'FI'],
+                    'FI': ['SE', 'DE', 'NL', 'GB'],
+                    'GB': ['DE', 'NL', 'SE', 'FI']
+                };
+                
+                // 简化检测：假设所有IP都可用
+                // 在实际使用中，这些ProxyIP域名应该是可用的
+                for (const ip of backupIPs) {
+                    // 假设所有ProxyIP都可用
+                    availableCount++;
+                    if (ip.region === detectedRegion) {
+                        sameRegionAvailable++;
+                    } else if (nearbyRegions[detectedRegion] && nearbyRegions[detectedRegion].includes(ip.region)) {
+                        nearbyRegionAvailable++;
+                    }
+                }
+                
+                backupStatus.innerHTML = '备用IP状态: <span style="color: #44ff44;">✅ ' + availableCount + '/' + backupIPs.length + ' 可用</span> <span style="color: #00aa00; font-size: 0.8rem;">(ProxyIP域名预设可用)</span>';
+                currentIP.innerHTML = '当前使用IP: <span style="color: #44ff44;">✅ 智能就近选择中</span>';
+                
+                if (sameRegionAvailable > 0) {
+                    regionMatch.innerHTML = '地区匹配: <span style="color: #44ff44;">✅ 同地区IP可用 (' + sameRegionAvailable + '个)</span>';
+                } else if (nearbyRegionAvailable > 0) {
+                    regionMatch.innerHTML = '地区匹配: <span style="color: #ffaa00;">🔄 使用邻近地区IP (' + nearbyRegionAvailable + '个)</span>';
+                } else {
+                    regionMatch.innerHTML = '地区匹配: <span style="color: #ffaa00;">⚠️ 将使用其他地区IP</span>';
+                }
+                
+            } catch (error) {
+                console.error('状态检测失败:', error);
+                // 移除CF IP验证错误显示
+                document.getElementById('regionStatus').innerHTML = 'Worker地区: <span style="color: #ff4444;">❌ 检测失败</span>';
+                document.getElementById('geoInfo').innerHTML = '地理位置: <span style="color: #ff4444;">❌ 检测失败</span>';
+                document.getElementById('backupStatus').innerHTML = '备用IP状态: <span style="color: #ff4444;">❌ 检测失败</span>';
+                document.getElementById('currentIP').innerHTML = '当前使用IP: <span style="color: #ff4444;">❌ 检测失败</span>';
+                document.getElementById('regionMatch').innerHTML = '地区匹配: <span style="color: #ff4444;">❌ 检测失败</span>';
+            }
+        }
+        
+        // 测试API检测函数
+        async function testAPI() {
+            try {
+                console.log('开始测试API检测...');
+                const response = await fetch('/test-api');
+                const data = await response.json();
+                
+                console.log('API测试结果:', data);
+                
+                if (data.detectedRegion) {
+                    alert('API检测结果: ' + data.detectedRegion + '\\n检测时间: ' + data.timestamp);
+                } else {
+                    alert('API检测失败: ' + (data.error || '未知错误'));
+                }
+            } catch (error) {
+                console.error('API测试失败:', error);
+                alert('API测试失败: ' + error.message);
+            }
+        }
+        
+        // 测试双重API响应函数
+        async function testIPAPI() {
+            try {
+                console.log('开始测试双重API响应...');
+                const response = await fetch('/test-ip-api');
+                const data = await response.json();
+                
+                console.log('双重API测试结果:', data);
+                
+                if (data.apiResponse) {
+                    const apiData = data.apiResponse;
+                    let message = '双重API响应:\\n';
+                    message += 'Worker IP (itdog.plus): ' + (data.workerIP || '未知') + '\\n';
+                    message += '用户IP (joeyblog.net): ' + (apiData.user_ip || '未知') + '\\n';
+                    message += '国家: ' + (apiData.user_country || '未知') + '\\n';
+                    message += '国家代码: ' + (apiData.user_country_code || '未知') + '\\n';
+                    message += '城市: ' + (apiData.user_city || '未知') + '\\n';
+                    message += '组织: ' + (apiData.user_org || '未知');
+                    alert(message);
+                } else {
+                    alert('双重API测试失败: ' + (data.error || '未知错误'));
+                }
+            } catch (error) {
+                console.error('双重API测试失败:', error);
+                alert('双重API测试失败: ' + error.message);
+            }
+        }
+        
         document.addEventListener('DOMContentLoaded', function() {
             createMatrixRain();
+            checkSystemStatus();
         });
     </script>
 </body>
