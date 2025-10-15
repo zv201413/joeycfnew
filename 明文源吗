@@ -413,8 +413,12 @@ function parseAddressAndPort(input) {
 export default {
 	async fetch(request, env, ctx) {
 		try {
-			// 先尝试正常处理，如果失败再检测地区并分配备用IP
-			// 这里暂时不进行地区检测，等待访问失败时再处理
+			// 检测Worker运行地区（使用智能检测）
+			if (!currentWorkerRegion) {
+				console.log('开始检测Worker地区...');
+				currentWorkerRegion = await detectWorkerRegion(request);
+				console.log('检测到Worker地区:', currentWorkerRegion);
+			}
 			
 			authToken = (env.u || env.U || authToken).toLowerCase();
 			const subPath = (env.d || env.D || authToken).toLowerCase();
