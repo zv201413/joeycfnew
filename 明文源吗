@@ -141,17 +141,52 @@ async function detectWorkerRegion(request) {
             workerIP = '8.8.8.8';
         }
         
-        // 使用自建API进行检测，传递获取到的IP参数
-        const apis = [
-            `https://joeyblog.net/api/t.php?ip=${workerIP}`
-        ];
+        // 由于joeyblog.net的API必须使用备用IP，我们需要先根据itdog.plus的响应进行初步地区判断
+        // 然后选择备用IP，再用备用IP访问joeyblog.net的API进行确认
+        let preliminaryRegion = 'US'; // 默认地区
         
-        for (const api of apis) {
+        // 根据itdog.plus的地址信息进行初步地区判断
+        try {
+            const ipResponse = await fetch('https://ipv4-overseas.itdog.plus/');
+            if (ipResponse.ok) {
+                const ipData = await ipResponse.json();
+                if (ipData.type === 'success' && ipData.address) {
+                    console.log('itdog.plus地址信息:', ipData.address);
+                    // 解析地址信息，格式如：美国/圣何塞/egihosting.com
+                    const addressParts = ipData.address.split('/');
+                    if (addressParts.length >= 1) {
+                        const countryName = addressParts[0];
+                        console.log('从itdog.plus解析到国家:', countryName);
+                        
+                        // 国家名称到地区代码的映射
+                        const countryNameToRegion = {
+                            '美国': 'US', '新加坡': 'SG', '日本': 'JP',
+                            '香港': 'HK', '韩国': 'KR', '德国': 'DE',
+                            '瑞典': 'SE', '荷兰': 'NL', '芬兰': 'FI', '英国': 'GB',
+                            '中国': 'HK', '台湾': 'HK', '澳大利亚': 'SG', '加拿大': 'US',
+                            '法国': 'DE', '意大利': 'DE', '西班牙': 'DE', '瑞士': 'DE',
+                            '奥地利': 'DE', '比利时': 'NL', '丹麦': 'SE', '挪威': 'SE', '爱尔兰': 'GB'
+                        };
+                        
+                        preliminaryRegion = countryNameToRegion[countryName] || 'US';
+                        console.log('初步判断地区:', preliminaryRegion);
+                    }
+                }
+            }
+        } catch (error) {
+            console.log('itdog.plus地址解析失败，使用默认地区:', error.message);
+        }
+        
+        // 根据初步地区判断选择备用IP
+        const bestBackupIP = await getBestBackupIP(preliminaryRegion);
+        if (bestBackupIP) {
+            console.log('选择备用IP用于API调用:', bestBackupIP.domain);
+            
+            // 使用备用IP访问joeyblog.net的API
+            const apiUrl = `https://joeyblog.net/api/t.php?ip=${workerIP}`;
             try {
-                console.log('尝试API:', api);
-                // 重要：访问API时必须直连，不能使用备用IP
-                // 使用原生fetch确保直连，不经过任何代理
-                const response = await fetch(api, {
+                console.log('使用备用IP访问API:', apiUrl);
+                const response = await fetch(apiUrl, {
                     method: 'GET',
                     headers: {
                         'User-Agent': 'Mozilla/5.0 (compatible; CF-Worker/1.0)',
@@ -162,16 +197,16 @@ async function detectWorkerRegion(request) {
                 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('API响应:', JSON.stringify(data, null, 2));
+                    console.log('joeyblog.net API响应:', JSON.stringify(data, null, 2));
                     
-                    // 解析自建API的响应格式
+                    // 解析joeyblog.net的响应格式
                     let countryCode = null;
                     
                     if (data.user_country_code) {
                         countryCode = data.user_country_code.toUpperCase();
-                        console.log('从自建API获取countryCode:', countryCode);
+                        console.log('从joeyblog.net获取countryCode:', countryCode);
                     } else if (data.user_country) {
-                        console.log('从自建API获取country:', data.user_country);
+                        console.log('从joeyblog.net获取country:', data.user_country);
                         // 如果是国家名称，需要转换
                         const countryNameToCode = {
                             'United States': 'US', 'Singapore': 'SG', 'Japan': 'JP',
@@ -181,7 +216,7 @@ async function detectWorkerRegion(request) {
                         countryCode = countryNameToCode[data.user_country] || data.user_country;
                         console.log('转换后的国家代码:', countryCode);
                     } else {
-                        console.log('自建API响应失败:', data);
+                        console.log('joeyblog.net API响应失败:', data);
                     }
                     
                     if (countryCode) {
@@ -207,28 +242,30 @@ async function detectWorkerRegion(request) {
                         console.log('国家代码:', countryCode, '映射到地区:', countryToRegion[countryCode]);
                         
                         if (countryToRegion[countryCode]) {
-                            console.log('从API检测到地区:', countryToRegion[countryCode]);
+                            console.log('从joeyblog.net API检测到地区:', countryToRegion[countryCode]);
                             return countryToRegion[countryCode];
                         } else {
-                            console.log('未找到对应的地区映射，国家代码:', countryCode, '可用映射:', Object.keys(countryToRegion));
-                            // 如果找不到映射，使用默认地区
-                            console.log('使用默认地区US');
-                            return 'US';
+                            console.log('未找到对应的地区映射，使用初步判断地区:', preliminaryRegion);
+                            return preliminaryRegion;
                         }
                     } else {
-                        console.log('未能解析出国家代码，继续尝试下一个API');
+                        console.log('未能解析出国家代码，使用初步判断地区:', preliminaryRegion);
+                        return preliminaryRegion;
                     }
                 } else {
-                    console.log('API响应失败:', response.status, response.statusText);
+                    console.log('joeyblog.net API响应失败:', response.status, response.statusText);
+                    console.log('使用初步判断地区:', preliminaryRegion);
+                    return preliminaryRegion;
                 }
             } catch (apiError) {
-                console.log('API检测失败:', api, apiError.message);
-                continue; // 尝试下一个API
+                console.log('joeyblog.net API调用失败:', apiError.message);
+                console.log('使用初步判断地区:', preliminaryRegion);
+                return preliminaryRegion;
             }
+        } else {
+            console.log('未找到合适的备用IP，使用初步判断地区:', preliminaryRegion);
+            return preliminaryRegion;
         }
-        
-        console.log('所有API检测失败，使用默认值US');
-        return 'US';
         
     } catch (error) {
         console.error('地区检测失败:', error);
@@ -1611,16 +1648,16 @@ async function handleSubscriptionPage(request, user = null) {
                     <div style="color: #00aaaa;">• 支持环境变量控制检测行为</div>
                 </div>
                 <div style="margin: 15px 0; padding: 10px; background: rgba(255, 165, 0, 0.1); border-left: 3px solid #ffa500;">
-                    <div style="color: #ffa500; font-weight: bold;">🌍 双重API地区检测</div>
-                    <div style="color: #ff8800; margin-top: 5px;">• 使用itdog.plus获取Worker IP地址</div>
-                    <div style="color: #ff8800;">• 使用自建API (joeyblog.net) 确认地理位置</div>
-                    <div style="color: #ff8800;">• 支持全球200+国家和地区检测</div>
-                    <div style="color: #ff8800;">• 智能选择最接近的备用IP节点</div>
+                    <div style="color: #ffa500; font-weight: bold;">🌍 智能地区检测</div>
+                    <div style="color: #ff8800; margin-top: 5px;">• 使用itdog.plus进行初步地区判断</div>
+                    <div style="color: #ff8800;">• 根据初步判断选择备用IP</div>
+                    <div style="color: #ff8800;">• 使用备用IP访问joeyblog.net确认位置</div>
+                    <div style="color: #ff8800;">• 智能回退机制确保检测成功</div>
                     <button onclick="testAPI()" style="margin-top: 10px; padding: 8px 16px; background: #ffa500; color: white; border: none; border-radius: 4px; cursor: pointer;">
                         🧪 测试API检测
                     </button>
                     <button onclick="testIPAPI()" style="margin-top: 10px; padding: 8px 16px; background: #ff6600; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">
-                        🔍 测试双重API响应
+                        🔍 测试智能检测
                     </button>
                 </div>
             </div>
