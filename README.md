@@ -25,7 +25,7 @@
 | 变量名 | 值 | 说明 |
 | :--- | :--- | :--- |
 | `u` | `你的 UUID` | **必需**。 |
-| `p` | `proxyip` | **可选**但强烈推荐，填写一个稳定的用来访问 Cloudflare IP 可以用 ProxyIP.cmliussss.net CM提供的公益项目 在次感谢。 |
+| `p` | `proxyip` | **可选**。 |
 | `s` | `你的SOCKS5地址` | **可选**。用于将所有出站流量通过 SOCKS5 代理转发，格式为 `user:pass@host:port` 或 `host:port`。 |
 | `d` | `你的订阅地址` | **可选**。不填就是/你的uuid |
 | `yx` | `自定义优选IP/域名` | **可选**。自定义优选IP和域名，支持端口，格式：`1.1.1.1:8080,2.2.2.2,example.com:8443`。当设置此变量时，将只使用原生地址和自定义优选，不生成默认优选。 |
@@ -62,7 +62,8 @@
 ###  致谢
 
   * 本项目基于 [zizifn/edgetunnel](https://github.com/zizifn/edgetunnel) 修改，感谢原作者的贡献。
-
+  * 本项目内置ProxyIP 来自CM [[cmliu](https://github.com/cmliu)) ，感谢作者的贡献。
+  * 本项目反代IP来着前端独苗kejiland 来自CM [[qwer-search](https://github.com/qwer-search)) ，感谢作者的贡献。
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=byJoey/cfnew&type=Timeline)](https://www.star-history.com/#byJoey/cfnew&Timeline&LogScale)
