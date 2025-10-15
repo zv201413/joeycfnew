@@ -63,6 +63,7 @@
 
   * 本项目基于 [zizifn/edgetunnel](https://github.com/zizifn/edgetunnel) 修改，感谢原作者的贡献。
   * 本项目内置ProxyIP 来自CM [[cmliu](https://github.com/cmliu)) ，感谢作者的贡献。
+  * 本项目反代IP来着前端独苗kejiland 来自CM [[qwer-search](https://github.com/qwer-search)) ，感谢作者的贡献。
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=byJoey/cfnew&type=Timeline)](https://www.star-history.com/#byJoey/cfnew&Timeline&LogScale)
