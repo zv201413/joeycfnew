@@ -97,23 +97,7 @@ function isValidIP(ip) {
 
 async function detectWorkerRegion(request) {
     try {
-        console.log('🔍 开始地区检测...');
-        
-        // 获取Cloudflare内置信息
-        const cfInfo = {
-            country: request.cf?.country,
-            region: request.cf?.region,
-            city: request.cf?.city,
-            timezone: request.cf?.timezone,
-            asn: request.cf?.asn,
-            asOrganization: request.cf?.asOrganization,
-            colo: request.cf?.colo
-        };
-        
-        console.log('📊 Cloudflare信息:', JSON.stringify(cfInfo, null, 2));
-        
         const cfCountry = request.cf?.country;
-        console.log('🌍 检测到国家代码:', cfCountry || '未知');
         
         if (cfCountry) {
             const countryToRegion = {
@@ -124,26 +108,14 @@ async function detectWorkerRegion(request) {
                 'AT': 'DE', 'BE': 'NL', 'DK': 'SE', 'NO': 'SE', 'IE': 'GB'
             };
             
-            const detectedRegion = countryToRegion[cfCountry];
-            console.log('🎯 国家映射结果:', cfCountry + ' -> ' + (detectedRegion || '未映射'));
-            
-            if (detectedRegion) {
-                console.log('✅ 地区检测成功:', detectedRegion);
-                return detectedRegion;
-            } else {
-                console.log('⚠️ 国家代码未在映射表中找到，使用默认地区');
+            if (countryToRegion[cfCountry]) {
+                return countryToRegion[cfCountry];
             }
-        } else {
-            console.log('❌ 未获取到国家代码，使用默认地区');
         }
         
-        // 默认返回香港
-        console.log('🔄 使用默认地区: HK');
         return 'HK';
         
     } catch (error) {
-        console.error('❌ 地区检测失败:', error);
-        console.error('📍 错误堆栈:', error.stack);
         return 'HK';
     }
 }
@@ -396,93 +368,7 @@ export default {
 					}
 				}
 				
-				if (url.pathname === '/test-ip-api') {
-					try {
-						// 使用内置方法获取Worker信息
-						const cfInfo = {
-							country: request.cf?.country || '未知',
-							region: request.cf?.region || '未知',
-							city: request.cf?.city || '未知',
-							timezone: request.cf?.timezone || '未知',
-							asn: request.cf?.asn || '未知',
-							asOrganization: request.cf?.asOrganization || '未知',
-							colo: request.cf?.colo || '未知'
-						};
-						
-						const workerIP = request.headers.get('CF-Connecting-IP') || '未知';
-						const detectedRegion = await detectWorkerRegion(request);
-						
-						return new Response(JSON.stringify({
-							cfInfo: cfInfo,
-							workerIP: workerIP || '未知',
-							detectedRegion: detectedRegion,
-							message: '内置检测完成（无需外部API）',
-							timestamp: new Date().toISOString()
-						}), {
-							headers: { 'Content-Type': 'application/json' }
-						});
-					} catch (error) {
-						return new Response(JSON.stringify({
-							error: error.message,
-							message: '内置检测失败'
-						}), {
-							status: 500,
-							headers: { 'Content-Type': 'application/json' }
-						});
-					}
-				}
 				
-				if (url.pathname === '/debug') {
-					try {
-						console.log('🐛 调试模式启动...');
-						
-						// 获取所有可用的调试信息
-						const debugInfo = {
-							requestInfo: {
-								url: request.url,
-								method: request.method,
-								headers: Object.fromEntries(request.headers.entries()),
-								cf: request.cf
-							},
-							cfDetails: {
-								country: request.cf?.country,
-								region: request.cf?.region,
-								city: request.cf?.city,
-								timezone: request.cf?.timezone,
-								asn: request.cf?.asn,
-								asOrganization: request.cf?.asOrganization,
-								colo: request.cf?.colo,
-								continent: request.cf?.continent,
-								latitude: request.cf?.latitude,
-								longitude: request.cf?.longitude,
-								postalCode: request.cf?.postalCode,
-								regionCode: request.cf?.regionCode,
-								subdivision: request.cf?.subdivision,
-								subdivisionCode: request.cf?.subdivisionCode
-							},
-							detectionResult: await detectWorkerRegion(request),
-							backupIPs: backupIPs.length,
-							regionMapping: Object.keys(regionMapping),
-							timestamp: new Date().toISOString()
-						};
-						
-						console.log('📋 调试信息收集完成');
-						
-						return new Response(JSON.stringify(debugInfo, null, 2), {
-							headers: { 'Content-Type': 'application/json' }
-						});
-					} catch (error) {
-						console.error('🐛 调试模式错误:', error);
-						return new Response(JSON.stringify({
-							error: error.message,
-							stack: error.stack,
-							message: '调试模式失败'
-						}), {
-							status: 500,
-							headers: { 'Content-Type': 'application/json' }
-						});
-					}
-				}
 				if (url.pathname === '/') {
 					const terminalHtml = `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -1501,8 +1387,6 @@ async function handleSubscriptionPage(request, user = null) {
         <div class="card">
             <h2 class="card-title">[ 快速获取 ]</h2>
             <button class="generate-btn" onclick="getBase64Subscription()">获取订阅链接</button>
-            <button class="generate-btn" onclick="testIPAPI()">测试检测</button>
-            <button class="generate-btn" onclick="debugInfo()">🐛 调试信息</button>
             <div class="subscription-url" id="base64SubscriptionUrl"></div>
         </div>
         <div class="card">
@@ -1735,79 +1619,6 @@ async function handleSubscriptionPage(request, user = null) {
             }
         }
         
-        async function testIPAPI() {
-            try {
-                const response = await fetch('/test-ip-api');
-                const data = await response.json();
-                
-                
-                if (data.cfInfo) {
-                    const cfData = data.cfInfo;
-                    let message = '🔍 内置检测结果:\\n';
-                    message += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n';
-                    message += '🌐 Worker IP: ' + (data.workerIP || '未知') + '\\n';
-                    message += '🎯 检测地区: ' + (data.detectedRegion || '未知') + '\\n';
-                    message += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n';
-                    message += '📍 地理位置信息:\\n';
-                    message += '   国家: ' + (cfData.country || '未知') + '\\n';
-                    message += '   省份/州: ' + (cfData.region || '未知') + '\\n';
-                    message += '   城市: ' + (cfData.city || '未知') + '\\n';
-                    message += '   时区: ' + (cfData.timezone || '未知') + '\\n';
-                    message += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n';
-                    message += '🏢 网络信息:\\n';
-                    message += '   ASN: ' + (cfData.asn || '未知') + '\\n';
-                    message += '   组织: ' + (cfData.asOrganization || '未知') + '\\n';
-                    message += '   数据中心: ' + (cfData.colo || '未知') + '\\n';
-                    message += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n';
-                    message += '⏰ 检测时间: ' + (data.timestamp || '未知');
-                    alert(message);
-                } else {
-                    alert('❌ 内置检测失败: ' + (data.error || '未知错误'));
-                }
-            } catch (error) {
-                console.error('双重API测试失败:', error);
-                alert('双重API测试失败: ' + error.message);
-            }
-        }
-        
-        async function debugInfo() {
-            try {
-                const response = await fetch('/debug');
-                const data = await response.json();
-                
-                console.log('🐛 完整调试信息:', data);
-                
-                let message = '🐛 完整调试信息:\\n';
-                message += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n';
-                message += '🌍 检测结果: ' + (data.detectionResult || '未知') + '\\n';
-                message += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n';
-                message += '📍 详细地理位置:\\n';
-                message += '   国家: ' + (data.cfDetails?.country || '未知') + '\\n';
-                message += '   省份: ' + (data.cfDetails?.region || '未知') + '\\n';
-                message += '   城市: ' + (data.cfDetails?.city || '未知') + '\\n';
-                message += '   时区: ' + (data.cfDetails?.timezone || '未知') + '\\n';
-                message += '   纬度: ' + (data.cfDetails?.latitude || '未知') + '\\n';
-                message += '   经度: ' + (data.cfDetails?.longitude || '未知') + '\\n';
-                message += '   邮编: ' + (data.cfDetails?.postalCode || '未知') + '\\n';
-                message += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n';
-                message += '🏢 网络详细信息:\\n';
-                message += '   ASN: ' + (data.cfDetails?.asn || '未知') + '\\n';
-                message += '   组织: ' + (data.cfDetails?.asOrganization || '未知') + '\\n';
-                message += '   数据中心: ' + (data.cfDetails?.colo || '未知') + '\\n';
-                message += '   大洲: ' + (data.cfDetails?.continent || '未知') + '\\n';
-                message += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n';
-                message += '📊 系统信息:\\n';
-                message += '   备用IP数量: ' + (data.backupIPs || '未知') + '\\n';
-                message += '   支持地区: ' + (data.regionMapping?.join(', ') || '未知') + '\\n';
-                message += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n';
-                message += '⏰ 调试时间: ' + (data.timestamp || '未知');
-                
-                alert(message);
-            } catch (error) {
-                console.error('🐛 调试信息获取失败:', error);
-                alert('🐛 调试信息获取失败: ' + error.message);
-            }
-        }
         
         document.addEventListener('DOMContentLoaded', function() {
             createMatrixRain();
