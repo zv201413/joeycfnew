@@ -97,52 +97,100 @@ function isValidIP(ip) {
 
 async function detectWorkerRegion(request) {
     try {
-        const apiUrl = `https://api.vore.top/api/IPdata?ip=`;
-        const response = await fetch(apiUrl, {
-            method: 'GET',
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (compatible; CF-Worker/1.0)',
-                'Accept': 'application/json'
-            },
-            signal: AbortSignal.timeout(5000)
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            let countryCode = null;
+        let workerIP = null;
+        try {
+            const ipResponse = await fetch('https://ipv4-overseas.itdog.plus/', {
+                method: 'GET',
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (compatible; CF-Worker/1.0)',
+                    'Accept': 'application/json'
+                },
+                signal: AbortSignal.timeout(5000)
+            });
             
-            if (data.ipdata && data.ipdata.info1) {
-                const countryNameToCode = {
-                    '美国': 'US', '新加坡': 'SG', '日本': 'JP',
-                    '香港': 'HK', '韩国': 'KR', '德国': 'DE',
-                    '瑞典': 'SE', '荷兰': 'NL', '芬兰': 'FI', '英国': 'GB'
-                };
-                countryCode = countryNameToCode[data.ipdata.info1] || data.ipdata.info1;
+            if (ipResponse.ok) {
+                const ipData = await ipResponse.json();
+                if (ipData.type === 'success' && ipData.ip) {
+                    workerIP = ipData.ip;
+                } else {
+                    workerIP = '8.8.8.8';
+                }
+            } else {
+                workerIP = '8.8.8.8';
             }
-            
-            if (countryCode) {
-                const countryToRegion = {
-                    'US': 'US', 'SG': 'SG', 'JP': 'JP', 'HK': 'HK', 'KR': 'KR',
-                    'DE': 'DE', 'SE': 'SE', 'NL': 'NL', 'FI': 'FI', 'GB': 'GB',
-                    'CN': 'HK', 'TW': 'HK', 'AU': 'SG', 'CA': 'US',
-                    'FR': 'DE', 'IT': 'DE', 'ES': 'DE', 'CH': 'DE',
-                    'AT': 'DE', 'BE': 'NL', 'DK': 'SE', 'NO': 'SE', 'IE': 'GB'
-                };
+        } catch (error) {
+            workerIP = '8.8.8.8';
+        }
+        
+        const bestBackupIP = await getBestBackupIP('HK');
+        if (bestBackupIP) {
+            const apiUrl = `https://api.vore.top/api/IPdata?ip=${workerIP}`;
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (compatible; CF-Worker/1.0)',
+                        'Accept': 'application/json'
+                    },
+                    signal: AbortSignal.timeout(5000)
+                });
                 
-                if (countryToRegion[countryCode]) {
-                    return countryToRegion[countryCode];
+                if (response.ok) {
+                    const data = await response.json();
+                    let countryCode = null;
+                    
+                    if (data.ipdata && data.ipdata.info1) {
+                        const countryNameToCode = {
+                            '美国': 'US', '新加坡': 'SG', '日本': 'JP',
+                            '香港': 'HK', '韩国': 'KR', '德国': 'DE',
+                            '瑞典': 'SE', '荷兰': 'NL', '芬兰': 'FI', '英国': 'GB',
+                            'United States': 'US', 'Singapore': 'SG', 'Japan': 'JP',
+                            'Hong Kong': 'HK', 'South Korea': 'KR', 'Germany': 'DE',
+                            'Sweden': 'SE', 'Netherlands': 'NL', 'Finland': 'FI', 'United Kingdom': 'GB'
+                        };
+                        countryCode = countryNameToCode[data.ipdata.info1] || data.ipdata.info1;
+                    } else if (data.adcode && data.adcode.p) {
+                        const countryNameToCode = {
+                            '美国': 'US', '新加坡': 'SG', '日本': 'JP',
+                            '香港': 'HK', '韩国': 'KR', '德国': 'DE',
+                            '瑞典': 'SE', '荷兰': 'NL', '芬兰': 'FI', '英国': 'GB',
+                            'United States': 'US', 'Singapore': 'SG', 'Japan': 'JP',
+                            'Hong Kong': 'HK', 'South Korea': 'KR', 'Germany': 'DE',
+                            'Sweden': 'SE', 'Netherlands': 'NL', 'Finland': 'FI', 'United Kingdom': 'GB'
+                        };
+                        countryCode = countryNameToCode[data.adcode.p] || data.adcode.p;
+                    }
+                    
+                    if (countryCode) {
+                        const countryToRegion = {
+                            'US': 'US', 'SG': 'SG', 'JP': 'JP', 'HK': 'HK', 'KR': 'KR',
+                            'DE': 'DE', 'SE': 'SE', 'NL': 'NL', 'FI': 'FI', 'GB': 'GB',
+                            'CN': 'HK', 'TW': 'HK', 'AU': 'SG', 'CA': 'US',
+                            'FR': 'DE', 'IT': 'DE', 'ES': 'DE', 'CH': 'DE',
+                            'AT': 'DE', 'BE': 'NL', 'DK': 'SE', 'NO': 'SE', 'IE': 'GB'
+                        };
+                        
+                        if (countryToRegion[countryCode]) {
+                            return countryToRegion[countryCode];
+                        } else {
+                            return 'HK';
+                        }
+                    } else {
+                        return 'HK';
+                    }
                 } else {
                     return 'HK';
                 }
-            } else {
+            } catch (apiError) {
                 return 'HK';
             }
         } else {
             return 'HK';
         }
+        
     } catch (error) {
         console.error('地区检测失败:', error);
-        return 'HK';
+        return 'US';
     }
 }
 
@@ -393,13 +441,26 @@ export default {
 					}
 				}
 				
-                if (url.pathname === '/test-ip-api') {
+				if (url.pathname === '/test-ip-api') {
 					try {
-                        const response = await fetch(`https://api.vore.top/api/IPdata?ip=`);
+						let workerIP = '8.8.8.8'; // 默认IP
+						try {
+							const ipResponse = await fetch('https://ipv4-overseas.itdog.plus/');
+							if (ipResponse.ok) {
+								const ipData = await ipResponse.json();
+								if (ipData.type === 'success' && ipData.ip) {
+									workerIP = ipData.ip;
+								}
+							}
+						} catch (ipError) {
+						}
+						
+                        const response = await fetch(`https://api.vore.top/api/IPdata?ip=${workerIP}`);
 						const data = await response.json();
 						return new Response(JSON.stringify({
 							apiResponse: data,
-							message: 'API测试完成',
+							workerIP: workerIP,
+							message: '双重API测试完成',
 							timestamp: new Date().toISOString()
 						}), {
 							headers: { 'Content-Type': 'application/json' }
@@ -407,7 +468,7 @@ export default {
 					} catch (error) {
 						return new Response(JSON.stringify({
 							error: error.message,
-							message: 'API测试失败'
+							message: '双重API测试失败'
 						}), {
 							status: 500,
 							headers: { 'Content-Type': 'application/json' }
@@ -1672,19 +1733,20 @@ async function handleSubscriptionPage(request, user = null) {
                 
                 if (data.apiResponse) {
                     const apiData = data.apiResponse;
-                    let message = 'API响应:\\n';
-                    message += '用户IP (api.vore.top): ' + (apiData.ipinfo && apiData.ipinfo.text || '未知') + '\\n';
-                    message += '国家: ' + (apiData.ipdata && apiData.ipdata.info1 || '未知') + '\\n';
-                    message += '地区: ' + (apiData.ipdata && apiData.ipdata.info2 || '未知') + '\\n';
-                    message += '城市: ' + (apiData.ipdata && apiData.ipdata.info3 || '未知') + '\\n';
-                    message += 'ISP: ' + (apiData.ipdata && apiData.ipdata.isp || '未知');
+                    let message = '双重API响应:\\n';
+                    message += 'Worker IP (itdog.plus): ' + (data.workerIP || '未知') + '\\n';
+                    message += '用户IP (api.vore.top): ' + (apiData.ipinfo?.text || '未知') + '\\n';
+                    message += '国家: ' + (apiData.ipdata?.info1 || '未知') + '\\n';
+                    message += '省份/州: ' + (apiData.ipdata?.info2 || '未知') + '\\n';
+                    message += '城市: ' + (apiData.ipdata?.info3 || '未知') + '\\n';
+                    message += 'ISP: ' + (apiData.ipdata?.isp || '未知');
                     alert(message);
                 } else {
-                    alert('API测试失败: ' + (data.error || '未知错误'));
+                    alert('双重API测试失败: ' + (data.error || '未知错误'));
                 }
             } catch (error) {
-                console.error('API测试失败:', error);
-                alert('API测试失败: ' + error.message);
+                console.error('双重API测试失败:', error);
+                alert('双重API测试失败: ' + error.message);
             }
         }
         
