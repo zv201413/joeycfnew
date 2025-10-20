@@ -7,12 +7,13 @@ let socks5Config = '';
 let customPreferredIPs = [];
 let customPreferredDomains = [];
 let enableSocksDowngrade = false;
-let disablePort80 = false;
+let disableNonTLS = false;
 let disablePreferred = false;
 
 let enableRegionMatching = true;
 let currentWorkerRegion = '';
 let manualWorkerRegion = '';
+let preferredIPsURL = '';
 
 // KV存储相关变量
 let kvStore = null;
@@ -388,15 +389,19 @@ export default {
 				enableSocksDowngrade = true;
 			}
 
-			const dkbyControl = env.dkby || env.DKBY;
+			// 优先使用KV配置，然后使用环境变量
+			const dkbyControl = getConfigValue('dkby', env.dkby || env.DKBY);
 			if (dkbyControl && dkbyControl.toLowerCase() === 'yes') {
-				disablePort80 = true;
+				disableNonTLS = true;
 			}
 
 			const yxbyControl = env.yxby || env.YXBY;
 			if (yxbyControl && yxbyControl.toLowerCase() === 'yes') {
 				disablePreferred = true;
 			}
+
+			// 优先使用KV配置，然后使用环境变量，如果都没有则使用默认URL
+			preferredIPsURL = getConfigValue('yxURL', env.yxURL || env.YXURL) || 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
 
 			const url = new URL(request.url);
 
@@ -954,7 +959,7 @@ async function handleSubscriptionRequest(request, user, url = null) {
 
 function generateLinksFromSource(list, user, workerDomain) {
     const defaultHttpsPorts = [443];
-    const defaultHttpPorts = disablePort80 ? [] : [80];
+    const defaultHttpPorts = disableNonTLS ? [] : [80];
     const links = [];
     const wsPath = encodeURIComponent('/?ed=2048');
     const proto = atob('dmxlc3M=');
@@ -966,7 +971,8 @@ function generateLinksFromSource(list, user, workerDomain) {
         let httpsPorts, httpPorts;
         if (item.port) {
             httpsPorts = [item.port];
-            httpPorts = disablePort80 && item.port === 80 ? [] : [item.port];
+            // 如果启用了disableNonTLS，跳过非TLS端口（80和8080等）
+            httpPorts = disableNonTLS ? [] : [item.port];
         } else {
             httpsPorts = defaultHttpsPorts;
             httpPorts = defaultHttpPorts;
@@ -1563,6 +1569,11 @@ async function handleSubscriptionPage(request, user = null) {
                         <small style="color: #00aa00; font-size: 0.85rem;">格式: IP:端口#节点名称 或 IP:端口 (无#则使用默认名称)。支持多个，用逗号分隔</small>
                     </div>
                     <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">优选IP来源URL (yxURL):</label>
+                        <input type="text" id="preferredIPsURL" placeholder="默认: https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
+                        <small style="color: #00aa00; font-size: 0.85rem;">自定义优选IP列表来源URL，留空则使用默认地址</small>
+                    </div>
+                    <div style="margin-bottom: 15px;">
                         <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">SOCKS5配置 (s):</label>
                         <input type="text" id="socksConfig" placeholder="例如: user:pass@host:port 或 host:port" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
                         <small style="color: #00aa00; font-size: 0.85rem;">SOCKS5代理地址，用于转发所有出站流量</small>
@@ -1589,12 +1600,12 @@ async function handleSubscriptionPage(request, user = null) {
                         <small style="color: #00aa00; font-size: 0.85rem;">设置为"启用"时：CF直连失败→SOCKS5连接→fallback地址</small>
                     </div>
                     <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">端口控制 (dkby):</label>
+                        <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">TLS控制 (dkby):</label>
                         <select id="portControl" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
-                            <option value="">默认（保留所有端口）</option>
-                            <option value="yes">禁用80端口</option>
+                            <option value="">默认（保留所有节点）</option>
+                            <option value="yes">仅TLS节点</option>
                         </select>
-                        <small style="color: #00aa00; font-size: 0.85rem;">设置为"禁用80端口"时只保留443端口和其他非80端口节点</small>
+                        <small style="color: #00aa00; font-size: 0.85rem;">设置为"仅TLS节点"时只生成带TLS的节点，不生成非TLS节点（如80端口）</small>
                     </div>
                     <div style="margin-bottom: 15px;">
                         <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">优选控制 (yxby):</label>
@@ -1906,6 +1917,7 @@ async function handleSubscriptionPage(request, user = null) {
                 document.getElementById('wkRegion').value = config.wk || '';
                 document.getElementById('customIP').value = config.p || '';
                 document.getElementById('preferredIPs').value = config.yx || '';
+                document.getElementById('preferredIPsURL').value = config.yxURL || '';
                 document.getElementById('socksConfig').value = config.s || '';
                 document.getElementById('regionMatching').value = config.rm || '';
                 document.getElementById('downgradeControl').value = config.qj || '';
@@ -1982,6 +1994,7 @@ async function handleSubscriptionPage(request, user = null) {
                             wk: '',
                             p: '',
                             yx: '',
+                            yxURL: '',
                             s: '',
                             rm: '',
                             qj: '',
@@ -2033,6 +2046,7 @@ async function handleSubscriptionPage(request, user = null) {
                     const configData = {
                         p: document.getElementById('customIP').value,
                         yx: document.getElementById('preferredIPs').value,
+                        yxURL: document.getElementById('preferredIPsURL').value,
                         s: document.getElementById('socksConfig').value
                     };
                     await saveConfig(configData);
@@ -2079,7 +2093,8 @@ function formatIdentifier(arr, offset = 0) {
 }
 
 async function fetchAndParseNewIPs() {
-    const url = "https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt";
+    // 使用配置的URL，如果没有配置则使用默认URL
+    const url = preferredIPsURL || "https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt";
     try {
         const response = await fetch(url);
         if (!response.ok) return [];
