@@ -55,8 +55,9 @@
 4. 访问 `/{你的UUID}` 即可使用图形化配置管理
 
 #### 🔑 API快速开始
-1. **开启API功能**：访问 `/{UUID}` → 找到"允许API管理"→ 选择"开启API管理"→ 保存
-2. **添加单个IP**：
+1. https://github.com/byJoey/yx-tools/releases 优选软件
+2. **开启API功能**：访问 `/{UUID}` → 找到"允许API管理"→ 选择"开启API管理"→ 保存
+3. **添加单个IP**：
 ```bash
 curl -X POST "https://your-worker.workers.dev/{UUID}/api/preferred-ips" \
   -H "Content-Type: application/json" \
