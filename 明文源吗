@@ -982,6 +982,10 @@ async function handleSubscriptionRequest(request, user, url = null) {
 }
 
 function generateLinksFromSource(list, user, workerDomain) {
+    // Cloudflare支持的端口
+    const CF_HTTP_PORTS = [80, 8080, 8880, 2052, 2082, 2086, 2095];
+    const CF_HTTPS_PORTS = [443, 2053, 2083, 2087, 2096, 8443];
+    
     const defaultHttpsPorts = [443];
     const defaultHttpPorts = disableNonTLS ? [] : [80];
     const links = [];
@@ -992,42 +996,61 @@ function generateLinksFromSource(list, user, workerDomain) {
         const nodeNameBase = item.isp.replace(/\s/g, '_');
         const safeIP = item.ip.includes(':') ? `[${item.ip}]` : item.ip;
         
-        let httpsPorts, httpPorts;
+        let portsToGenerate = [];
+        
         if (item.port) {
-            httpsPorts = [item.port];
-            // 如果启用了disableNonTLS，跳过非TLS端口（80和8080等）
-            httpPorts = disableNonTLS ? [] : [item.port];
+            // 有指定端口时，根据端口类型决定生成TLS或非TLS
+            const port = item.port;
+            
+            if (CF_HTTPS_PORTS.includes(port)) {
+                // CF HTTPS端口，只生成TLS节点
+                portsToGenerate.push({ port: port, tls: true });
+            } else if (CF_HTTP_PORTS.includes(port)) {
+                // CF HTTP端口，只生成非TLS节点（除非启用了disableNonTLS）
+                if (!disableNonTLS) {
+                    portsToGenerate.push({ port: port, tls: false });
+                }
+            } else {
+                // 非CF标准端口，只生成TLS节点（HTTP会被CF拦截）
+                portsToGenerate.push({ port: port, tls: true });
+            }
         } else {
-            httpsPorts = defaultHttpsPorts;
-            httpPorts = defaultHttpPorts;
+            // 没有指定端口时，使用默认端口
+            defaultHttpsPorts.forEach(port => {
+                portsToGenerate.push({ port: port, tls: true });
+            });
+            defaultHttpPorts.forEach(port => {
+                portsToGenerate.push({ port: port, tls: false });
+            });
         }
 
-        httpsPorts.forEach(port => {
-            const wsNodeName = `${nodeNameBase}-${port}-WS-TLS`;
-            
-            const wsParams = new URLSearchParams({ 
-                encryption: 'none', 
-                security: 'tls', 
-                sni: workerDomain, 
-                fp: 'chrome', 
-                type: 'ws', 
-                host: workerDomain, 
-                path: wsPath 
-            });
-            links.push(`${proto}://${user}@${safeIP}:${port}?${wsParams.toString()}#${encodeURIComponent(wsNodeName)}`);
-        });
-
-        httpPorts.forEach(port => {
-            const wsNodeName = `${nodeNameBase}-${port}-WS`;
-
-            const wsParams = new URLSearchParams({
-                encryption: 'none',
-                security: 'none',
-                type: 'ws',
-                host: workerDomain,
-                path: wsPath
-            });
-            links.push(`${proto}://${user}@${safeIP}:${port}?${wsParams.toString()}#${encodeURIComponent(wsNodeName)}`);
+        // 生成节点
+        portsToGenerate.forEach(({ port, tls }) => {
+            if (tls) {
+                // TLS节点
+                const wsNodeName = `${nodeNameBase}-${port}-WS-TLS`;
+                const wsParams = new URLSearchParams({ 
+                    encryption: 'none', 
+                    security: 'tls', 
+                    sni: workerDomain, 
+                    fp: 'chrome', 
+                    type: 'ws', 
+                    host: workerDomain, 
+                    path: wsPath 
+                });
+                links.push(`${proto}://${user}@${safeIP}:${port}?${wsParams.toString()}#${encodeURIComponent(wsNodeName)}`);
+            } else {
+                // 非TLS节点
+                const wsNodeName = `${nodeNameBase}-${port}-WS`;
+                const wsParams = new URLSearchParams({
+                    encryption: 'none',
+                    security: 'none',
+                    type: 'ws',
+                    host: workerDomain,
+                    path: wsPath
+                });
+                links.push(`${proto}://${user}@${safeIP}:${port}?${wsParams.toString()}#${encodeURIComponent(wsNodeName)}`);
+            }
         });
     });
     return links;
@@ -2208,14 +2231,36 @@ async function fetchAndParseNewIPs() {
 }
 
 function generateLinksFromNewIPs(list, user, workerDomain) {
+    // Cloudflare支持的端口
+    const CF_HTTP_PORTS = [80, 8080, 8880, 2052, 2082, 2086, 2095];
+    const CF_HTTPS_PORTS = [443, 2053, 2083, 2087, 2096, 8443];
+    
     const links = [];
     const wsPath = encodeURIComponent('/?ed=2048');
     const proto = atob('dmxlc3M=');
     
     list.forEach(item => {
         const nodeName = item.name.replace(/\s/g, '_');
-        const link = `${proto}://${user}@${item.ip}:${item.port}?encryption=none&security=tls&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(nodeName)}`;
-        links.push(link);
+        const port = item.port;
+        
+        if (CF_HTTPS_PORTS.includes(port)) {
+            // CF HTTPS端口，生成TLS节点
+            const wsNodeName = `${nodeName}-${port}-WS-TLS`;
+            const link = `${proto}://${user}@${item.ip}:${port}?encryption=none&security=tls&sni=${workerDomain}&fp=chrome&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
+            links.push(link);
+        } else if (CF_HTTP_PORTS.includes(port)) {
+            // CF HTTP端口，生成非TLS节点（除非启用了disableNonTLS）
+            if (!disableNonTLS) {
+                const wsNodeName = `${nodeName}-${port}-WS`;
+                const link = `${proto}://${user}@${item.ip}:${port}?encryption=none&security=none&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
+                links.push(link);
+            }
+        } else {
+            // 非CF标准端口，只生成TLS节点（HTTP会被CF拦截）
+            const wsNodeName = `${nodeName}-${port}-WS-TLS`;
+            const link = `${proto}://${user}@${item.ip}:${port}?encryption=none&security=tls&sni=${workerDomain}&fp=chrome&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
+            links.push(link);
+        }
     });
     return links;
 }
