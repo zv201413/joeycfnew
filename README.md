@@ -46,12 +46,37 @@
 | `dkby` | `yes` | **可选**。TLS控制，设置为`yes`时只生成TLS节点，不生成非TLS节点（如80端口） |
 | `yxby` | `yes` | **可选**。优选控制，设置为`yes`时关闭所有优选功能，只使用原生地址，不生成优选IP和域名节点 |
 | `rm` | `no` | **可选**。地区匹配控制，设置为`no`时关闭地区智能匹配 |
+| `apiEnabled` | `yes` | **可选**。API管理开关，设置为`yes`时允许通过API动态管理优选IP（默认关闭） |
 
 #### 📦 KV存储设置（可选但推荐）
 1. 在Cloudflare Workers中创建KV命名空间
 2. 在Workers设置中绑定KV命名空间，变量名设为 `C`
 3. 重新部署Workers
 4. 访问 `/{你的UUID}` 即可使用图形化配置管理
+
+#### 🔑 API快速开始
+1. **开启API功能**：访问 `/{UUID}` → 找到"允许API管理"→ 选择"开启API管理"→ 保存
+2. **添加单个IP**：
+```bash
+curl -X POST "https://your-worker.workers.dev/{UUID}/api/preferred-ips" \
+  -H "Content-Type: application/json" \
+  -d '{"ip": "1.2.3.4", "port": 443, "name": "香港节点"}'
+```
+3. **批量添加IP**：
+```bash
+curl -X POST "https://your-worker.workers.dev/{UUID}/api/preferred-ips" \
+  -H "Content-Type: application/json" \
+  -d '[
+    {"ip": "1.2.3.4", "port": 443, "name": "节点1"},
+    {"ip": "5.6.7.8", "port": 8443, "name": "节点2"}
+  ]'
+```
+4. **一键清空**：
+```bash
+curl -X DELETE "https://your-worker.workers.dev/{UUID}/api/preferred-ips" \
+  -H "Content-Type: application/json" \
+  -d '{"all": true}'
+```
 
 ###  新功能
 
@@ -60,6 +85,19 @@
 - **图形化界面**：访问 `/{你的UUID}` 即可使用配置管理界面
 - **实时配置**：无需重新部署，配置立即生效
 - **配置优先级**：KV配置 > 环境变量 > 默认值
+
+#### 🚀 API动态管理（新增）
+- **API管理**：通过RESTful API动态管理优选IP，无需修改代码
+- **批量上报**：支持一次性批量添加多个优选IP
+- **一键清空**：支持清空所有优选IP，快速更新列表
+- **安全开关**：默认关闭，需在图形界面手动开启API功能
+- **自动合并**：API添加的IP与手动配置的yx变量自动合并
+- **实时同步**：API添加的IP立即在配置页面显示
+- **API端点**：
+  - `GET /{UUID}/api/preferred-ips` - 查询优选IP列表
+  - `POST /{UUID}/api/preferred-ips` - 添加优选IP（支持单个/批量）
+  - `DELETE /{UUID}/api/preferred-ips` - 删除优选IP（支持单个/全部）
+
 
 #### 🌍 手动指定地区
 - **地区选择**：支持手动指定Worker地区，覆盖自动检测
