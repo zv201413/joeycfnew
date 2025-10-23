@@ -293,7 +293,8 @@ export default {
 			authToken = (env.u || env.U || authToken).toLowerCase();
 			const subPath = (env.d || env.D || authToken).toLowerCase();
 			
-			const customIP = env.p || env.P;
+			// 优先使用KV配置，然后使用环境变量
+			const customIP = getConfigValue('p', env.p || env.P);
 			let useCustomIP = false;
 			
 			// 检查是否手动指定了wk地区 (优先使用KV配置)
@@ -313,7 +314,8 @@ export default {
 				enableRegionMatching = false;
 			}
 			
-			const envFallback = env.p || env.P;
+			// 使用上面已经读取的customIP，优先使用KV配置
+			const envFallback = customIP;
 			if (envFallback) {
 				const fallbackValue = envFallback.toLowerCase();
 				if (fallbackValue.includes(']:')) {
@@ -850,8 +852,14 @@ async function handleSubscriptionRequest(request, user, url = null) {
     const target = url.searchParams.get('target') || 'base64';
 
     if (currentWorkerRegion === 'CUSTOM') {
-        const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
-        finalLinks.push(...generateLinksFromSource(nativeList, user, workerDomain));
+        // 使用用户设置的自定义ProxyIP
+        if (fallbackAddress) {
+            const customIPList = [{ ip: fallbackAddress, isp: '自定义ProxyIP' }];
+            finalLinks.push(...generateLinksFromSource(customIPList, user, workerDomain));
+        } else {
+            const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
+            finalLinks.push(...generateLinksFromSource(nativeList, user, workerDomain));
+        }
     } else {
         try {
             const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
@@ -1545,7 +1553,7 @@ async function handleSubscriptionPage(request, user = null) {
     <div class="matrix-bg"></div>
     <div class="matrix-rain"></div>
     <div class="matrix-code-rain" id="matrixCodeRain"></div>
-    <div class="matrix-text">代理订阅中心 v1.1</div>
+    <div class="matrix-text">代理订阅中心 v2.0</div>
     <div class="container">
         <div class="header">
             <h1 class="title">代理订阅中心</h1>
