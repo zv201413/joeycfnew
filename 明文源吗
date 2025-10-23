@@ -295,16 +295,12 @@ export default {
 			
 			// 优先使用KV配置，然后使用环境变量
 			const customIP = getConfigValue('p', env.p || env.P);
-			let useCustomIP = false;
 			
 			// 检查是否手动指定了wk地区 (优先使用KV配置)
 			const manualRegion = getConfigValue('wk', env.wk || env.WK);
 			if (manualRegion && manualRegion.trim()) {
 				manualWorkerRegion = manualRegion.trim().toUpperCase();
 				currentWorkerRegion = manualWorkerRegion;
-			} else if (customIP && customIP.trim()) {
-				useCustomIP = true;
-				currentWorkerRegion = 'CUSTOM';
 			} else {
 				currentWorkerRegion = await detectWorkerRegion(request);
 			}
@@ -468,15 +464,7 @@ export default {
 							region: manualRegion.trim().toUpperCase(),
 							detectionMethod: '手动指定地区',
 							manualRegion: manualRegion.trim().toUpperCase(),
-							timestamp: new Date().toISOString()
-						}), {
-							headers: { 'Content-Type': 'application/json' }
-						});
-					} else if (customIP && customIP.trim()) {
-						return new Response(JSON.stringify({
-							region: 'CUSTOM',
-							detectionMethod: '自定义ProxyIP模式',
-							customIP: customIP,
+							customFallback: customIP || null,
 							timestamp: new Date().toISOString()
 						}), {
 							headers: { 'Content-Type': 'application/json' }
@@ -486,6 +474,7 @@ export default {
 						return new Response(JSON.stringify({
 							region: detectedRegion,
 							detectionMethod: 'API检测',
+							customFallback: customIP || null,
 							timestamp: new Date().toISOString()
 						}), {
 							headers: { 'Content-Type': 'application/json' }
@@ -851,20 +840,13 @@ async function handleSubscriptionRequest(request, user, url = null) {
     const workerDomain = url.hostname;
     const target = url.searchParams.get('target') || 'base64';
 
-    if (currentWorkerRegion === 'CUSTOM') {
-        // 使用用户设置的自定义ProxyIP
-        if (fallbackAddress) {
-            const customIPList = [{ ip: fallbackAddress, isp: '自定义ProxyIP' }];
-            finalLinks.push(...generateLinksFromSource(customIPList, user, workerDomain));
-        } else {
-            const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
-            finalLinks.push(...generateLinksFromSource(nativeList, user, workerDomain));
-        }
-    } else {
-        try {
-            const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
-            finalLinks.push(...generateLinksFromSource(nativeList, user, workerDomain));
-        } catch (error) {
+    // p变量只作为fallback地址，不影响订阅生成
+    try {
+        const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
+        finalLinks.push(...generateLinksFromSource(nativeList, user, workerDomain));
+    } catch (error) {
+        // p变量优先级最高，有p就不使用内置ProxyIP
+        if (!fallbackAddress) {
             if (!currentWorkerRegion) {
                 currentWorkerRegion = await detectWorkerRegion(request);
             }
@@ -905,18 +887,20 @@ async function handleSubscriptionRequest(request, user, url = null) {
                 finalLinks.push(...generateLinksFromSource(dynamicIPList, user, workerDomain));
             }
         } catch (error) {
-            
-            if (!currentWorkerRegion) {
-                currentWorkerRegion = await detectWorkerRegion(request);
-            }
-            
-            const bestBackupIP = await getBestBackupIP(currentWorkerRegion);
-            if (bestBackupIP) {
-                fallbackAddress = bestBackupIP.domain;
-                fallbackPort = bestBackupIP.port.toString();
+            // p变量优先级最高，有p就不使用内置ProxyIP
+            if (!fallbackAddress) {
+                if (!currentWorkerRegion) {
+                    currentWorkerRegion = await detectWorkerRegion(request);
+                }
                 
-                const backupList = [{ ip: fallbackAddress, isp: 'ProxyIP-' + currentWorkerRegion }];
-                finalLinks.push(...generateLinksFromSource(backupList, user, workerDomain));
+                const bestBackupIP = await getBestBackupIP(currentWorkerRegion);
+                if (bestBackupIP) {
+                    fallbackAddress = bestBackupIP.domain;
+                    fallbackPort = bestBackupIP.port.toString();
+                    
+                    const backupList = [{ ip: fallbackAddress, isp: 'ProxyIP-' + currentWorkerRegion }];
+                    finalLinks.push(...generateLinksFromSource(backupList, user, workerDomain));
+                }
             }
         }
 
@@ -926,18 +910,20 @@ async function handleSubscriptionRequest(request, user, url = null) {
                 finalLinks.push(...generateLinksFromNewIPs(newIPList, user, workerDomain));
             }
         } catch (error) {
-            
-            if (!currentWorkerRegion) {
-                currentWorkerRegion = await detectWorkerRegion(request);
-            }
-            
-            const bestBackupIP = await getBestBackupIP(currentWorkerRegion);
-            if (bestBackupIP) {
-                fallbackAddress = bestBackupIP.domain;
-                fallbackPort = bestBackupIP.port.toString();
+            // p变量优先级最高，有p就不使用内置ProxyIP
+            if (!fallbackAddress) {
+                if (!currentWorkerRegion) {
+                    currentWorkerRegion = await detectWorkerRegion(request);
+                }
                 
-                const backupList = [{ ip: fallbackAddress, isp: 'ProxyIP-' + currentWorkerRegion }];
-                finalLinks.push(...generateLinksFromSource(backupList, user, workerDomain));
+                const bestBackupIP = await getBestBackupIP(currentWorkerRegion);
+                if (bestBackupIP) {
+                    fallbackAddress = bestBackupIP.domain;
+                    fallbackPort = bestBackupIP.port.toString();
+                    
+                    const backupList = [{ ip: fallbackAddress, isp: 'ProxyIP-' + currentWorkerRegion }];
+                    finalLinks.push(...generateLinksFromSource(backupList, user, workerDomain));
+                }
             }
         }
     }
@@ -1176,10 +1162,17 @@ async function forwardTCP(addrType, host, portNum, rawData, ws, respHeader, remo
                 socksSocket.closed.catch(() => {}).finally(() => closeSocketQuietly(ws));
                 connectStreams(socksSocket, ws, respHeader, null);
                 return;
-            } catch (socksErr) {
-                const bestBackupIP = await getBestBackupIP(currentWorkerRegion);
-                const backupHost = bestBackupIP ? bestBackupIP.domain : (fallbackAddress || host);
-                const backupPort = bestBackupIP ? bestBackupIP.port : (parseInt(fallbackPort, 10) || portNum);
+                } catch (socksErr) {
+                // p变量优先级最高，有p就不使用内置ProxyIP
+                let backupHost, backupPort;
+                if (fallbackAddress) {
+                    backupHost = fallbackAddress;
+                    backupPort = parseInt(fallbackPort, 10) || 443;
+                } else {
+                    const bestBackupIP = await getBestBackupIP(currentWorkerRegion);
+                    backupHost = bestBackupIP ? bestBackupIP.domain : host;
+                    backupPort = bestBackupIP ? bestBackupIP.port : portNum;
+                }
                 
                 try {
                     const fallbackSocket = await connectAndSend(backupHost, backupPort, false);
@@ -1191,9 +1184,16 @@ async function forwardTCP(addrType, host, portNum, rawData, ws, respHeader, remo
                 }
             }
         } else {
-            const bestBackupIP = await getBestBackupIP(currentWorkerRegion);
-            const backupHost = bestBackupIP ? bestBackupIP.domain : (fallbackAddress || host);
-            const backupPort = bestBackupIP ? bestBackupIP.port : (parseInt(fallbackPort, 10) || portNum);
+            // p变量优先级最高，有p就不使用内置ProxyIP
+            let backupHost, backupPort;
+            if (fallbackAddress) {
+                backupHost = fallbackAddress;
+                backupPort = parseInt(fallbackPort, 10) || 443;
+            } else {
+                const bestBackupIP = await getBestBackupIP(currentWorkerRegion);
+                backupHost = bestBackupIP ? bestBackupIP.domain : host;
+                backupPort = bestBackupIP ? bestBackupIP.port : portNum;
+            }
             
             try {
                 const fallbackSocket = await connectAndSend(backupHost, backupPort, isSocksEnabled);
@@ -1609,7 +1609,6 @@ async function handleSubscriptionPage(request, user = null) {
                             <option value="FI">🇫🇮 芬兰</option>
                             <option value="GB">🇬🇧 英国</option>
                         </select>
-                        <small id="wkRegionHint" style="color: #00aa00; font-size: 0.85rem; display: none;">⚠️ 使用自定义ProxyIP时，地区选择已禁用</small>
                     </div>
                     <button type="submit" style="background: rgba(0, 255, 0, 0.15); border: 2px solid #00ff00; padding: 12px 24px; color: #00ff00; font-family: 'Courier New', monospace; font-weight: bold; cursor: pointer; margin-right: 10px; text-shadow: 0 0 8px #00ff00; transition: all 0.4s ease;">保存地区配置</button>
                 </form>
@@ -1803,38 +1802,31 @@ async function handleSubscriptionPage(request, user = null) {
                 let detectedRegion = 'US'; // 默认值
                 let isCustomIPMode = false;
                 let isManualRegionMode = false;
+                
                 try {
                     const response = await fetch('/region');
                     const data = await response.json();
                     
+                    // 检查是否设置了自定义fallback (p变量)
+                    const hasCustomFallback = data.customFallback && data.customFallback.trim();
                     
-                    if (data.region === 'CUSTOM') {
-                        isCustomIPMode = true;
-                        detectedRegion = 'CUSTOM';
-                        
-                        // 获取自定义IP的详细信息
-                        const customIPInfo = data.customIP || '未知';
-                        
-                        geoInfo.innerHTML = '检测方式: <span style="color: #ffaa00;">⚙️ 自定义ProxyIP模式 (p变量启用)</span>';
-                        regionStatus.innerHTML = 'Worker地区: <span style="color: #ffaa00;">🔧 自定义IP模式 (已禁用地区匹配)</span>';
-                        
-                        // 显示自定义IP配置状态，包含具体IP
-                        if (backupStatus) backupStatus.innerHTML = 'ProxyIP状态: <span style="color: #ffaa00;">🔧 使用自定义ProxyIP: ' + customIPInfo + '</span>';
-                        if (currentIP) currentIP.innerHTML = '当前使用IP: <span style="color: #ffaa00;">✅ ' + customIPInfo + ' (p变量配置)</span>';
-                        if (regionMatch) regionMatch.innerHTML = '地区匹配: <span style="color: #ffaa00;">⚠️ 自定义IP模式，地区选择已禁用</span>';
-                        
-                        return; // 提前返回，不执行后续的地区匹配逻辑
-                    } else if (data.detectionMethod === '手动指定地区') {
+                    if (data.detectionMethod === '手动指定地区') {
                         isManualRegionMode = true;
                         detectedRegion = data.region;
                         
                         geoInfo.innerHTML = '检测方式: <span style="color: #44aa44;">手动指定地区</span>';
                         regionStatus.innerHTML = 'Worker地区: <span style="color: #44ff44;">🎯 ' + regionNames[detectedRegion] + ' (手动指定)</span>';
                         
-                        // 显示配置状态而不是检测状态
-                        if (backupStatus) backupStatus.innerHTML = 'ProxyIP状态: <span style="color: #44ff44;">✅ 10/10 可用 (ProxyIP域名预设可用)</span>';
-                        if (currentIP) currentIP.innerHTML = '当前使用IP: <span style="color: #44ff44;">✅ 智能就近选择中</span>';
-                        if (regionMatch) regionMatch.innerHTML = '地区匹配: <span style="color: #44ff44;">✅ 同地区IP可用 (1个)</span>';
+                        // 显示配置状态，如果有p变量则特别标注
+                        if (hasCustomFallback) {
+                            if (backupStatus) backupStatus.innerHTML = 'Fallback状态: <span style="color: #ffaa00;">🔧 使用自定义Fallback (p变量): ' + data.customFallback + '</span>';
+                            if (currentIP) currentIP.innerHTML = '当前使用IP: <span style="color: #44ff44;">✅ 智能就近选择中</span>';
+                            if (regionMatch) regionMatch.innerHTML = '优先级: <span style="color: #ffaa00;">⚠️ p变量优先级最高，不使用内置ProxyIP</span>';
+                        } else {
+                            if (backupStatus) backupStatus.innerHTML = 'ProxyIP状态: <span style="color: #44ff44;">✅ 10/10 可用 (ProxyIP域名预设可用)</span>';
+                            if (currentIP) currentIP.innerHTML = '当前使用IP: <span style="color: #44ff44;">✅ 智能就近选择中</span>';
+                            if (regionMatch) regionMatch.innerHTML = '地区匹配: <span style="color: #44ff44;">✅ 同地区IP可用 (1个)</span>';
+                        }
                         
                         return; // 提前返回，不执行后续的地区匹配逻辑
                     } else if (data.region && regionNames[data.region]) {
@@ -1850,17 +1842,31 @@ async function handleSubscriptionPage(request, user = null) {
                 regionStatus.innerHTML = 'Worker地区: <span style="color: #44ff44;">✅ ' + regionNames[detectedRegion] + '</span>';
                 
                 
-                // 直接显示配置状态，不再进行检测
-                if (backupStatus) {
-                    backupStatus.innerHTML = 'ProxyIP状态: <span style="color: #44ff44;">✅ 10/10 可用 (ProxyIP域名预设可用)</span>';
-                }
-                
-                if (currentIP) {
-                    currentIP.innerHTML = '当前使用IP: <span style="color: #44ff44;">✅ 智能就近选择中</span>';
-                }
-                
-                if (regionMatch) {
-                    regionMatch.innerHTML = '地区匹配: <span style="color: #44ff44;">✅ 同地区IP可用 (1个)</span>';
+                // 直接显示配置状态，如果有p变量则特别标注
+                if (hasCustomFallback) {
+                    if (backupStatus) {
+                        backupStatus.innerHTML = 'Fallback状态: <span style="color: #ffaa00;">🔧 使用自定义Fallback (p变量): ' + hasCustomFallback + '</span>';
+                    }
+                    
+                    if (currentIP) {
+                        currentIP.innerHTML = '当前使用IP: <span style="color: #44ff44;">✅ 智能就近选择中</span>';
+                    }
+                    
+                    if (regionMatch) {
+                        regionMatch.innerHTML = '优先级: <span style="color: #ffaa00;">⚠️ p变量优先级最高，不使用内置ProxyIP</span>';
+                    }
+                } else {
+                    if (backupStatus) {
+                        backupStatus.innerHTML = 'ProxyIP状态: <span style="color: #44ff44;">✅ 10/10 可用 (ProxyIP域名预设可用)</span>';
+                    }
+                    
+                    if (currentIP) {
+                        currentIP.innerHTML = '当前使用IP: <span style="color: #44ff44;">✅ 智能就近选择中</span>';
+                    }
+                    
+                    if (regionMatch) {
+                        regionMatch.innerHTML = '地区匹配: <span style="color: #44ff44;">✅ 同地区IP可用 (1个)</span>';
+                    }
                 }
                 
             } catch (error) {
@@ -1992,43 +1998,8 @@ async function handleSubscriptionPage(request, user = null) {
                 document.getElementById('portControl').value = config.dkby || '';
                 document.getElementById('preferredControl').value = config.yxby || '';
                 
-                // 检查p变量，如果有值则禁用wk地区选择
-                updateWkRegionState();
-                
             } catch (error) {
                 document.getElementById('currentConfig').textContent = '加载配置失败: ' + error.message;
-            }
-        }
-        
-        // 更新wk地区选择的启用/禁用状态
-        function updateWkRegionState() {
-            const customIP = document.getElementById('customIP');
-            const wkRegion = document.getElementById('wkRegion');
-            const wkRegionHint = document.getElementById('wkRegionHint');
-            
-            if (customIP && wkRegion) {
-                const hasCustomIP = customIP.value.trim() !== '';
-                wkRegion.disabled = hasCustomIP;
-                
-                // 添加视觉反馈
-                if (hasCustomIP) {
-                    wkRegion.style.opacity = '0.5';
-                    wkRegion.style.cursor = 'not-allowed';
-                    wkRegion.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-                    // 显示提示信息
-                    if (wkRegionHint) {
-                        wkRegionHint.style.display = 'block';
-                        wkRegionHint.style.color = '#ffaa00';
-                    }
-                } else {
-                    wkRegion.style.opacity = '1';
-                    wkRegion.style.cursor = 'pointer';
-                    wkRegion.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-                    // 隐藏提示信息
-                    if (wkRegionHint) {
-                        wkRegionHint.style.display = 'none';
-                    }
-                }
             }
         }
         
@@ -2062,8 +2033,6 @@ async function handleSubscriptionPage(request, user = null) {
                 if (result.success) {
                     console.log('✅ 保存成功，重新加载配置');
                     await loadCurrentConfig();
-                    // 更新wk地区选择状态
-                    updateWkRegionState();
                     // 保存成功后刷新页面以更新系统状态
                     setTimeout(function() {
                         window.location.reload();
@@ -2119,8 +2088,6 @@ async function handleSubscriptionPage(request, user = null) {
                     
                     if (result.success) {
                         await loadCurrentConfig();
-                        // 更新wk地区选择状态
-                        updateWkRegionState();
                         // 刷新页面以更新系统状态
                         setTimeout(function() {
                             window.location.reload();
@@ -2136,14 +2103,6 @@ async function handleSubscriptionPage(request, user = null) {
             createMatrixRain();
             checkSystemStatus();
             checkKVStatus();
-            
-            // 监听customIP输入框变化，实时更新wk地区选择状态
-            const customIPInput = document.getElementById('customIP');
-            if (customIPInput) {
-                customIPInput.addEventListener('input', function() {
-                    updateWkRegionState();
-                });
-            }
             
             // 绑定表单事件
             const regionForm = document.getElementById('regionForm');
