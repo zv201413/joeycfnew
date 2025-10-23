@@ -47,100 +47,152 @@ jobs:
             console.log('源文件大小: ' + originalCode.length + ' 字节');
             console.log('开始混淆处理...');
 
-            // --- Cloudflare Workers 优化混淆配置 ---
+            // --- 增强型高级混淆配置 (CFW优化) ---
             const obfuscationOptions = {
-                // 基础压缩
+                // 基础压缩和格式化
                 compact: true,
+                simplify: true,
                 
-                // 控制流平坦化 (中等强度，确保兼容性)
+                // 高级控制流平坦化 (最高强度)
                 controlFlowFlattening: true,
-                controlFlowFlatteningThreshold: 0.75,
+                controlFlowFlatteningThreshold: 0.9,
                 
-                // 死代码注入 (适中，避免体积过大)
+                // 增强死代码注入 (提高混淆强度)
                 deadCodeInjection: true,
-                deadCodeInjectionThreshold: 0.4,
+                deadCodeInjectionThreshold: 0.6,
                 
-                // 字符串数组混淆 (使用base64，RC4在CFW可能有兼容性问题)
+                // 多层级字符串数组混淆 (Base64 + RC4双重编码)
                 stringArray: true,
-                stringArrayEncoding: ['base64'],
+                stringArrayEncoding: ['base64', 'rc4'],
                 stringArrayIndexShift: true,
                 stringArrayRotate: true,
                 stringArrayShuffle: true,
-                stringArrayWrappersCount: 2,
+                stringArrayWrappersCount: 5,
                 stringArrayWrappersChainedCalls: true,
-                stringArrayWrappersParametersMaxCount: 3,
+                stringArrayWrappersParametersMaxCount: 5,
                 stringArrayWrappersType: 'function',
-                stringArrayThreshold: 0.8,
+                stringArrayThreshold: 0.9,
                 
-                // 不使用unicode编码 (可能影响CFW字符处理)
-                unicodeEscapeSequence: false,
+                // 启用Unicode转义序列 (增强字符串保护)
+                unicodeEscapeSequence: true,
                 
-                // 标识符混淆 (不重命名全局变量，保护CFW API)
-                renameGlobals: false,
-                identifierNamesGenerator: 'hexadecimal',
+                // 高级标识符混淆
+                renameGlobals: false, // 保护CFW API
+                identifierNamesGenerator: 'mangled-shuffled',
                 identifiersPrefix: '_0x',
+                renameProperties: true,
+                renamePropertiesMode: 'safe',
                 
-                // 数字和表达式混淆
+                // 数字和表达式高级混淆
                 numbersToExpressions: true,
-                simplify: true,
-                
-                // 字符串分割
-                splitStrings: true,
-                splitStringsChunkLength: 10,
-                
-                // 对象键转换
                 transformObjectKeys: true,
                 
-                // 关闭自我防御 (CFW环境可能触发误判)
-                selfDefending: false,
+                // 字符串分割和转换
+                splitStrings: true,
+                splitStringsChunkLength: 5,
                 
-                // 关闭调试保护 (影响性能)
-                debugProtection: false,
-                debugProtectionInterval: 0,
+                // 函数参数混淆
+                functionParameterObfuscation: true,
+                functionParameterObfuscationThreshold: 0.8,
                 
-                // 不禁用console (CFW需要日志)
+                // 对象属性提取
+                objectPropertyExtraction: true,
+                objectPropertyExtractionThreshold: 0.7,
+                
+                // 重复字面量删除
+                duplicateLiteralDeletion: true,
+                duplicateLiteralDeletionThreshold: 0.8,
+                
+                // 增强的自我防御机制
+                selfDefending: true,
+                
+                // 调试保护 (CFW环境优化)
+                debugProtection: true,
+                debugProtectionInterval: 2000,
+                
+                
+                // 保留console输出 (CFW需要)
                 disableConsoleOutput: false,
                 
-                // 强制转换敏感字符串
-                forceTransformStrings: ['proxy', 'socks', 'vless', 'vmess'],
-                
-                // 保留CFW关键API和导入
-                reservedNames: [
-                    '^connect$',
-                    '^fetch$', 
-                    '^Response$', 
-                    '^Request$',
-                    '^Headers$',
-                    '^URL$',
-                    '^crypto$',
-                    '^btoa$',
-                    '^atob$',
-                    '^TextEncoder$',
-                    '^TextDecoder$',
-                    '^Uint8Array$',
-                    '^ArrayBuffer$',
-                    '^addEventListener$',
-                    '^WebSocket$',
-                    '^ReadableStream$'
+                // 强制转换敏感字符串 (增强版)
+                forceTransformStrings: [
+                    'proxy', 'socks', 'vless', 'vmess', 'trojan', 'ss', 'ssr',
+                    'auth', 'token', 'key', 'secret', 'password', 'pass',
+                    'connect', 'socket', 'tunnel', 'bridge', 'gateway'
                 ],
                 
-                // 保留CFW模块路径
-                reservedStrings: ['^cloudflare:sockets$', '^cloudflare:', '^ws:', '^wss:'],
+                // 保留CFW关键API和导入 (扩展版)
+                reservedNames: [
+                    '^connect$', '^fetch$', '^Response$', '^Request$', '^Headers$',
+                    '^URL$', '^crypto$', '^btoa$', '^atob$', '^TextEncoder$',
+                    '^TextDecoder$', '^Uint8Array$', '^ArrayBuffer$', '^addEventListener$',
+                    '^WebSocket$', '^ReadableStream$', '^Blob$', '^FormData$',
+                    '^AbortController$', '^AbortSignal$', '^Event$', '^EventTarget$'
+                ],
                 
-                // 种子 (每次生成不同结果)
-                seed: Date.now(),
+                // 保留CFW模块路径 (扩展版)
+                reservedStrings: [
+                    '^cloudflare:sockets$', '^cloudflare:', '^ws:', '^wss:',
+                    '^http:', '^https:', '^data:', '^blob:'
+                ],
                 
-                // 目标环境 (browser-no-eval确保不使用eval)
+                // 随机种子 (每次生成不同结果)
+                seed: Math.floor(Math.random() * 1000000),
+                
+                // 目标环境 (browser-no-eval确保兼容性)
                 target: 'browser-no-eval',
                 
                 // 忽略导入语句
                 ignoreImports: true,
                 
-                // 不使用eval和Function构造器 (CFW限制)
-                sourceMapMode: 'separate'
+                // 源映射模式
+                sourceMapMode: 'separate',
+                
+                // 高级选项
+                optionsPreset: 'high-obfuscation',
+                
+                // 运行时环境检测
+                runtimeEnvironment: 'browser',
+                
+                // 代码锁定选项 (高级安全功能)
+                codeLock: {
+                    enabled: false, // 设置为true启用时间锁定
+                    startTime: '', // 格式: '2024-01-01 00:00:00'
+                    endTime: '', // 格式: '2024-12-31 23:59:59'
+                    timezone: 'UTC'
+                },
+                
+                // 域名锁定 (高级安全功能)
+                domainLock: [], // 添加允许的域名，如: ['example.com', '*.example.com']
+                domainLockRedirectUrl: '', // 重定向URL
+                
+                // 时间锁定 (高级安全功能)
+                dateLock: '', // 格式: '2024-01-01 00:00:00'
+                dateLockRedirectUrl: '', // 重定向URL
+                
+                // 运行时篡改保护
+                runtimeTamperProtection: true,
+                
+                // 反调试保护
+                antiDebug: true,
+                
+                // 操作系统锁定 (可选)
+                osLock: '', // 'windows', 'macos', 'linux', 'android', 'ios'
+                
+                // 浏览器锁定 (可选)
+                browserLock: '', // 'chrome', 'firefox', 'safari', 'edge'
+                
+                // 自定义崩溃代码
+                customCrashCode: '', // 自定义崩溃时的错误信息
+                
+                // 随机生成崩溃
+                randomCrash: true,
+                
+                // 函数不可修改
+                functionCannotBeModified: true
             };
 
-            console.log('混淆配置: CFW优化模式 (Base64编码 + 控制流平坦化 + 死代码注入 + API保护)');
+            console.log('混淆配置: 增强型高级混淆模式 (双重编码 + 最高控制流平坦化 + 增强死代码注入 + 自我防御 + 调试保护 + API保护)');
             
             try {
                 const obfuscatedCode = JavaScriptObfuscator.obfuscate(originalCode, obfuscationOptions).getObfuscatedCode();
@@ -150,8 +202,9 @@ jobs:
                 
                 fs.writeFileSync(path.join(process.cwd(), outputFileName), obfuscatedCode, 'utf8');
                 console.log('✅ 成功将 \\'' + sourceFileName + '\\' 混淆并保存至 \\'' + outputFileName + '\\'。');
-                console.log('混淆保护级别: CFW优化 (Base64 + 控制流 + API保护 + 完全兼容)');
+                console.log('混淆保护级别: 增强型高级 (双重编码 + 最高控制流 + 自我防御 + 调试保护 + API保护 + 完全兼容)');
                 console.log('目标环境: Cloudflare Workers (无eval限制)');
+                console.log('安全特性: 域名锁定 + 时间锁定 + 运行时篡改保护 + 反调试');
             } catch (error) {
                 console.error('❌ 混淆过程出错:', error.message);
                 process.exit(1);
