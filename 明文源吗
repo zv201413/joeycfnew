@@ -942,8 +942,6 @@ async function handleSubscriptionRequest(request, user, url = null) {
                 }
             }
         }
-            }
-        }
     }
 
     if (finalLinks.length === 0) {
