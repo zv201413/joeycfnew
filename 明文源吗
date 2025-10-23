@@ -1551,7 +1551,7 @@
         <div class="matrix-bg"></div>
         <div class="matrix-rain"></div>
         <div class="matrix-code-rain" id="matrixCodeRain"></div>
-        <div class="matrix-text">终端中心 v2.0</div>
+        <div class="matrix-text">终端中心</div>
         <div class="container">
             <div class="header">
                 <h1 class="title">终端中心</h1>
