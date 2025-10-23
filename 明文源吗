@@ -1802,13 +1802,14 @@ async function handleSubscriptionPage(request, user = null) {
                 let detectedRegion = 'US'; // 默认值
                 let isCustomIPMode = false;
                 let isManualRegionMode = false;
+                let hasCustomFallback = false;
                 
                 try {
                     const response = await fetch('/region');
                     const data = await response.json();
                     
                     // 检查是否设置了自定义fallback (p变量)
-                    const hasCustomFallback = data.customFallback && data.customFallback.trim();
+                    hasCustomFallback = data.customFallback && data.customFallback.trim();
                     
                     if (data.detectionMethod === '手动指定地区') {
                         isManualRegionMode = true;
