@@ -47,68 +47,66 @@ jobs:
             console.log('源文件大小: ' + originalCode.length + ' 字节');
             console.log('开始混淆处理...');
 
-            // --- 增强型高级混淆配置 (CFW优化) ---
+            // --- 优化型混淆配置 (CFW兼容 + 文件大小优化) ---
             const obfuscationOptions = {
                 // 基础压缩和格式化
                 compact: true,
                 simplify: true,
                 
-                // 高级控制流平坦化 (最高强度)
+                // 控制流平坦化 (中等强度，减少文件大小)
                 controlFlowFlattening: true,
-                controlFlowFlatteningThreshold: 0.9,
+                controlFlowFlatteningThreshold: 0.5,
                 
-                // 增强死代码注入 (提高混淆强度)
+                // 死代码注入 (减少强度以控制文件大小)
                 deadCodeInjection: true,
-                deadCodeInjectionThreshold: 0.6,
+                deadCodeInjectionThreshold: 0.3,
                 
-                // 多层级字符串数组混淆 (Base64编码，CFW兼容)
+                // 字符串数组混淆 (优化配置)
                 stringArray: true,
                 stringArrayEncoding: ['base64'],
                 stringArrayIndexShift: true,
                 stringArrayRotate: true,
                 stringArrayShuffle: true,
-                stringArrayWrappersCount: 5,
+                stringArrayWrappersCount: 2, // 减少包装器数量
                 stringArrayWrappersChainedCalls: true,
-                stringArrayWrappersParametersMaxCount: 5,
+                stringArrayWrappersParametersMaxCount: 3, // 减少参数数量
                 stringArrayWrappersType: 'function',
-                stringArrayThreshold: 0.9,
+                stringArrayThreshold: 0.6, // 降低阈值以减少文件大小
                 
-                // 启用Unicode转义序列 (增强字符串保护)
-                unicodeEscapeSequence: true,
+                // 禁用Unicode转义序列 (减少文件大小)
+                unicodeEscapeSequence: false,
                 
-                // 高级标识符混淆
+                // 标识符混淆 (优化配置)
                 renameGlobals: false, // 保护CFW API
-                identifierNamesGenerator: 'mangled-shuffled',
+                identifierNamesGenerator: 'hexadecimal', // 使用更简单的生成器
                 identifiersPrefix: '_0x',
-                renameProperties: true,
-                renamePropertiesMode: 'safe',
+                renameProperties: false, // 禁用属性重命名以减少复杂性
                 
-                // 数字和表达式高级混淆
+                // 数字和表达式混淆
                 numbersToExpressions: true,
-                transformObjectKeys: true,
+                transformObjectKeys: false, // 禁用对象键转换以减少文件大小
                 
-                // 字符串分割和转换
+                // 字符串分割 (优化配置)
                 splitStrings: true,
-                splitStringsChunkLength: 5,
+                splitStringsChunkLength: 10, // 增加块长度以减少分割
                 
-                // 函数参数混淆
+                // 函数参数混淆 (降低强度)
                 functionParameterObfuscation: true,
-                functionParameterObfuscationThreshold: 0.8,
+                functionParameterObfuscationThreshold: 0.4, // 降低阈值
                 
-                // 对象属性提取
+                // 对象属性提取 (降低强度)
                 objectPropertyExtraction: true,
-                objectPropertyExtractionThreshold: 0.7,
+                objectPropertyExtractionThreshold: 0.3, // 降低阈值
                 
-                // 重复字面量删除
+                // 重复字面量删除 (降低强度)
                 duplicateLiteralDeletion: true,
-                duplicateLiteralDeletionThreshold: 0.8,
+                duplicateLiteralDeletionThreshold: 0.4, // 降低阈值
                 
-                // 增强的自我防御机制
-                selfDefending: true,
+                // 禁用自我防御机制 (避免setInterval问题)
+                selfDefending: false,
                 
-                // 调试保护 (CFW环境优化)
-                debugProtection: true,
-                debugProtectionInterval: 2000,
+                // 禁用调试保护 (避免setInterval问题)
+                debugProtection: false,
                 
                 
                 // 保留console输出 (CFW需要)
@@ -192,7 +190,7 @@ jobs:
                 // functionCannotBeModified: true
             };
 
-            console.log('混淆配置: 增强型高级混淆模式 (Base64编码 + 最高控制流平坦化 + 增强死代码注入 + 自我防御 + 调试保护 + API保护)');
+            console.log('混淆配置: 优化型混淆模式 (Base64编码 + 中等控制流平坦化 + 优化死代码注入 + 文件大小优化 + CFW兼容)');
             
             try {
                 const obfuscatedCode = JavaScriptObfuscator.obfuscate(originalCode, obfuscationOptions).getObfuscatedCode();
@@ -202,9 +200,9 @@ jobs:
                 
                 fs.writeFileSync(path.join(process.cwd(), outputFileName), obfuscatedCode, 'utf8');
                 console.log('✅ 成功将 \\'' + sourceFileName + '\\' 混淆并保存至 \\'' + outputFileName + '\\'。');
-                console.log('混淆保护级别: 增强型高级 (Base64编码 + 最高控制流 + 自我防御 + 调试保护 + API保护 + 完全兼容)');
+                console.log('混淆保护级别: 优化型 (Base64编码 + 中等控制流 + 文件大小优化 + API保护 + 完全兼容)');
                 console.log('目标环境: Cloudflare Workers (无eval限制)');
-                console.log('安全特性: 域名锁定 + 时间锁定 + 运行时篡改保护 + 反调试');
+                console.log('优化特性: 文件大小控制 + 运行时稳定性 + CFW完全兼容');
             } catch (error) {
                 console.error('❌ 混淆过程出错:', error.message);
                 process.exit(1);
