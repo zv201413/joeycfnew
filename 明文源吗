@@ -328,7 +328,7 @@ export default {
 				}
 			}
 
-			socks5Config = env.s || env.S || socks5Config;
+			socks5Config = getConfigValue('s', env.s || env.S) || socks5Config;
 			if (socks5Config) {
 				try {
 					parsedSocks5Config = parseSocksConfig(socks5Config);
@@ -402,6 +402,12 @@ export default {
 
 			// 优先使用KV配置，然后使用环境变量，如果都没有则使用默认URL
 			preferredIPsURL = getConfigValue('yxURL', env.yxURL || env.YXURL) || 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
+			
+			// 如果yxURL不是默认值，清空内置优选IP
+			const defaultURL = 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
+			if (preferredIPsURL !== defaultURL) {
+				backupIPs = [];
+			}
 
 			const url = new URL(request.url);
 
@@ -2341,6 +2347,32 @@ async function handleConfigAPI(request) {
             } else {
                 fallbackAddress = '';
                 fallbackPort = '443';
+            }
+            
+            socks5Config = getConfigValue('s', '') || '';
+            if (socks5Config) {
+                try {
+                    parsedSocks5Config = parseSocksConfig(socks5Config);
+                    isSocksEnabled = true;
+                } catch (err) {
+                    isSocksEnabled = false;
+                }
+            } else {
+                isSocksEnabled = false;
+            }
+            
+            const newPreferredIPsURL = getConfigValue('yxURL', '') || 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
+            const defaultURL = 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
+            if (newPreferredIPsURL !== defaultURL) {
+                backupIPs = [];
+            } else {
+                backupIPs = [
+                    { domain: 'ProxyIP.US.CMLiussss.net', region: 'US', regionCode: 'US', port: 443 },
+                    { domain: 'ProxyIP.SG.CMLiussss.net', region: 'SG', regionCode: 'SG', port: 443 },
+                    { domain: 'ProxyIP.JP.CMLiussss.net', region: 'JP', regionCode: 'JP', port: 443 },
+                    { domain: 'ProxyIP.HK.CMLiussss.net', region: 'HK', regionCode: 'HK', port: 443 },
+                    { domain: 'ProxyIP.KR.CMLiussss.net', region: 'KR', regionCode: 'KR', port: 443 }
+                ];
             }
             
             return new Response(JSON.stringify({
