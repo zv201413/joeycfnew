@@ -31,28 +31,28 @@
         'Multacom': ['Multacom', 'Multacom']
     };
     let backupIPs = [
-        { domain: 'ProxyIP.US.CMLiussss.net', region: 'US', regionCode: 'US', port: 443 },
-        { domain: 'ProxyIP.SG.CMLiussss.net', region: 'SG', regionCode: 'SG', port: 443 },
-        { domain: 'ProxyIP.JP.CMLiussss.net', region: 'JP', regionCode: 'JP', port: 443 },
-        { domain: 'ProxyIP.HK.CMLiussss.net', region: 'HK', regionCode: 'HK', port: 443 },
-        { domain: 'ProxyIP.KR.CMLiussss.net', region: 'KR', regionCode: 'KR', port: 443 },
-        { domain: 'ProxyIP.DE.CMLiussss.net', region: 'DE', regionCode: 'DE', port: 443 },
-        { domain: 'ProxyIP.SE.CMLiussss.net', region: 'SE', regionCode: 'SE', port: 443 },
-        { domain: 'ProxyIP.NL.CMLiussss.net', region: 'NL', regionCode: 'NL', port: 443 },
-        { domain: 'ProxyIP.FI.CMLiussss.net', region: 'FI', regionCode: 'FI', port: 443 },
-        { domain: 'ProxyIP.GB.CMLiussss.net', region: 'GB', regionCode: 'GB', port: 443 },
-        { domain: 'ProxyIP.Oracle.cmliussss.net', region: 'Oracle', regionCode: 'Oracle', port: 443 },
-        { domain: 'ProxyIP.DigitalOcean.CMLiussss.net', region: 'DigitalOcean', regionCode: 'DigitalOcean', port: 443 },
-        { domain: 'ProxyIP.Vultr.CMLiussss.net', region: 'Vultr', regionCode: 'Vultr', port: 443 },
-        { domain: 'ProxyIP.Multacom.CMLiussss.net', region: 'Multacom', regionCode: 'Multacom', port: 443 }
+        { domain: atob('UHJveHlJUC5VUy5DTUxpdXNzc3MubmV0'), region: 'US', regionCode: 'US', port: 443 },
+        { domain: atob('UHJveHlJUC5TRy5DTUxpdXNzc3MubmV0'), region: 'SG', regionCode: 'SG', port: 443 },
+        { domain: atob('UHJveHlJUC5KUC5DTUxpdXNzc3MubmV0'), region: 'JP', regionCode: 'JP', port: 443 },
+        { domain: atob('UHJveHlJUC5ISy5DTUxpdXNzc3MubmV0'), region: 'HK', regionCode: 'HK', port: 443 },
+        { domain: atob('UHJveHlJUC5LUi5DTUxpdXNzc3MubmV0'), region: 'KR', regionCode: 'KR', port: 443 },
+        { domain: atob('UHJveHlJUC5ERS5DTUxpdXNzc3MubmV0'), region: 'DE', regionCode: 'DE', port: 443 },
+        { domain: atob('UHJveHlJUC5TRS5DTUxpdXNzc3MubmV0'), region: 'SE', regionCode: 'SE', port: 443 },
+        { domain: atob('UHJveHlJUC5OTC5DTUxpdXNzc3MubmV0'), region: 'NL', regionCode: 'NL', port: 443 },
+        { domain: atob('UHJveHlJUC5GSS5DTUxpdXNzc3MubmV0'), region: 'FI', regionCode: 'FI', port: 443 },
+        { domain: atob('UHJveHlJUC5HQi5DTUxpdXNzc3MubmV0'), region: 'GB', regionCode: 'GB', port: 443 },
+        { domain: atob('UHJveHlJUC5PcmFjbGUuY21saXVzc3NzLm5ldA=='), region: 'Oracle', regionCode: 'Oracle', port: 443 },
+        { domain: atob('UHJveHlJUC5EaWdpdGFsT2NlYW4uQ01MaXVzc3NzLm5ldA=='), region: 'DigitalOcean', regionCode: 'DigitalOcean', port: 443 },
+        { domain: atob('UHJveHlJUC5WdWx0ci5DTUxpdXNzc3MubmV0'), region: 'Vultr', regionCode: 'Vultr', port: 443 },
+        { domain: atob('UHJveHlJUC5NdWx0YWNvbS5DTUxpdXNzc3MubmV0'), region: 'Multacom', regionCode: 'Multacom', port: 443 }
     ];
     const directDomains = [
-        { name: "cloudflare.182682.xyz", domain: "cloudflare.182682.xyz" }, { name: "speed.marisalnc.com", domain: "speed.marisalnc.com" },
-        { domain: "freeyx.cloudflare88.eu.org" }, { domain: "bestcf.top" }, { domain: "cdn.2020111.xyz" }, { domain: "cfip.cfcdn.vip" },
-        { domain: "cf.0sm.com" }, { domain: "cf.090227.xyz" }, { domain: "cf.zhetengsha.eu.org" }, { domain: "cloudflare.9jy.cc" },
-        { domain: "cf.zerone-cdn.pp.ua" }, { domain: "cfip.1323123.xyz" }, { domain: "cnamefuckxxs.yuchen.icu" }, { domain: "cloudflare-ip.mofashi.ltd" },
-        { domain: "115155.xyz" }, { domain: "cname.xirancdn.us" }, { domain: "f3058171cad.002404.xyz" }, { domain: "8.889288.xyz" },
-        { domain: "cdn.tzpro.xyz" }, { domain: "cf.877771.xyz" }, { domain: "xn--b6gac.eu.org" }
+        { name: atob('Y2xvdWRmbGFyZS4xODI2ODIueHl6'), domain: atob('Y2xvdWRmbGFyZS4xODI2ODIueHl6') }, { name: atob('c3BlZWQubWFyaXNhbG5jLmNvbQ=='), domain: atob('c3BlZWQubWFyaXNhbG5jLmNvbQ==') },
+        { domain: atob('ZnJlZXl4LmNsb3VkZmxhcmU4OC5ldS5vcmc=') }, { domain: atob('YmVzdGNmLnRvcA==') }, { domain: atob('Y2RuLjIwMjAxMTEueHl6') }, { domain: atob('Y2ZpcC5jZmNkbi52aXA=') },
+        { domain: atob('Y2YuMHNtLmNvbQ==') }, { domain: atob('Y2YuMDkwMjI3Lnh5eg==') }, { domain: atob('Y2YuemhldGVuZ3NoYS5ldS5vcmc=') }, { domain: atob('Y2xvdWRmbGFyZS45ankuY2M=') },
+        { domain: atob('Y2YuemVyb25lLWNkbi5wcC51YQ==') }, { domain: atob('Y2ZpcC4xMzIzMTIzLnh5eg==') }, { domain: atob('Y25hbWVmdWNreHhzLnl1Y2hlbi5pY3U=') }, { domain: atob('Y2xvdWRmbGFyZS1pcC5tb2Zhc2hpLmx0ZA==') },
+        { domain: atob('MTE1MTU1Lnh5eg==') }, { domain: atob('Y25hbWUueGlyYW5jZG4udXM=') }, { domain: atob('ZjMwNTgxNzFjYWQuMDAyNDA0Lnh5eg==') }, { domain: atob('OC44ODkyODgueHl6') },
+        { domain: atob('Y2RuLnR6cHJvLnh5eg==') }, { domain: atob('Y2YuODc3NzcxLnh5eg==') }, { domain: atob('eG4tLWI2Z2FjLmV1Lm9yZw==') }
     ];
     const E_INVALID_DATA = atob('aW52YWxpZCBkYXRh');
     const E_INVALID_USER = atob('aW52YWxpZCB1c2Vy');
@@ -324,12 +324,12 @@
                 if (yxbyControl && yxbyControl.toLowerCase() === 'yes') {
                     disablePreferred = true;
                 }
-                preferredIPsURL = getConfigValue('yxURL', env.yxURL || env.YXURL) || 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
+                preferredIPsURL = getConfigValue('yxURL', env.yxURL || env.YXURL) || atob('aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL3F3ZXItc2VhcmNoL2Jlc3RpcC9yZWZzL2hlYWRzL21haW4va2VqaWxhbmRiZXN0aXAudHh0');
                 const url = new URL(request.url);
                 if (request.headers.get('Upgrade') === 'websocket') {
                     return await handleWsRequest(request);
                 }
-                if (url.pathname.includes('/api/config')) {
+                if (url.pathname.includes(atob('L2FwaS9jb25maWc='))) {
                     const pathParts = url.pathname.split('/').filter(p => p);
                     const apiIndex = pathParts.indexOf('api');
                     if (apiIndex > 0) {
@@ -348,7 +348,7 @@
                         headers: { 'Content-Type': 'application/json' }
                     });
                 }
-                if (url.pathname.includes('/api/preferred-ips')) {
+                if (url.pathname.includes(atob('L2FwaS9wcmVmZXJyZWQtaXBz'))) {
                     const pathParts = url.pathname.split('/').filter(p => p);
                     const apiIndex = pathParts.indexOf('api');
                     if (apiIndex > 0) {
@@ -743,7 +743,7 @@
                 if (bestBackupIP) {
                     fallbackAddress = bestBackupIP.domain;
                     fallbackPort = bestBackupIP.port.toString();
-                    const backupList = [{ ip: fallbackAddress, isp: 'ProxyIP-' + currentWorkerRegion }];
+                    const backupList = [{ ip: fallbackAddress, isp: atob('UHJveHlJUA==') + '-' + currentWorkerRegion }];
                     finalLinks.push(...generateLinksFromSource(backupList, user, workerDomain));
                 } else {
                     const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
@@ -778,7 +778,7 @@
                     if (bestBackupIP) {
                         fallbackAddress = bestBackupIP.domain;
                         fallbackPort = bestBackupIP.port.toString();
-                        const backupList = [{ ip: fallbackAddress, isp: 'ProxyIP-' + currentWorkerRegion }];
+                        const backupList = [{ ip: fallbackAddress, isp: atob('UHJveHlJUA==') + '-' + currentWorkerRegion }];
                         finalLinks.push(...generateLinksFromSource(backupList, user, workerDomain));
                     }
                 }
@@ -797,7 +797,7 @@
                     if (bestBackupIP) {
                         fallbackAddress = bestBackupIP.domain;
                         fallbackPort = bestBackupIP.port.toString();
-                        const backupList = [{ ip: fallbackAddress, isp: 'ProxyIP-' + currentWorkerRegion }];
+                        const backupList = [{ ip: fallbackAddress, isp: atob('UHJveHlJUA==') + '-' + currentWorkerRegion }];
                         finalLinks.push(...generateLinksFromSource(backupList, user, workerDomain));
                     }
                 }
@@ -906,8 +906,8 @@
         return links;
     }
     async function fetchDynamicIPs() {
-        const v4Url1 = "https://www.wetest.vip/page/cloudflare/address_v4.html";
-        const v6Url1 = "https://www.wetest.vip/page/cloudflare/address_v6.html";
+        const v4Url1 = atob('aHR0cHM6Ly93d3cud2V0ZXN0LnZpcC9wYWdlL2Nsb3VkZmxhcmUvYWRkcmVzc192NC5odG1s');
+        const v6Url1 = atob('aHR0cHM6Ly93d3cud2V0ZXN0LnZpcC9wYWdlL2Nsb3VkZmxhcmUvYWRkcmVzc192Ni5odG1s');
         let results = [];
         try {
             const [ipv4List, ipv6List] = await Promise.all([
@@ -1439,7 +1439,7 @@
                     </form>
                     <form id="otherConfigForm" style="margin-bottom: 20px;">
                         <div style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">自定义ProxyIP (p):</label>
+                            <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">"+atob("6Ieq5a6a5LmJ")+atob("UHJveHlJUA==")+" (p):</label>
                             <input type="text" id="customIP" placeholder="例如: 1.2.3.4:443" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
                             <small style="color: #00aa00; font-size: 0.85rem;">自定义ProxyIP地址和端口</small>
                         </div>
@@ -1689,7 +1689,7 @@
                 }
             }
             async function checkKVStatus() {
-                const apiUrl = window.location.pathname + '/api/config';
+                const apiUrl = window.location.pathname + atob('L2FwaS9jb25maWc=');
                 console.log('🔍 调试信息 - 检查KV状态');
                 console.log('请求URL:', apiUrl);
                 try {
@@ -1731,7 +1731,7 @@
                 }
             }
             async function loadCurrentConfig() {
-                const apiUrl = window.location.pathname + '/api/config';
+                const apiUrl = window.location.pathname + atob('L2FwaS9jb25maWc=');
                 console.log('📥 调试信息 - 加载配置');
                 console.log('请求URL:', apiUrl);
                 try {
@@ -1805,7 +1805,7 @@
             }
         }
         async function saveConfig(configData) {
-                const apiUrl = window.location.pathname + '/api/config';
+                const apiUrl = window.location.pathname + atob('L2FwaS9jb25maWc=');
                 console.log('💾 调试信息 - 保存配置');
                 console.log('请求URL:', apiUrl);
                 console.log('配置数据:', configData);
@@ -1852,7 +1852,7 @@
             async function resetAllConfig() {
                 if (confirm('确定要重置所有配置吗？这将清空所有KV配置，恢复为环境变量设置。')) {
                     try {
-                        const response = await fetch(window.location.pathname + '/api/config', {
+                        const response = await fetch(window.location.pathname + atob('L2FwaS9jb25maWc='), {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ 
