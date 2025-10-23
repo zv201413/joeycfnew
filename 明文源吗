@@ -1405,7 +1405,7 @@
                     <div style="color: #00ff00; margin-bottom: 15px; font-weight: bold; text-shadow: 0 0 5px #00ff00;">[ 系统检测中... ]</div>
                     <div id="regionStatus" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00;">Worker地区: 检测中...</div>
                     <div id="geoInfo" style="margin: 8px 0; color: #00aa00; font-family: 'Courier New', monospace; font-size: 0.9rem; text-shadow: 0 0 3px #00aa00;">检测方式: 检测中...</div>
-                    <div id="backupStatus" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00;">ProxyIP状态: 检测中...</div>
+                    <div id="backupStatus" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00;">${atob("UHJveHlJUOeKtuaAgQ==")}状态: 检测中...</div>
                     <div id="currentIP" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00;">当前使用IP: 检测中...</div>
                     <div id="regionMatch" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00;">地区匹配: 检测中...</div>
                     <div id="selectionLogic" style="margin: 8px 0; color: #00aa00; font-family: 'Courier New', monospace; font-size: 0.9rem; text-shadow: 0 0 3px #00aa00;">选择逻辑: 同地区 → 邻近地区 → 其他地区</div>
@@ -1439,9 +1439,9 @@
                     </form>
                     <form id="otherConfigForm" style="margin-bottom: 20px;">
                         <div style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">"+atob("6Ieq5a6a5LmJ")+atob("UHJveHlJUA==")+" (p):</label>
+                            <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">${atob("6Ieq5a6a5LmJ")}${atob("UHJveHlJUA==")} (p):</label>
                             <input type="text" id="customIP" placeholder="例如: 1.2.3.4:443" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
-                            <small style="color: #00aa00; font-size: 0.85rem;">自定义ProxyIP地址和端口</small>
+                            <small style="color: #00aa00; font-size: 0.85rem;">自定义${atob("UHJveHlJUA==")}地址和端口</small>
                         </div>
                         <div style="margin-bottom: 15px;">
                             <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">优选IP列表 (yx):</label>
@@ -1450,7 +1450,7 @@
                         </div>
                         <div style="margin-bottom: 15px;">
                             <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">优选IP来源URL (yxURL):</label>
-                            <input type="text" id="preferredIPsURL" placeholder="默认: https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
+                            <input type="text" id="preferredIPsURL" placeholder="默认: ${atob('aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL3F3ZXItc2VhcmNoL2Jlc3RpcC9yZWZzL2hlYWRzL21haW4va2VqaWxhbmRiZXN0aXAudHh0')}" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
                             <small style="color: #00aa00; font-size: 0.85rem;">自定义优选IP列表来源URL，留空则使用默认地址</small>
                         </div>
                         <div style="margin-bottom: 15px;">
@@ -1515,8 +1515,8 @@
             <div class="card">
                 <h2 class="card-title">[ 相关链接 ]</h2>
                 <div style="text-align: center; margin: 20px 0;">
-                    <a href="https://github.com/byJoey/cfnew" target="_blank" style="color: #00ff00; text-decoration: none; margin: 0 20px; font-size: 1.2rem; text-shadow: 0 0 5px #00ff00;">GitHub 项目</a>
-                    <a href="https://www.youtube.com/@joeyblog" target="_blank" style="color: #00ff00; text-decoration: none; margin: 0 20px; font-size: 1.2rem; text-shadow: 0 0 5px #00ff00;">YouTube @joeyblog</a>
+                    <a href=atob("aHR0cHM6Ly9naXRodWIuY29tL2J5Sm9leS9jZm5ldw==") target="_blank" style="color: #00ff00; text-decoration: none; margin: 0 20px; font-size: 1.2rem; text-shadow: 0 0 5px #00ff00;">GitHub 项目</a>
+                    <a href=atob("aHR0cHM6Ly93d3cueW91dHViZS5jb20vQGpvZXlibG9n") target="_blank" style="color: #00ff00; text-decoration: none; margin: 0 20px; font-size: 1.2rem; text-shadow: 0 0 5px #00ff00;">YouTube @joeyblog</a>
                 </div>
             </div>
         </div>
@@ -1532,7 +1532,7 @@
                     });
                 } else {
                     var encodedUrl = encodeURIComponent(subscriptionUrl);
-                    var apiUrl = "https://s.jhb.edu.kg/sub?target=" + clientType + "&url=" + encodedUrl + "&insert=false";
+                    var apiUrl = atob("aHR0cHM6Ly9zLmpoYi5lZHUua2cvc3ViP3RhcmdldD0=") + " + clientType + "&url=" + encodedUrl + "&insert=false";
                     document.getElementById("clientSubscriptionUrl").textContent = apiUrl;
                     document.getElementById("clientSubscriptionUrl").style.display = "block";
                     navigator.clipboard.writeText(apiUrl).then(function() {
@@ -1629,9 +1629,9 @@
                             if (hasCustomFallback) {
                                 if (backupStatus) backupStatus.innerHTML = 'Fallback状态: <span style="color: #ffaa00;">🔧 使用自定义Fallback (p变量): ' + data.customFallback + '</span>';
                                 if (currentIP) currentIP.innerHTML = '当前使用IP: <span style="color: #44ff44;">✅ 智能就近选择中</span>';
-                                if (regionMatch) regionMatch.innerHTML = '优先级: <span style="color: #ffaa00;">⚠️ p变量优先级最高，不使用内置ProxyIP</span>';
+                                if (regionMatch) regionMatch.innerHTML = '优先级: <span style="color: #ffaa00;">⚠️ p变量优先级最高，不使用内置${atob("UHJveHlJUA==")}</span>';
                             } else {
-                                if (backupStatus) backupStatus.innerHTML = 'ProxyIP状态: <span style="color: #44ff44;">✅ 10/10 可用 (ProxyIP域名预设可用)</span>';
+                                if (backupStatus) backupStatus.innerHTML = '${atob("UHJveHlJUOeKtuaAgQ==")}状态: <span style="color: #44ff44;">✅ 10/10 可用 (${atob("UHJveHlJUA==")}域名预设可用)</span>';
                                 if (currentIP) currentIP.innerHTML = '当前使用IP: <span style="color: #44ff44;">✅ 智能就近选择中</span>';
                                 if (regionMatch) regionMatch.innerHTML = '地区匹配: <span style="color: #44ff44;">✅ 同地区IP可用 (1个)</span>';
                             }
@@ -1652,11 +1652,11 @@
                             currentIP.innerHTML = '当前使用IP: <span style="color: #44ff44;">✅ 智能就近选择中</span>';
                         }
                         if (regionMatch) {
-                            regionMatch.innerHTML = '优先级: <span style="color: #ffaa00;">⚠️ p变量优先级最高，不使用内置ProxyIP</span>';
+                            regionMatch.innerHTML = '优先级: <span style="color: #ffaa00;">⚠️ p变量优先级最高，不使用内置${atob("UHJveHlJUA==")}</span>';
                         }
                     } else {
                         if (backupStatus) {
-                            backupStatus.innerHTML = 'ProxyIP状态: <span style="color: #44ff44;">✅ 10/10 可用 (ProxyIP域名预设可用)</span>';
+                            backupStatus.innerHTML = '${atob("UHJveHlJUOeKtuaAgQ==")}状态: <span style="color: #44ff44;">✅ 10/10 可用 (${atob("UHJveHlJUA==")}域名预设可用)</span>';
                         }
                         if (currentIP) {
                             currentIP.innerHTML = '当前使用IP: <span style="color: #44ff44;">✅ 智能就近选择中</span>';
@@ -1669,7 +1669,7 @@
                     console.error('状态检测失败:', error);
                     document.getElementById('regionStatus').innerHTML = 'Worker地区: <span style="color: #ff4444;">❌ 检测失败</span>';
                     document.getElementById('geoInfo').innerHTML = '地理位置: <span style="color: #ff4444;">❌ 检测失败</span>';
-                    document.getElementById('backupStatus').innerHTML = 'ProxyIP状态: <span style="color: #ff4444;">❌ 检测失败</span>';
+                    document.getElementById('backupStatus').innerHTML = '${atob("UHJveHlJUOeKtuaAgQ==")}状态: <span style="color: #ff4444;">❌ 检测失败</span>';
                     document.getElementById('currentIP').innerHTML = '当前使用IP: <span style="color: #ff4444;">❌ 检测失败</span>';
                     document.getElementById('regionMatch').innerHTML = '地区匹配: <span style="color: #ff4444;">❌ 检测失败</span>';
                 }
