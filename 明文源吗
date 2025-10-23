@@ -2325,6 +2325,24 @@ async function handleConfigAPI(request) {
             
             await saveKVConfig();
             
+            const envFallback = getConfigValue('p', '');
+            if (envFallback) {
+                const fallbackValue = envFallback.toLowerCase();
+                if (fallbackValue.includes(']:')) {
+                    const lastColonIndex = fallbackValue.lastIndexOf(':');
+                    fallbackPort = fallbackValue.slice(lastColonIndex + 1);
+                    fallbackAddress = fallbackValue.slice(0, lastColonIndex);
+                } else if (!fallbackValue.includes(']:') && !fallbackValue.includes(']')) {
+                    [fallbackAddress, fallbackPort = '443'] = fallbackValue.split(':');
+                } else {
+                    fallbackAddress = fallbackValue;
+                    fallbackPort = '443';
+                }
+            } else {
+                fallbackAddress = '';
+                fallbackPort = '443';
+            }
+            
             return new Response(JSON.stringify({
                 success: true,
                 message: '配置已保存',
