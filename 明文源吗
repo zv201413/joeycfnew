@@ -150,7 +150,7 @@
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), timeout);
-            const response = await fetch(`https:
+            const response = await fetch(`https://${domain}`, {
                 method: 'HEAD',
                 signal: controller.signal,
                 headers: {
@@ -324,7 +324,7 @@
                 if (yxbyControl && yxbyControl.toLowerCase() === 'yes') {
                     disablePreferred = true;
                 }
-                preferredIPsURL = getConfigValue('yxURL', env.yxURL || env.YXURL) || 'https:
+                preferredIPsURL = getConfigValue('yxURL', env.yxURL || env.YXURL) || 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
                 const url = new URL(request.url);
                 if (request.headers.get('Upgrade') === 'websocket') {
                     return await handleWsRequest(request);
@@ -806,7 +806,7 @@
         if (finalLinks.length === 0) {
             const errorRemark = "所有节点获取失败";
             const proto = atob('dmxlc3M=');
-            const errorLink = `${proto}:
+            const errorLink = `${proto}://00000000-0000-0000-0000-000000000000@127.0.0.1:80?encryption=none&security=none&type=ws&host=error.com&path=%2F#${encodeURIComponent(errorRemark)}`;
             finalLinks.push(errorLink);
         }
         let subscriptionContent;
@@ -889,7 +889,7 @@
                         host: workerDomain, 
                         path: wsPath 
                     });
-                    links.push(`${proto}:
+                    links.push(`${proto}://${user}@${safeIP}:${port}?${wsParams.toString()}#${encodeURIComponent(wsNodeName)}`);
                 } else {
                     const wsNodeName = `${nodeNameBase}-${port}-WS`;
                     const wsParams = new URLSearchParams({
@@ -899,15 +899,15 @@
                         host: workerDomain,
                         path: wsPath
                     });
-                    links.push(`${proto}:
+                    links.push(`${proto}://${user}@${safeIP}:${port}?${wsParams.toString()}#${encodeURIComponent(wsNodeName)}`);
                 }
             });
         });
         return links;
     }
     async function fetchDynamicIPs() {
-        const v4Url1 = "https:
-        const v6Url1 = "https:
+        const v4Url1 = "https://www.wetest.vip/page/cloudflare/address_v4.html";
+        const v6Url1 = "https://www.wetest.vip/page/cloudflare/address_v6.html";
         let results = [];
         try {
             const [ipv4List, ipv6List] = await Promise.all([
@@ -1450,7 +1450,7 @@
                         </div>
                         <div style="margin-bottom: 15px;">
                             <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">优选IP来源URL (yxURL):</label>
-                            <input type="text" id="preferredIPsURL" placeholder="默认: https:
+                            <input type="text" id="preferredIPsURL" placeholder="默认: https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
                             <small style="color: #00aa00; font-size: 0.85rem;">自定义优选IP列表来源URL，留空则使用默认地址</small>
                         </div>
                         <div style="margin-bottom: 15px;">
@@ -1515,8 +1515,8 @@
             <div class="card">
                 <h2 class="card-title">[ 相关链接 ]</h2>
                 <div style="text-align: center; margin: 20px 0;">
-                    <a href="https:
-                    <a href="https:
+                    <a href="https://github.com/byJoey/cfnew" target="_blank" style="color: #00ff00; text-decoration: none; margin: 0 20px; font-size: 1.2rem; text-shadow: 0 0 5px #00ff00;">GitHub 项目</a>
+                    <a href="https://www.youtube.com/@joeyblog" target="_blank" style="color: #00ff00; text-decoration: none; margin: 0 20px; font-size: 1.2rem; text-shadow: 0 0 5px #00ff00;">YouTube @joeyblog</a>
                 </div>
             </div>
         </div>
@@ -1532,7 +1532,7 @@
                     });
                 } else {
                     var encodedUrl = encodeURIComponent(subscriptionUrl);
-                    var apiUrl = "https:
+                    var apiUrl = "https://s.jhb.edu.kg/sub?target=" + clientType + "&url=" + encodedUrl + "&insert=false";
                     document.getElementById("clientSubscriptionUrl").textContent = apiUrl;
                     document.getElementById("clientSubscriptionUrl").style.display = "block";
                     navigator.clipboard.writeText(apiUrl).then(function() {
@@ -1952,7 +1952,7 @@
         return id;
     }
     async function fetchAndParseNewIPs() {
-        const url = preferredIPsURL || "https:
+        const url = preferredIPsURL || "https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt";
         try {
             const response = await fetch(url);
             if (!response.ok) return [];
@@ -1988,17 +1988,17 @@
             const port = item.port;
             if (CF_HTTPS_PORTS.includes(port)) {
                 const wsNodeName = `${nodeName}-${port}-WS-TLS`;
-                const link = `${proto}:
+                const link = `${proto}://${user}@${item.ip}:${port}?encryption=none&security=tls&sni=${workerDomain}&fp=chrome&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
                 links.push(link);
             } else if (CF_HTTP_PORTS.includes(port)) {
                 if (!disableNonTLS) {
                     const wsNodeName = `${nodeName}-${port}-WS`;
-                    const link = `${proto}:
+                    const link = `${proto}://${user}@${item.ip}:${port}?encryption=none&security=none&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
                     links.push(link);
                 }
             } else {
                 const wsNodeName = `${nodeName}-${port}-WS-TLS`;
-                const link = `${proto}:
+                const link = `${proto}://${user}@${item.ip}:${port}?encryption=none&security=tls&sni=${workerDomain}&fp=chrome&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
                 links.push(link);
             }
         });
