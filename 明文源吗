@@ -1169,9 +1169,15 @@ async function forwardTCP(addrType, host, portNum, rawData, ws, respHeader, remo
                 connectStreams(socksSocket, ws, respHeader, null);
                 return;
             } catch (socksErr) {
-                const bestBackupIP = await getBestBackupIP(currentWorkerRegion);
-                const backupHost = bestBackupIP ? bestBackupIP.domain : (fallbackAddress || host);
-                const backupPort = bestBackupIP ? bestBackupIP.port : (parseInt(fallbackPort, 10) || portNum);
+                let backupHost, backupPort;
+                if (fallbackAddress && fallbackPort) {
+                    backupHost = fallbackAddress;
+                    backupPort = parseInt(fallbackPort, 10) || portNum;
+                } else {
+                    const bestBackupIP = await getBestBackupIP(currentWorkerRegion);
+                    backupHost = bestBackupIP ? bestBackupIP.domain : host;
+                    backupPort = bestBackupIP ? bestBackupIP.port : portNum;
+                }
                 
                 try {
                     const fallbackSocket = await connectAndSend(backupHost, backupPort, false);
@@ -1183,9 +1189,15 @@ async function forwardTCP(addrType, host, portNum, rawData, ws, respHeader, remo
                 }
             }
         } else {
-            const bestBackupIP = await getBestBackupIP(currentWorkerRegion);
-            const backupHost = bestBackupIP ? bestBackupIP.domain : (fallbackAddress || host);
-            const backupPort = bestBackupIP ? bestBackupIP.port : (parseInt(fallbackPort, 10) || portNum);
+            let backupHost, backupPort;
+            if (fallbackAddress && fallbackPort) {
+                backupHost = fallbackAddress;
+                backupPort = parseInt(fallbackPort, 10) || portNum;
+            } else {
+                const bestBackupIP = await getBestBackupIP(currentWorkerRegion);
+                backupHost = bestBackupIP ? bestBackupIP.domain : host;
+                backupPort = bestBackupIP ? bestBackupIP.port : portNum;
+            }
             
             try {
                 const fallbackSocket = await connectAndSend(backupHost, backupPort, isSocksEnabled);
