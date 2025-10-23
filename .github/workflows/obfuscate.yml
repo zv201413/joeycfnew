@@ -16,7 +16,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '18'
 
       - name: Install Obfuscator
         run: npm install javascript-obfuscator
@@ -33,7 +33,7 @@ jobs:
             const sourceFilePath = path.join(process.cwd(), sourceFileName);
 
             if (!fs.existsSync(sourceFilePath)) {
-              console.error('错误：在路径 \\'' + sourceFilePath + '\\' 未找到源文件。请确保您的仓库根目录有名为 \\'明文源吗\\' 的文件。');
+              console.error('错误：在路径 \'' + sourceFilePath + '\' 未找到源文件。请确保您的仓库根目录有名为 \'明文源吗\' 的文件。');
               process.exit(1);
             }
 
@@ -44,204 +44,40 @@ jobs:
               process.exit(1);
             }
 
-            console.log('源文件大小: ' + originalCode.length + ' 字节');
-            console.log('开始混淆处理...');
-
-            // --- 优化型混淆配置 (CFW兼容 + 文件大小优化) ---
+            // --- 最终平衡型混淆配置 ---
             const obfuscationOptions = {
-                // 基础压缩和格式化
                 compact: true,
-                simplify: true,
-                
-                // 控制流平坦化 (中等强度，减少文件大小)
                 controlFlowFlattening: true,
-                controlFlowFlatteningThreshold: 0.5,
-                
-                // 死代码注入 (减少强度以控制文件大小)
+                controlFlowFlatteningThreshold: 0.75,
                 deadCodeInjection: true,
-                deadCodeInjectionThreshold: 0.3,
-                
-                // 字符串数组混淆 (优化配置，支持中文)
+                deadCodeInjectionThreshold: 0.4,
                 stringArray: true,
-                stringArrayEncoding: ['base64'], // Base64编码支持中文
-                stringArrayIndexShift: true,
-                stringArrayRotate: true,
-                stringArrayShuffle: true,
-                stringArrayWrappersCount: 2, // 减少包装器数量
-                stringArrayWrappersChainedCalls: true,
-                stringArrayWrappersParametersMaxCount: 3, // 减少参数数量
-                stringArrayWrappersType: 'function',
-                stringArrayThreshold: 0.8, // 提高阈值以处理更多中文字符串
-                
-                // 禁用Unicode转义序列 (减少文件大小)
-                unicodeEscapeSequence: false,
-                
-                // 标识符混淆 (优化配置)
-                renameGlobals: false, // 保护CFW API
-                identifierNamesGenerator: 'hexadecimal', // 使用更简单的生成器
-                identifiersPrefix: '_0x',
-                renameProperties: false, // 禁用属性重命名以减少复杂性
-                
-                // 数字和表达式混淆
+                stringArrayEncoding: ['base64'],
+                stringArrayThreshold: 0.75,
+                renameGlobals: true,
+                identifierNamesGenerator: 'mangled',
                 numbersToExpressions: true,
-                transformObjectKeys: false, // 禁用对象键转换以减少文件大小
-                
-                // 字符串分割 (优化配置，支持中文)
                 splitStrings: true,
-                splitStringsChunkLength: 8, // 适合中文字符的长度
-                
-                // 中文字符串处理
-                stringArrayCallsTransform: true,
-                stringArrayCallsTransformThreshold: 0.8,
-                
-                // 强制处理所有字符串（包括中文）
-                stringArrayThreshold: 0.8, // 提高阈值以处理更多字符串
-                
-                // 确保中文字符串被编码
-                stringArrayEncodingDetection: true,
-                
-                // 函数参数混淆 (降低强度)
-                functionParameterObfuscation: true,
-                functionParameterObfuscationThreshold: 0.4, // 降低阈值
-                
-                // 对象属性提取 (降低强度)
-                objectPropertyExtraction: true,
-                objectPropertyExtractionThreshold: 0.3, // 降低阈值
-                
-                // 重复字面量删除 (降低强度)
-                duplicateLiteralDeletion: true,
-                duplicateLiteralDeletionThreshold: 0.4, // 降低阈值
-                
-                // 禁用自我防御机制 (避免setInterval问题)
+                splitStringsChunkLength: 10,
+                transformObjectKeys: true,
                 selfDefending: false,
-                
-                // 禁用调试保护 (避免setInterval问题)
-                debugProtection: false,
-                
-                
-                // 保留console输出 (CFW需要)
-                disableConsoleOutput: false,
-                
-                // 强制转换敏感字符串 (增强版，包含中文)
-                forceTransformStrings: [
-                    // 英文敏感词
-                    'proxy', 'socks', 'vless', 'vmess', 'trojan', 'ss', 'ssr',
-                    'auth', 'token', 'key', 'secret', 'password', 'pass',
-                    'connect', 'socket', 'tunnel', 'bridge', 'gateway',
-                    // 中文敏感词
-                    '代理', '连接', '认证', '密码', '密钥', '令牌', '访问',
-                    '服务器', '客户端', '配置', '设置', '网络', '协议',
-                    '加密', '解密', '传输', '数据', '流量', '节点',
-                    '美国', '新加坡', '日本', '香港', '韩国', '德国', '瑞典', '荷兰', '芬兰', '英国',
-                    '甲骨文', '数码海', 'Vultr', 'Multacom'
-                ],
-                
-                // 保留CFW关键API和导入 (扩展版)
-                reservedNames: [
-                    '^connect$', '^fetch$', '^Response$', '^Request$', '^Headers$',
-                    '^URL$', '^crypto$', '^btoa$', '^atob$', '^TextEncoder$',
-                    '^TextDecoder$', '^Uint8Array$', '^ArrayBuffer$', '^addEventListener$',
-                    '^WebSocket$', '^ReadableStream$', '^Blob$', '^FormData$',
-                    '^AbortController$', '^AbortSignal$', '^Event$', '^EventTarget$'
-                ],
-                
-                // 保留CFW模块路径 (扩展版)
-                reservedStrings: [
-                    '^cloudflare:sockets$', '^cloudflare:', '^ws:', '^wss:',
-                    '^http:', '^https:', '^data:', '^blob:'
-                ],
-                
-                // 随机种子 (每次生成不同结果)
-                seed: Math.floor(Math.random() * 1000000),
-                
-                // 目标环境 (browser-no-eval确保兼容性)
-                target: 'browser-no-eval',
-                
-                // 忽略导入语句
-                ignoreImports: true,
-                
-                // 源映射模式
-                sourceMapMode: 'separate',
-                
-                // 高级选项 (移除可能导致验证错误的预设)
-                // optionsPreset: 'high-obfuscation',
-                
-                // 运行时环境检测 (移除可能导致验证错误的选项)
-                // runtimeEnvironment: 'browser',
-                
-                // 代码锁定选项 (高级安全功能) - 默认禁用，需要时取消注释
-                // codeLock: {
-                //     enabled: false,
-                //     startTime: '2024-01-01 00:00:00',
-                //     endTime: '2024-12-31 23:59:59',
-                //     timezone: 'UTC'
-                // },
-                
-                // 域名锁定 (高级安全功能) - 默认禁用，需要时取消注释
-                // domainLock: ['example.com', '*.example.com'],
-                // domainLockRedirectUrl: 'https://example.com/redirect',
-                
-                // 时间锁定 (高级安全功能) - 默认禁用，需要时取消注释
-                // dateLock: '2024-12-31 23:59:59',
-                // dateLockRedirectUrl: 'https://example.com/expired',
-                
-                // 运行时篡改保护 (默认启用)
-                // runtimeTamperProtection: true,
-                
-                // 反调试保护 (默认启用)
-                // antiDebug: true,
-                
-                // 操作系统锁定 (可选) - 需要时取消注释
-                // osLock: 'windows', // 'windows', 'macos', 'linux', 'android', 'ios'
-                
-                // 浏览器锁定 (可选) - 需要时取消注释
-                // browserLock: 'chrome', // 'chrome', 'firefox', 'safari', 'edge'
-                
-                // 自定义崩溃代码 (可选) - 需要时取消注释
-                // customCrashCode: 'Access Denied',
-                
-                // 随机生成崩溃 (默认启用)
-                // randomCrash: true,
-                
-                // 函数不可修改 (默认启用)
-                // functionCannotBeModified: true
+                debugProtection: false
             };
 
-            console.log('混淆配置: 优化型混淆模式 (Base64编码 + 中文字符串处理 + 中等控制流平坦化 + 优化死代码注入 + 文件大小优化 + CFW兼容)');
+            const obfuscatedCode = JavaScriptObfuscator.obfuscate(originalCode, obfuscationOptions).getObfuscatedCode();
             
-            try {
-                const obfuscatedCode = JavaScriptObfuscator.obfuscate(originalCode, obfuscationOptions).getObfuscatedCode();
-                
-                console.log('混淆后大小: ' + obfuscatedCode.length + ' 字节');
-                console.log('大小变化: ' + ((obfuscatedCode.length / originalCode.length * 100).toFixed(2)) + '%');
-                
-                fs.writeFileSync(path.join(process.cwd(), outputFileName), obfuscatedCode, 'utf8');
-                console.log('✅ 成功将 \\'' + sourceFileName + '\\' 混淆并保存至 \\'' + outputFileName + '\\'。');
-                console.log('混淆保护级别: 优化型 (Base64编码 + 中文字符串处理 + 中等控制流 + 文件大小优化 + API保护 + 完全兼容)');
-                console.log('目标环境: Cloudflare Workers (无eval限制)');
-                console.log('优化特性: 中文字符串混淆 + 文件大小控制 + 运行时稳定性 + CFW完全兼容');
-            } catch (error) {
-                console.error('❌ 混淆过程出错:', error.message);
-                process.exit(1);
-            }
+            fs.writeFileSync(path.join(process.cwd(), outputFileName), obfuscatedCode, 'utf8');
+            console.log('成功将 \'' + sourceFileName + '\' 混淆并保存至 \'' + outputFileName + '\'。');
           "
-
-      - name: Verify obfuscated file
-        run: |
-          if [ -f "少年你相信光吗" ]; then
-            echo "✅ 混淆文件已生成"
-            echo "文件大小: $(wc -c < '少年你相信光吗') 字节"
-            echo "代码行数: $(wc -l < '少年你相信光吗') 行"
-          else
-            echo "❌ 混淆文件生成失败"
-            exit 1
-          fi
 
       - name: Commit and push the obfuscated file
         run: |
           git config --global user.name 'GitHub Actions Bot'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add '少年你相信光吗'
-          git commit -m "build: 生成混淆脚本 (CFW优化模式) [$(date +'%Y-%m-%d %H:%M:%S')]" --allow-empty
-          git push
-          echo "✅ 混淆文件已提交并推送"
+          if git diff --staged --quiet; then
+            echo "No changes to commit, the obfuscated file is already up-to-date."
+          else
+            git commit -m "build: Generate and obfuscate worker script"
+            git push
+          fi
