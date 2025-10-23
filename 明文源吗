@@ -37,20 +37,20 @@
     };
 
     let backupIPs = [
-        { domain: 'ProxyIP.US.CMLiussss.net', region: 'US', regionCode: 'US', port: 443 },
-        { domain: 'ProxyIP.SG.CMLiussss.net', region: 'SG', regionCode: 'SG', port: 443 },
-        { domain: 'ProxyIP.JP.CMLiussss.net', region: 'JP', regionCode: 'JP', port: 443 },
-        { domain: 'ProxyIP.HK.CMLiussss.net', region: 'HK', regionCode: 'HK', port: 443 },
-        { domain: 'ProxyIP.KR.CMLiussss.net', region: 'KR', regionCode: 'KR', port: 443 },
-        { domain: 'ProxyIP.DE.CMLiussss.net', region: 'DE', regionCode: 'DE', port: 443 },
-        { domain: 'ProxyIP.SE.CMLiussss.net', region: 'SE', regionCode: 'SE', port: 443 },
-        { domain: 'ProxyIP.NL.CMLiussss.net', region: 'NL', regionCode: 'NL', port: 443 },
-        { domain: 'ProxyIP.FI.CMLiussss.net', region: 'FI', regionCode: 'FI', port: 443 },
-        { domain: 'ProxyIP.GB.CMLiussss.net', region: 'GB', regionCode: 'GB', port: 443 },
-        { domain: 'ProxyIP.Oracle.cmliussss.net', region: 'Oracle', regionCode: 'Oracle', port: 443 },
-        { domain: 'ProxyIP.DigitalOcean.CMLiussss.net', region: 'DigitalOcean', regionCode: 'DigitalOcean', port: 443 },
-        { domain: 'ProxyIP.Vultr.CMLiussss.net', region: 'Vultr', regionCode: 'Vultr', port: 443 },
-        { domain: 'ProxyIP.Multacom.CMLiussss.net', region: 'Multacom', regionCode: 'Multacom', port: 443 }
+        { domain: '.US.CMLiussss.net', region: 'US', regionCode: 'US', port: 443 },
+        { domain: '.SG.CMLiussss.net', region: 'SG', regionCode: 'SG', port: 443 },
+        { domain: '.JP.CMLiussss.net', region: 'JP', regionCode: 'JP', port: 443 },
+        { domain: '.HK.CMLiussss.net', region: 'HK', regionCode: 'HK', port: 443 },
+        { domain: '.KR.CMLiussss.net', region: 'KR', regionCode: 'KR', port: 443 },
+        { domain: '.DE.CMLiussss.net', region: 'DE', regionCode: 'DE', port: 443 },
+        { domain: '.SE.CMLiussss.net', region: 'SE', regionCode: 'SE', port: 443 },
+        { domain: '.NL.CMLiussss.net', region: 'NL', regionCode: 'NL', port: 443 },
+        { domain: '.FI.CMLiussss.net', region: 'FI', regionCode: 'FI', port: 443 },
+        { domain: '.GB.CMLiussss.net', region: 'GB', regionCode: 'GB', port: 443 },
+        { domain: '.Oracle.cmliussss.net', region: 'Oracle', regionCode: 'Oracle', port: 443 },
+        { domain: '.DigitalOcean.CMLiussss.net', region: 'DigitalOcean', regionCode: 'DigitalOcean', port: 443 },
+        { domain: '.Vultr.CMLiussss.net', region: 'Vultr', regionCode: 'Vultr', port: 443 },
+        { domain: '.Multacom.CMLiussss.net', region: 'Multacom', regionCode: 'Multacom', port: 443 }
     ];
 
     const directDomains = [
@@ -427,17 +427,14 @@
                             });
                         }
                     }
-                    // 如果路径格式不正确，返回JSON错误
                     return new Response(JSON.stringify({ error: '无效的API路径' }), { 
                         status: 404,
                         headers: { 'Content-Type': 'application/json' }
                     });
                 }
                 
-                // 优选IP管理API路由
                 if (url.pathname.includes('/api/preferred-ips')) {
                     const pathParts = url.pathname.split('/').filter(p => p);
-                    // 查找UUID - 应该在 api 之前
                     const apiIndex = pathParts.indexOf('api');
                     if (apiIndex > 0) {
                         const user = pathParts[apiIndex - 1];
@@ -450,7 +447,6 @@
                             });
                         }
                     }
-                    // 如果路径格式不正确，返回JSON错误
                     return new Response(JSON.stringify({ error: '无效的API路径' }), { 
                         status: 404,
                         headers: { 'Content-Type': 'application/json' }
@@ -844,12 +840,10 @@
         const workerDomain = url.hostname;
         const target = url.searchParams.get('target') || 'base64';
 
-        // p变量只作为fallback地址，不影响终端生成
         try {
             const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
             finalLinks.push(...generateLinksFromSource(nativeList, user, workerDomain));
         } catch (error) {
-            // p变量优先级最高，有p就不使用内置ProxyIP
             if (!fallbackAddress) {
                 if (!currentWorkerRegion) {
                     currentWorkerRegion = await detectWorkerRegion(request);
@@ -859,7 +853,7 @@
                 if (bestBackupIP) {
                     fallbackAddress = bestBackupIP.domain;
                     fallbackPort = bestBackupIP.port.toString();
-                    const backupList = [{ ip: fallbackAddress, isp: 'ProxyIP-' + currentWorkerRegion }];
+                    const backupList = [{ ip: fallbackAddress, isp: '-' + currentWorkerRegion }];
                     finalLinks.push(...generateLinksFromSource(backupList, user, workerDomain));
                 } else {
                     const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
@@ -891,7 +885,7 @@
                     finalLinks.push(...generateLinksFromSource(dynamicIPList, user, workerDomain));
                 }
             } catch (error) {
-                // p变量优先级最高，有p就不使用内置ProxyIP
+                // p变量优先级最高，有p就不使用内置
                 if (!fallbackAddress) {
                     if (!currentWorkerRegion) {
                         currentWorkerRegion = await detectWorkerRegion(request);
@@ -902,7 +896,7 @@
                         fallbackAddress = bestBackupIP.domain;
                         fallbackPort = bestBackupIP.port.toString();
                         
-                        const backupList = [{ ip: fallbackAddress, isp: 'ProxyIP-' + currentWorkerRegion }];
+                        const backupList = [{ ip: fallbackAddress, isp: '-' + currentWorkerRegion }];
                         finalLinks.push(...generateLinksFromSource(backupList, user, workerDomain));
                     }
                 }
@@ -914,7 +908,7 @@
                     finalLinks.push(...generateLinksFromNewIPs(newIPList, user, workerDomain));
                 }
             } catch (error) {
-                // p变量优先级最高，有p就不使用内置ProxyIP
+                // p变量优先级最高，有p就不使用内置
                 if (!fallbackAddress) {
                     if (!currentWorkerRegion) {
                         currentWorkerRegion = await detectWorkerRegion(request);
@@ -925,7 +919,7 @@
                         fallbackAddress = bestBackupIP.domain;
                         fallbackPort = bestBackupIP.port.toString();
                         
-                        const backupList = [{ ip: fallbackAddress, isp: 'ProxyIP-' + currentWorkerRegion }];
+                        const backupList = [{ ip: fallbackAddress, isp: '-' + currentWorkerRegion }];
                         finalLinks.push(...generateLinksFromSource(backupList, user, workerDomain));
                     }
                 }
@@ -1167,7 +1161,7 @@
                     connectStreams(socksSocket, ws, respHeader, null);
                     return;
                     } catch (socksErr) {
-                    // p变量优先级最高，有p就不使用内置ProxyIP
+                    // p变量优先级最高，有p就不使用内置
                     let backupHost, backupPort;
                     if (fallbackAddress) {
                         backupHost = fallbackAddress;
@@ -1188,7 +1182,7 @@
                     }
                 }
             } else {
-                // p变量优先级最高，有p就不使用内置ProxyIP
+                // p变量优先级最高，有p就不使用内置
                 let backupHost, backupPort;
                 if (fallbackAddress) {
                     backupHost = fallbackAddress;
@@ -1585,7 +1579,7 @@
                     <div style="color: #00ff00; margin-bottom: 15px; font-weight: bold; text-shadow: 0 0 5px #00ff00;">[ 系统检测中... ]</div>
                     <div id="regionStatus" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00;">Worker地区: 检测中...</div>
                     <div id="geoInfo" style="margin: 8px 0; color: #00aa00; font-family: 'Courier New', monospace; font-size: 0.9rem; text-shadow: 0 0 3px #00aa00;">检测方式: 检测中...</div>
-                    <div id="backupStatus" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00;">ProxyIP状态: 检测中...</div>
+                    <div id="backupStatus" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00;">状态: 检测中...</div>
                     <div id="currentIP" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00;">当前使用IP: 检测中...</div>
                     <div id="regionMatch" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00;">地区匹配: 检测中...</div>
                     <div id="selectionLogic" style="margin: 8px 0; color: #00aa00; font-family: 'Courier New', monospace; font-size: 0.9rem; text-shadow: 0 0 3px #00aa00;">选择逻辑: 同地区 → 邻近地区 → 其他地区</div>
@@ -1619,9 +1613,9 @@
                     </form>
                     <form id="otherConfigForm" style="margin-bottom: 20px;">
                         <div style="margin-bottom: 15px;">
-                            <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">自定义ProxyIP (p):</label>
+                            <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">自定义 (p):</label>
                             <input type="text" id="customIP" placeholder="例如: 1.2.3.4:443" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
-                            <small style="color: #00aa00; font-size: 0.85rem;">自定义ProxyIP地址和端口</small>
+                            <small style="color: #00aa00; font-size: 0.85rem;">自定义地址和端口</small>
                         </div>
                         <div style="margin-bottom: 15px;">
                             <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">优选IP列表 (yx):</label>
@@ -1827,9 +1821,9 @@
                             if (hasCustomFallback) {
                                 if (backupStatus) backupStatus.innerHTML = 'Fallback状态: <span style="color: #ffaa00;">🔧 使用自定义Fallback (p变量): ' + data.customFallback + '</span>';
                                 if (currentIP) currentIP.innerHTML = '当前使用IP: <span style="color: #44ff44;">✅ 智能就近选择中</span>';
-                                if (regionMatch) regionMatch.innerHTML = '优先级: <span style="color: #ffaa00;">⚠️ p变量优先级最高，不使用内置ProxyIP</span>';
+                                if (regionMatch) regionMatch.innerHTML = '优先级: <span style="color: #ffaa00;">⚠️ p变量优先级最高，不使用内置</span>';
                             } else {
-                                if (backupStatus) backupStatus.innerHTML = 'ProxyIP状态: <span style="color: #44ff44;">✅ 10/10 可用 (ProxyIP域名预设可用)</span>';
+                                if (backupStatus) backupStatus.innerHTML = '状态: <span style="color: #44ff44;">✅ 10/10 可用 (域名预设可用)</span>';
                                 if (currentIP) currentIP.innerHTML = '当前使用IP: <span style="color: #44ff44;">✅ 智能就近选择中</span>';
                                 if (regionMatch) regionMatch.innerHTML = '地区匹配: <span style="color: #44ff44;">✅ 同地区IP可用 (1个)</span>';
                             }
@@ -1859,11 +1853,11 @@
                         }
                         
                         if (regionMatch) {
-                            regionMatch.innerHTML = '优先级: <span style="color: #ffaa00;">⚠️ p变量优先级最高，不使用内置ProxyIP</span>';
+                            regionMatch.innerHTML = '优先级: <span style="color: #ffaa00;">⚠️ p变量优先级最高，不使用内置</span>';
                         }
                     } else {
                         if (backupStatus) {
-                            backupStatus.innerHTML = 'ProxyIP状态: <span style="color: #44ff44;">✅ 10/10 可用 (ProxyIP域名预设可用)</span>';
+                            backupStatus.innerHTML = '状态: <span style="color: #44ff44;">✅ 10/10 可用 (域名预设可用)</span>';
                         }
                         
                         if (currentIP) {
@@ -1879,7 +1873,7 @@
                     console.error('状态检测失败:', error);
                     document.getElementById('regionStatus').innerHTML = 'Worker地区: <span style="color: #ff4444;">❌ 检测失败</span>';
                     document.getElementById('geoInfo').innerHTML = '地理位置: <span style="color: #ff4444;">❌ 检测失败</span>';
-                    document.getElementById('backupStatus').innerHTML = 'ProxyIP状态: <span style="color: #ff4444;">❌ 检测失败</span>';
+                    document.getElementById('backupStatus').innerHTML = '状态: <span style="color: #ff4444;">❌ 检测失败</span>';
                     document.getElementById('currentIP').innerHTML = '当前使用IP: <span style="color: #ff4444;">❌ 检测失败</span>';
                     document.getElementById('regionMatch').innerHTML = '地区匹配: <span style="color: #ff4444;">❌ 检测失败</span>';
                 }
