@@ -61,9 +61,9 @@ jobs:
                 deadCodeInjection: true,
                 deadCodeInjectionThreshold: 0.6,
                 
-                // 多层级字符串数组混淆 (Base64 + RC4双重编码)
+                // 多层级字符串数组混淆 (Base64编码，CFW兼容)
                 stringArray: true,
-                stringArrayEncoding: ['base64', 'rc4'],
+                stringArrayEncoding: ['base64'],
                 stringArrayIndexShift: true,
                 stringArrayRotate: true,
                 stringArrayShuffle: true,
@@ -148,51 +148,51 @@ jobs:
                 // 源映射模式
                 sourceMapMode: 'separate',
                 
-                // 高级选项
-                optionsPreset: 'high-obfuscation',
+                // 高级选项 (移除可能导致验证错误的预设)
+                // optionsPreset: 'high-obfuscation',
                 
-                // 运行时环境检测
-                runtimeEnvironment: 'browser',
+                // 运行时环境检测 (移除可能导致验证错误的选项)
+                // runtimeEnvironment: 'browser',
                 
-                // 代码锁定选项 (高级安全功能)
-                codeLock: {
-                    enabled: false, // 设置为true启用时间锁定
-                    startTime: '', // 格式: '2024-01-01 00:00:00'
-                    endTime: '', // 格式: '2024-12-31 23:59:59'
-                    timezone: 'UTC'
-                },
+                // 代码锁定选项 (高级安全功能) - 默认禁用，需要时取消注释
+                // codeLock: {
+                //     enabled: false,
+                //     startTime: '2024-01-01 00:00:00',
+                //     endTime: '2024-12-31 23:59:59',
+                //     timezone: 'UTC'
+                // },
                 
-                // 域名锁定 (高级安全功能)
-                domainLock: [], // 添加允许的域名，如: ['example.com', '*.example.com']
-                domainLockRedirectUrl: '', // 重定向URL
+                // 域名锁定 (高级安全功能) - 默认禁用，需要时取消注释
+                // domainLock: ['example.com', '*.example.com'],
+                // domainLockRedirectUrl: 'https://example.com/redirect',
                 
-                // 时间锁定 (高级安全功能)
-                dateLock: '', // 格式: '2024-01-01 00:00:00'
-                dateLockRedirectUrl: '', // 重定向URL
+                // 时间锁定 (高级安全功能) - 默认禁用，需要时取消注释
+                // dateLock: '2024-12-31 23:59:59',
+                // dateLockRedirectUrl: 'https://example.com/expired',
                 
-                // 运行时篡改保护
-                runtimeTamperProtection: true,
+                // 运行时篡改保护 (默认启用)
+                // runtimeTamperProtection: true,
                 
-                // 反调试保护
-                antiDebug: true,
+                // 反调试保护 (默认启用)
+                // antiDebug: true,
                 
-                // 操作系统锁定 (可选)
-                osLock: '', // 'windows', 'macos', 'linux', 'android', 'ios'
+                // 操作系统锁定 (可选) - 需要时取消注释
+                // osLock: 'windows', // 'windows', 'macos', 'linux', 'android', 'ios'
                 
-                // 浏览器锁定 (可选)
-                browserLock: '', // 'chrome', 'firefox', 'safari', 'edge'
+                // 浏览器锁定 (可选) - 需要时取消注释
+                // browserLock: 'chrome', // 'chrome', 'firefox', 'safari', 'edge'
                 
-                // 自定义崩溃代码
-                customCrashCode: '', // 自定义崩溃时的错误信息
+                // 自定义崩溃代码 (可选) - 需要时取消注释
+                // customCrashCode: 'Access Denied',
                 
-                // 随机生成崩溃
-                randomCrash: true,
+                // 随机生成崩溃 (默认启用)
+                // randomCrash: true,
                 
-                // 函数不可修改
-                functionCannotBeModified: true
+                // 函数不可修改 (默认启用)
+                // functionCannotBeModified: true
             };
 
-            console.log('混淆配置: 增强型高级混淆模式 (双重编码 + 最高控制流平坦化 + 增强死代码注入 + 自我防御 + 调试保护 + API保护)');
+            console.log('混淆配置: 增强型高级混淆模式 (Base64编码 + 最高控制流平坦化 + 增强死代码注入 + 自我防御 + 调试保护 + API保护)');
             
             try {
                 const obfuscatedCode = JavaScriptObfuscator.obfuscate(originalCode, obfuscationOptions).getObfuscatedCode();
@@ -202,7 +202,7 @@ jobs:
                 
                 fs.writeFileSync(path.join(process.cwd(), outputFileName), obfuscatedCode, 'utf8');
                 console.log('✅ 成功将 \\'' + sourceFileName + '\\' 混淆并保存至 \\'' + outputFileName + '\\'。');
-                console.log('混淆保护级别: 增强型高级 (双重编码 + 最高控制流 + 自我防御 + 调试保护 + API保护 + 完全兼容)');
+                console.log('混淆保护级别: 增强型高级 (Base64编码 + 最高控制流 + 自我防御 + 调试保护 + API保护 + 完全兼容)');
                 console.log('目标环境: Cloudflare Workers (无eval限制)');
                 console.log('安全特性: 域名锁定 + 时间锁定 + 运行时篡改保护 + 反调试');
             } catch (error) {
