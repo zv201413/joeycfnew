@@ -293,7 +293,7 @@ export default {
 			authToken = (env.u || env.U || authToken).toLowerCase();
 			const subPath = (env.d || env.D || authToken).toLowerCase();
 			
-			const customIP = env.p || env.P;
+			const customIP = getConfigValue('p', env.p || env.P);
 			let useCustomIP = false;
 			
 			// 检查是否手动指定了wk地区 (优先使用KV配置)
@@ -313,7 +313,7 @@ export default {
 				enableRegionMatching = false;
 			}
 			
-			const envFallback = env.p || env.P;
+			const envFallback = getConfigValue('p', env.p || env.P);
 			if (envFallback) {
 				const fallbackValue = envFallback.toLowerCase();
 				if (fallbackValue.includes(']:')) {
