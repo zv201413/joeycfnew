@@ -310,21 +310,25 @@
                     enableRegionMatching = false;
                 }
                 
-                // 使用上面已经读取的customIP，优先使用KV配置
-                const envFallback = customIP;
-                if (envFallback) {
-                    const fallbackValue = envFallback.toLowerCase();
-                    if (fallbackValue.includes(']:')) {
-                        const lastColonIndex = fallbackValue.lastIndexOf(':');
-                        fallbackPort = fallbackValue.slice(lastColonIndex + 1);
-                        fallbackAddress = fallbackValue.slice(0, lastColonIndex);
-                    } else if (!fallbackValue.includes(']:') && !fallbackValue.includes(']')) {
-                        [fallbackAddress, fallbackPort = '443'] = fallbackValue.split(':');
-                    } else {
-                        fallbackAddress = fallbackValue;
-                        fallbackPort = '443';
-                    }
-                }
+			// 使用上面已经读取的customIP，优先使用KV配置
+			const envFallback = customIP;
+			if (envFallback && envFallback.trim()) {
+				const fallbackValue = envFallback.toLowerCase();
+				if (fallbackValue.includes(']:')) {
+					const lastColonIndex = fallbackValue.lastIndexOf(':');
+					fallbackPort = fallbackValue.slice(lastColonIndex + 1);
+					fallbackAddress = fallbackValue.slice(0, lastColonIndex);
+				} else if (!fallbackValue.includes(']:') && !fallbackValue.includes(']')) {
+					[fallbackAddress, fallbackPort = '443'] = fallbackValue.split(':');
+				} else {
+					fallbackAddress = fallbackValue;
+					fallbackPort = '443';
+				}
+			} else {
+				// 如果p变量为空，重置fallbackAddress
+				fallbackAddress = '';
+				fallbackPort = '443';
+			}
 
                 socks5Config = env.s || env.S || socks5Config;
                 if (socks5Config) {
@@ -1608,9 +1612,10 @@
                                 <option value="NL">🇳🇱 荷兰</option>
                                 <option value="FI">🇫🇮 芬兰</option>
                                 <option value="GB">🇬🇧 英国</option>
-                            </select>
-                        </div>
-                        <button type="submit" style="background: rgba(0, 255, 0, 0.15); border: 2px solid #00ff00; padding: 12px 24px; color: #00ff00; font-family: 'Courier New', monospace; font-weight: bold; cursor: pointer; margin-right: 10px; text-shadow: 0 0 8px #00ff00; transition: all 0.4s ease;">保存地区配置</button>
+                        </select>
+                        <small id="wkRegionHint" style="color: #00aa00; font-size: 0.85rem; display: none;">⚠️ 使用自定义Fallback (p变量) 时，地区选择已禁用</small>
+                    </div>
+                    <button type="submit" style="background: rgba(0, 255, 0, 0.15); border: 2px solid #00ff00; padding: 12px 24px; color: #00ff00; font-family: 'Courier New', monospace; font-weight: bold; cursor: pointer; margin-right: 10px; text-shadow: 0 0 8px #00ff00; transition: all 0.4s ease;">保存地区配置</button>
                     </form>
                     <form id="otherConfigForm" style="margin-bottom: 20px;">
                         <div style="margin-bottom: 15px;">
@@ -1995,16 +2000,51 @@
                     document.getElementById('socksConfig').value = config.s || '';
                     document.getElementById('apiEnabled').value = config.apiEnabled || '';
                     document.getElementById('regionMatching').value = config.rm || '';
-                    document.getElementById('downgradeControl').value = config.qj || '';
-                    document.getElementById('portControl').value = config.dkby || '';
-                    document.getElementById('preferredControl').value = config.yxby || '';
-                    
-                } catch (error) {
-                    document.getElementById('currentConfig').textContent = '加载配置失败: ' + error.message;
+                document.getElementById('downgradeControl').value = config.qj || '';
+                document.getElementById('portControl').value = config.dkby || '';
+                document.getElementById('preferredControl').value = config.yxby || '';
+                
+                // 检查p变量，如果有值则禁用wk地区选择
+                updateWkRegionState();
+                
+            } catch (error) {
+                document.getElementById('currentConfig').textContent = '加载配置失败: ' + error.message;
+            }
+        }
+        
+        // 更新wk地区选择的启用/禁用状态
+        function updateWkRegionState() {
+            const customIP = document.getElementById('customIP');
+            const wkRegion = document.getElementById('wkRegion');
+            const wkRegionHint = document.getElementById('wkRegionHint');
+            
+            if (customIP && wkRegion) {
+                const hasCustomIP = customIP.value.trim() !== '';
+                wkRegion.disabled = hasCustomIP;
+                
+                // 添加视觉反馈
+                if (hasCustomIP) {
+                    wkRegion.style.opacity = '0.5';
+                    wkRegion.style.cursor = 'not-allowed';
+                    wkRegion.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+                    // 显示提示信息
+                    if (wkRegionHint) {
+                        wkRegionHint.style.display = 'block';
+                        wkRegionHint.style.color = '#ffaa00';
+                    }
+                } else {
+                    wkRegion.style.opacity = '1';
+                    wkRegion.style.cursor = 'pointer';
+                    wkRegion.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+                    // 隐藏提示信息
+                    if (wkRegionHint) {
+                        wkRegionHint.style.display = 'none';
+                    }
                 }
             }
-            
-            async function saveConfig(configData) {
+        }
+        
+        async function saveConfig(configData) {
                 const apiUrl = window.location.pathname + '/api/config';
                 console.log('💾 调试信息 - 保存配置');
                 console.log('请求URL:', apiUrl);
@@ -2100,12 +2140,20 @@
                 }
             }
             
-            document.addEventListener('DOMContentLoaded', function() {
-                createMatrixRain();
-                checkSystemStatus();
-                checkKVStatus();
-                
-                // 绑定表单事件
+        document.addEventListener('DOMContentLoaded', function() {
+            createMatrixRain();
+            checkSystemStatus();
+            checkKVStatus();
+            
+            // 监听customIP输入框变化，实时更新wk地区选择状态
+            const customIPInput = document.getElementById('customIP');
+            if (customIPInput) {
+                customIPInput.addEventListener('input', function() {
+                    updateWkRegionState();
+                });
+            }
+            
+            // 绑定表单事件
                 const regionForm = document.getElementById('regionForm');
                 if (regionForm) {
                     regionForm.addEventListener('submit', async function(e) {
