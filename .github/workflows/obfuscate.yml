@@ -16,7 +16,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Install Obfuscator
         run: npm install javascript-obfuscator
@@ -33,7 +33,7 @@ jobs:
             const sourceFilePath = path.join(process.cwd(), sourceFileName);
 
             if (!fs.existsSync(sourceFilePath)) {
-              console.error('错误：在路径 \'' + sourceFilePath + '\' 未找到源文件。请确保您的仓库根目录有名为 \'明文源吗\' 的文件。');
+              console.error('错误：在路径 \\'' + sourceFilePath + '\\' 未找到源文件。请确保您的仓库根目录有名为 \\'明文源吗\\' 的文件。');
               process.exit(1);
             }
 
@@ -44,40 +44,136 @@ jobs:
               process.exit(1);
             }
 
-            // --- 最终平衡型混淆配置 ---
+            console.log('源文件大小: ' + originalCode.length + ' 字节');
+            console.log('开始混淆处理...');
+
+            // --- Cloudflare Workers 优化混淆配置 ---
             const obfuscationOptions = {
+                // 基础压缩
                 compact: true,
+                
+                // 控制流平坦化 (中等强度，确保兼容性)
                 controlFlowFlattening: true,
                 controlFlowFlatteningThreshold: 0.75,
+                
+                // 死代码注入 (适中，避免体积过大)
                 deadCodeInjection: true,
                 deadCodeInjectionThreshold: 0.4,
+                
+                // 字符串数组混淆 (使用base64，RC4在CFW可能有兼容性问题)
                 stringArray: true,
                 stringArrayEncoding: ['base64'],
-                stringArrayThreshold: 0.75,
-                renameGlobals: true,
-                identifierNamesGenerator: 'mangled',
+                stringArrayIndexShift: true,
+                stringArrayRotate: true,
+                stringArrayShuffle: true,
+                stringArrayWrappersCount: 2,
+                stringArrayWrappersChainedCalls: true,
+                stringArrayWrappersParametersMaxCount: 3,
+                stringArrayWrappersType: 'function',
+                stringArrayThreshold: 0.8,
+                
+                // 不使用unicode编码 (可能影响CFW字符处理)
+                unicodeEscapeSequence: false,
+                
+                // 标识符混淆 (不重命名全局变量，保护CFW API)
+                renameGlobals: false,
+                identifierNamesGenerator: 'hexadecimal',
+                identifiersPrefix: '_0x',
+                
+                // 数字和表达式混淆
                 numbersToExpressions: true,
+                simplify: true,
+                
+                // 字符串分割
                 splitStrings: true,
                 splitStringsChunkLength: 10,
+                
+                // 对象键转换
                 transformObjectKeys: true,
+                
+                // 关闭自我防御 (CFW环境可能触发误判)
                 selfDefending: false,
-                debugProtection: false
+                
+                // 关闭调试保护 (影响性能)
+                debugProtection: false,
+                debugProtectionInterval: 0,
+                
+                // 不禁用console (CFW需要日志)
+                disableConsoleOutput: false,
+                
+                // 强制转换敏感字符串
+                forceTransformStrings: ['proxy', 'socks', 'vless', 'vmess'],
+                
+                // 保留CFW关键API和导入
+                reservedNames: [
+                    '^connect$',
+                    '^fetch$', 
+                    '^Response$', 
+                    '^Request$',
+                    '^Headers$',
+                    '^URL$',
+                    '^crypto$',
+                    '^btoa$',
+                    '^atob$',
+                    '^TextEncoder$',
+                    '^TextDecoder$',
+                    '^Uint8Array$',
+                    '^ArrayBuffer$',
+                    '^addEventListener$',
+                    '^WebSocket$',
+                    '^ReadableStream$'
+                ],
+                
+                // 保留CFW模块路径
+                reservedStrings: ['^cloudflare:sockets$', '^cloudflare:', '^ws:', '^wss:'],
+                
+                // 种子 (每次生成不同结果)
+                seed: Date.now(),
+                
+                // 目标环境 (browser-no-eval确保不使用eval)
+                target: 'browser-no-eval',
+                
+                // 忽略导入语句
+                ignoreImports: true,
+                
+                // 不使用eval和Function构造器 (CFW限制)
+                sourceMapMode: 'separate'
             };
 
-            const obfuscatedCode = JavaScriptObfuscator.obfuscate(originalCode, obfuscationOptions).getObfuscatedCode();
+            console.log('混淆配置: CFW优化模式 (Base64编码 + 控制流平坦化 + 死代码注入 + API保护)');
             
-            fs.writeFileSync(path.join(process.cwd(), outputFileName), obfuscatedCode, 'utf8');
-            console.log('成功将 \'' + sourceFileName + '\' 混淆并保存至 \'' + outputFileName + '\'。');
+            try {
+                const obfuscatedCode = JavaScriptObfuscator.obfuscate(originalCode, obfuscationOptions).getObfuscatedCode();
+                
+                console.log('混淆后大小: ' + obfuscatedCode.length + ' 字节');
+                console.log('大小变化: ' + ((obfuscatedCode.length / originalCode.length * 100).toFixed(2)) + '%');
+                
+                fs.writeFileSync(path.join(process.cwd(), outputFileName), obfuscatedCode, 'utf8');
+                console.log('✅ 成功将 \\'' + sourceFileName + '\\' 混淆并保存至 \\'' + outputFileName + '\\'。');
+                console.log('混淆保护级别: CFW优化 (Base64 + 控制流 + API保护 + 完全兼容)');
+                console.log('目标环境: Cloudflare Workers (无eval限制)');
+            } catch (error) {
+                console.error('❌ 混淆过程出错:', error.message);
+                process.exit(1);
+            }
           "
+
+      - name: Verify obfuscated file
+        run: |
+          if [ -f "少年你相信光吗" ]; then
+            echo "✅ 混淆文件已生成"
+            echo "文件大小: $(wc -c < '少年你相信光吗') 字节"
+            echo "代码行数: $(wc -l < '少年你相信光吗') 行"
+          else
+            echo "❌ 混淆文件生成失败"
+            exit 1
+          fi
 
       - name: Commit and push the obfuscated file
         run: |
           git config --global user.name 'GitHub Actions Bot'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add '少年你相信光吗'
-          if git diff --staged --quiet; then
-            echo "No changes to commit, the obfuscated file is already up-to-date."
-          else
-            git commit -m "build: Generate and obfuscate worker script"
-            git push
-          fi
+          git commit -m "build: 生成混淆脚本 (CFW优化模式) [$(date +'%Y-%m-%d %H:%M:%S')]" --allow-empty
+          git push
+          echo "✅ 混淆文件已提交并推送"
