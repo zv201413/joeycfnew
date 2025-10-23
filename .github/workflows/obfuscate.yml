@@ -61,9 +61,9 @@ jobs:
                 deadCodeInjection: true,
                 deadCodeInjectionThreshold: 0.3,
                 
-                // 字符串数组混淆 (优化配置)
+                // 字符串数组混淆 (优化配置，支持中文)
                 stringArray: true,
-                stringArrayEncoding: ['base64'],
+                stringArrayEncoding: ['base64'], // Base64编码支持中文
                 stringArrayIndexShift: true,
                 stringArrayRotate: true,
                 stringArrayShuffle: true,
@@ -71,7 +71,7 @@ jobs:
                 stringArrayWrappersChainedCalls: true,
                 stringArrayWrappersParametersMaxCount: 3, // 减少参数数量
                 stringArrayWrappersType: 'function',
-                stringArrayThreshold: 0.6, // 降低阈值以减少文件大小
+                stringArrayThreshold: 0.8, // 提高阈值以处理更多中文字符串
                 
                 // 禁用Unicode转义序列 (减少文件大小)
                 unicodeEscapeSequence: false,
@@ -86,9 +86,19 @@ jobs:
                 numbersToExpressions: true,
                 transformObjectKeys: false, // 禁用对象键转换以减少文件大小
                 
-                // 字符串分割 (优化配置)
+                // 字符串分割 (优化配置，支持中文)
                 splitStrings: true,
-                splitStringsChunkLength: 10, // 增加块长度以减少分割
+                splitStringsChunkLength: 8, // 适合中文字符的长度
+                
+                // 中文字符串处理
+                stringArrayCallsTransform: true,
+                stringArrayCallsTransformThreshold: 0.8,
+                
+                // 强制处理所有字符串（包括中文）
+                stringArrayThreshold: 0.8, // 提高阈值以处理更多字符串
+                
+                // 确保中文字符串被编码
+                stringArrayEncodingDetection: true,
                 
                 // 函数参数混淆 (降低强度)
                 functionParameterObfuscation: true,
@@ -112,11 +122,18 @@ jobs:
                 // 保留console输出 (CFW需要)
                 disableConsoleOutput: false,
                 
-                // 强制转换敏感字符串 (增强版)
+                // 强制转换敏感字符串 (增强版，包含中文)
                 forceTransformStrings: [
+                    // 英文敏感词
                     'proxy', 'socks', 'vless', 'vmess', 'trojan', 'ss', 'ssr',
                     'auth', 'token', 'key', 'secret', 'password', 'pass',
-                    'connect', 'socket', 'tunnel', 'bridge', 'gateway'
+                    'connect', 'socket', 'tunnel', 'bridge', 'gateway',
+                    // 中文敏感词
+                    '代理', '连接', '认证', '密码', '密钥', '令牌', '访问',
+                    '服务器', '客户端', '配置', '设置', '网络', '协议',
+                    '加密', '解密', '传输', '数据', '流量', '节点',
+                    '美国', '新加坡', '日本', '香港', '韩国', '德国', '瑞典', '荷兰', '芬兰', '英国',
+                    '甲骨文', '数码海', 'Vultr', 'Multacom'
                 ],
                 
                 // 保留CFW关键API和导入 (扩展版)
@@ -190,7 +207,7 @@ jobs:
                 // functionCannotBeModified: true
             };
 
-            console.log('混淆配置: 优化型混淆模式 (Base64编码 + 中等控制流平坦化 + 优化死代码注入 + 文件大小优化 + CFW兼容)');
+            console.log('混淆配置: 优化型混淆模式 (Base64编码 + 中文字符串处理 + 中等控制流平坦化 + 优化死代码注入 + 文件大小优化 + CFW兼容)');
             
             try {
                 const obfuscatedCode = JavaScriptObfuscator.obfuscate(originalCode, obfuscationOptions).getObfuscatedCode();
@@ -200,9 +217,9 @@ jobs:
                 
                 fs.writeFileSync(path.join(process.cwd(), outputFileName), obfuscatedCode, 'utf8');
                 console.log('✅ 成功将 \\'' + sourceFileName + '\\' 混淆并保存至 \\'' + outputFileName + '\\'。');
-                console.log('混淆保护级别: 优化型 (Base64编码 + 中等控制流 + 文件大小优化 + API保护 + 完全兼容)');
+                console.log('混淆保护级别: 优化型 (Base64编码 + 中文字符串处理 + 中等控制流 + 文件大小优化 + API保护 + 完全兼容)');
                 console.log('目标环境: Cloudflare Workers (无eval限制)');
-                console.log('优化特性: 文件大小控制 + 运行时稳定性 + CFW完全兼容');
+                console.log('优化特性: 中文字符串混淆 + 文件大小控制 + 运行时稳定性 + CFW完全兼容');
             } catch (error) {
                 console.error('❌ 混淆过程出错:', error.message);
                 process.exit(1);
