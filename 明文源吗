@@ -2197,6 +2197,178 @@ async function handleSubscriptionPage(request, user = null) {
                 });
             }
         });
+        
+        // TG群弹窗功能
+        function showTGGroupModal() {
+            // 检查是否已经选择不再提醒
+            if (localStorage.getItem('tgGroupReminder') === 'dismissed') {
+                return;
+            }
+            
+            // 创建弹窗HTML
+            const modalHtml = `
+                <div id="tgGroupModal" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.8);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 10000;
+                    backdrop-filter: blur(5px);
+                ">
+                    <div style="
+                        background: linear-gradient(45deg, #001100, #002200, #001100);
+                        border: 2px solid #00ff00;
+                        border-radius: 15px;
+                        padding: 30px;
+                        max-width: 500px;
+                        width: 90%;
+                        text-align: center;
+                        box-shadow: 0 0 30px rgba(0, 255, 0, 0.5);
+                        animation: modalGlow 2s ease-in-out infinite;
+                    ">
+                        <div style="
+                            color: #00ff00;
+                            font-size: 24px;
+                            font-weight: bold;
+                            margin-bottom: 20px;
+                            text-shadow: 0 0 10px #00ff00;
+                        ">欢迎使用WK代理服务</div>
+                        
+                        <div style="
+                            color: #44ff44;
+                            font-size: 16px;
+                            line-height: 1.6;
+                            margin-bottom: 25px;
+                        ">
+                            关注我们的社交媒体，获取最新更新和技术支持！<br>
+                            <span style="color: #ffaa00;">提供内容：</span><br>
+                            • 最新节点更新通知<br>
+                            • 技术问题解答<br>
+                            • 使用技巧分享<br>
+                            • 社区交流互动
+                        </div>
+                        
+                        <div style="
+                            display: flex;
+                            gap: 15px;
+                            justify-content: center;
+                            flex-wrap: wrap;
+                        ">
+                            <button id="joinTGGroup" style="
+                                background: linear-gradient(45deg, #00ff00, #00aa00);
+                                border: none;
+                                color: #000;
+                                padding: 12px 25px;
+                                border-radius: 8px;
+                                font-size: 16px;
+                                font-weight: bold;
+                                cursor: pointer;
+                                transition: all 0.3s ease;
+                                box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+                            " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                                加入TG群
+                            </button>
+                            
+                            <button id="joinYouTube" style="
+                                background: linear-gradient(45deg, #ff0000, #cc0000);
+                                border: none;
+                                color: #fff;
+                                padding: 12px 25px;
+                                border-radius: 8px;
+                                font-size: 16px;
+                                font-weight: bold;
+                                cursor: pointer;
+                                transition: all 0.3s ease;
+                                box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
+                            " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                                订阅YouTube
+                            </button>
+                            
+                            <button id="dismissModal" style="
+                                background: linear-gradient(45deg, #666, #444);
+                                border: none;
+                                color: #fff;
+                                padding: 12px 25px;
+                                border-radius: 8px;
+                                font-size: 16px;
+                                font-weight: bold;
+                                cursor: pointer;
+                                transition: all 0.3s ease;
+                            " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                                关闭
+                            </button>
+                            
+                            <button id="dontRemind" style="
+                                background: linear-gradient(45deg, #ffaa00, #ff8800);
+                                border: none;
+                                color: #000;
+                                padding: 12px 25px;
+                                border-radius: 8px;
+                                font-size: 16px;
+                                font-weight: bold;
+                                cursor: pointer;
+                                transition: all 0.3s ease;
+                            " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                                不再提醒
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <style>
+                    @keyframes modalGlow {
+                        0%, 100% { box-shadow: 0 0 30px rgba(0, 255, 0, 0.5); }
+                        50% { box-shadow: 0 0 50px rgba(0, 255, 0, 0.8); }
+                    }
+                </style>
+            `;
+            
+            // 添加弹窗到页面
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // 绑定事件
+            document.getElementById('joinTGGroup').addEventListener('click', function() {
+                // 这里可以替换为实际的TG群链接
+                window.open('https://t.me/your_tg_group', '_blank');
+                closeModal();
+            });
+            
+            document.getElementById('joinYouTube').addEventListener('click', function() {
+                window.open('https://www.youtube.com/@joeyblog?sub_confirmation=1', '_blank');
+                closeModal();
+            });
+            
+            document.getElementById('dismissModal').addEventListener('click', function() {
+                closeModal();
+            });
+            
+            document.getElementById('dontRemind').addEventListener('click', function() {
+                localStorage.setItem('tgGroupReminder', 'dismissed');
+                closeModal();
+            });
+            
+            function closeModal() {
+                const modal = document.getElementById('tgGroupModal');
+                if (modal) {
+                    modal.style.opacity = '0';
+                    modal.style.transform = 'scale(0.8)';
+                    setTimeout(() => {
+                        modal.remove();
+                    }, 300);
+                }
+            }
+        }
+        
+        // 页面加载完成后显示弹窗
+        document.addEventListener('DOMContentLoaded', function() {
+            // 延迟2秒显示弹窗，让页面先加载完成
+            setTimeout(showTGGroupModal, 2000);
+        });
     </script>
 </body>
 </html>`;
