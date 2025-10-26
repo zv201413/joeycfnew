@@ -403,10 +403,9 @@ export default {
 			// 优先使用KV配置，然后使用环境变量，如果都没有则使用默认URL
 			preferredIPsURL = getConfigValue('yxURL', env.yxURL || env.YXURL) || 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
 			
-			// 如果yxURL不是默认值，清空内置优选IP和域名
+			// 如果yxURL不是默认值，清空域名但保留backupIPs作为后备选项
 			const defaultURL = 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
 			if (preferredIPsURL !== defaultURL) {
-				backupIPs = [];
 				directDomains.length = 0;
 				customPreferredIPs = [];
 				customPreferredDomains = [];
@@ -2368,7 +2367,6 @@ async function handleConfigAPI(request) {
             const newPreferredIPsURL = getConfigValue('yxURL', '') || 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
             const defaultURL = 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
             if (newPreferredIPsURL !== defaultURL) {
-                backupIPs = [];
                 directDomains.length = 0;
                 customPreferredIPs = [];
                 customPreferredDomains = [];
