@@ -15,6 +15,10 @@ let currentWorkerRegion = '';
 let manualWorkerRegion = '';
 let preferredIPsURL = '';
 
+// 协议选择配置
+let enableVless = true;
+let enableTrojan = false;
+
 // KV存储相关变量
 let kvStore = null;
 let kvConfig = {};
@@ -398,6 +402,22 @@ export default {
 			const yxbyControl = env.yxby || env.YXBY;
 			if (yxbyControl && yxbyControl.toLowerCase() === 'yes') {
 				disablePreferred = true;
+			}
+
+			// 协议选择配置（优先使用KV配置）
+			const vlessControl = getConfigValue('enableVless', env.enableVless || env.ENABLEVLESS);
+			if (vlessControl !== undefined && vlessControl !== '') {
+				enableVless = vlessControl === 'yes' || vlessControl === true || vlessControl === 'true';
+			}
+			
+			const trojanControl = getConfigValue('enableTrojan', env.enableTrojan || env.ENABLETROJAN);
+			if (trojanControl !== undefined && trojanControl !== '') {
+				enableTrojan = trojanControl === 'yes' || trojanControl === true || trojanControl === 'true';
+			}
+			
+			// 确保至少有一个协议启用
+			if (!enableVless && !enableTrojan) {
+				enableVless = true;
 			}
 
 			// 优先使用KV配置，然后使用环境变量，如果都没有则使用默认URL
@@ -857,13 +877,23 @@ async function handleSubscriptionRequest(request, user, url = null) {
     const workerDomain = url.hostname;
     const target = url.searchParams.get('target') || 'base64';
 
+    // 生成节点的辅助函数
+    async function addNodesFromList(list) {
+        if (enableVless) {
+            finalLinks.push(...generateLinksFromSource(list, user, workerDomain));
+        }
+        if (enableTrojan) {
+            finalLinks.push(...await generateTrojanLinksFromSource(list, user, workerDomain));
+        }
+    }
+
     if (currentWorkerRegion === 'CUSTOM') {
         const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
-        finalLinks.push(...generateLinksFromSource(nativeList, user, workerDomain));
+        await addNodesFromList(nativeList);
     } else {
         try {
             const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
-            finalLinks.push(...generateLinksFromSource(nativeList, user, workerDomain));
+            await addNodesFromList(nativeList);
         } catch (error) {
             if (!currentWorkerRegion) {
                 currentWorkerRegion = await detectWorkerRegion(request);
@@ -874,10 +904,10 @@ async function handleSubscriptionRequest(request, user, url = null) {
                 fallbackAddress = bestBackupIP.domain;
                 fallbackPort = bestBackupIP.port.toString();
                 const backupList = [{ ip: fallbackAddress, isp: 'ProxyIP-' + currentWorkerRegion }];
-                finalLinks.push(...generateLinksFromSource(backupList, user, workerDomain));
+                await addNodesFromList(backupList);
             } else {
                 const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
-                finalLinks.push(...generateLinksFromSource(nativeList, user, workerDomain));
+                await addNodesFromList(nativeList);
             }
         }
     }
@@ -888,23 +918,23 @@ async function handleSubscriptionRequest(request, user, url = null) {
     } else if (hasCustomPreferred) {
         // 使用yx配置的优选IP（包含API添加的）
         if (customPreferredIPs.length > 0) {
-            finalLinks.push(...generateLinksFromSource(customPreferredIPs, user, workerDomain));
+            await addNodesFromList(customPreferredIPs);
         }
         
         if (customPreferredDomains.length > 0) {
             const customDomainList = customPreferredDomains.map(d => ({ ip: d.domain, isp: d.name || d.domain }));
-            finalLinks.push(...generateLinksFromSource(customDomainList, user, workerDomain));
+            await addNodesFromList(customDomainList);
         }
     } else {
         const domainList = directDomains.map(d => ({ ip: d.domain, isp: d.name || d.domain }));
-        finalLinks.push(...generateLinksFromSource(domainList, user, workerDomain));
+        await addNodesFromList(domainList);
 
         const defaultURL = 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
         if (preferredIPsURL === defaultURL) {
             try {
                 const dynamicIPList = await fetchDynamicIPs();
                 if (dynamicIPList.length > 0) {
-                    finalLinks.push(...generateLinksFromSource(dynamicIPList, user, workerDomain));
+                    await addNodesFromList(dynamicIPList);
                 }
             } catch (error) {
                 if (!currentWorkerRegion) {
@@ -917,7 +947,7 @@ async function handleSubscriptionRequest(request, user, url = null) {
                     fallbackPort = bestBackupIP.port.toString();
                     
                     const backupList = [{ ip: fallbackAddress, isp: 'ProxyIP-' + currentWorkerRegion }];
-                    finalLinks.push(...generateLinksFromSource(backupList, user, workerDomain));
+                    await addNodesFromList(backupList);
                 }
             }
         }
@@ -925,7 +955,12 @@ async function handleSubscriptionRequest(request, user, url = null) {
         try {
             const newIPList = await fetchAndParseNewIPs();
             if (newIPList.length > 0) {
-                finalLinks.push(...generateLinksFromNewIPs(newIPList, user, workerDomain));
+                if (enableVless) {
+                    finalLinks.push(...generateLinksFromNewIPs(newIPList, user, workerDomain));
+                }
+                if (enableTrojan) {
+                    finalLinks.push(...await generateTrojanLinksFromNewIPs(newIPList, user, workerDomain));
+                }
             }
         } catch (error) {
             if (!currentWorkerRegion) {
@@ -938,7 +973,7 @@ async function handleSubscriptionRequest(request, user, url = null) {
                 fallbackPort = bestBackupIP.port.toString();
                 
                 const backupList = [{ ip: fallbackAddress, isp: 'ProxyIP-' + currentWorkerRegion }];
-                finalLinks.push(...generateLinksFromSource(backupList, user, workerDomain));
+                await addNodesFromList(backupList);
             }
         }
     }
@@ -1065,6 +1100,77 @@ function generateLinksFromSource(list, user, workerDomain) {
     return links;
 }
 
+// Trojan 链接生成函数
+async function generateTrojanLinksFromSource(list, user, workerDomain) {
+    // Cloudflare支持的端口
+    const CF_HTTP_PORTS = [80, 8080, 8880, 2052, 2082, 2086, 2095];
+    const CF_HTTPS_PORTS = [443, 2053, 2083, 2087, 2096, 8443];
+    
+    const defaultHttpsPorts = [443];
+    const defaultHttpPorts = disableNonTLS ? [] : [80];
+    const links = [];
+    const wsPath = encodeURIComponent('/');
+    
+    // 将 UUID 转换为 SHA224 作为 Trojan 密码
+    const sha224Password = await sha224Hash(user);
+
+    list.forEach(item => {
+        const nodeNameBase = item.isp.replace(/\s/g, '_');
+        const safeIP = item.ip.includes(':') ? `[${item.ip}]` : item.ip;
+        
+        let portsToGenerate = [];
+        
+        if (item.port) {
+            const port = item.port;
+            
+            if (CF_HTTPS_PORTS.includes(port)) {
+                portsToGenerate.push({ port: port, tls: true });
+            } else if (CF_HTTP_PORTS.includes(port)) {
+                if (!disableNonTLS) {
+                    portsToGenerate.push({ port: port, tls: false });
+                }
+            } else {
+                portsToGenerate.push({ port: port, tls: true });
+            }
+        } else {
+            defaultHttpsPorts.forEach(port => {
+                portsToGenerate.push({ port: port, tls: true });
+            });
+            defaultHttpPorts.forEach(port => {
+                portsToGenerate.push({ port: port, tls: false });
+            });
+        }
+
+        // 生成 Trojan 节点
+        portsToGenerate.forEach(({ port, tls }) => {
+            if (tls) {
+                // TLS节点
+                const wsNodeName = `${nodeNameBase}-${port}-Trojan-WS-TLS`;
+                const wsParams = new URLSearchParams({ 
+                    security: 'tls', 
+                    sni: workerDomain, 
+                    fp: 'chrome', 
+                    type: 'ws', 
+                    host: workerDomain, 
+                    path: wsPath 
+                });
+                links.push(`trojan://${sha224Password}@${safeIP}:${port}?${wsParams.toString()}#${encodeURIComponent(wsNodeName)}`);
+            } else {
+                // 非TLS节点
+                const wsNodeName = `${nodeNameBase}-${port}-Trojan-WS`;
+                const wsParams = new URLSearchParams({
+                    security: 'none',
+                    type: 'ws',
+                    host: workerDomain,
+                    path: wsPath
+                });
+                links.push(`trojan://${sha224Password}@${safeIP}:${port}?${wsParams.toString()}#${encodeURIComponent(wsNodeName)}`);
+            }
+        });
+    });
+    return links;
+}
+
 async function fetchDynamicIPs() {
     const v4Url1 = "https://www.wetest.vip/page/cloudflare/address_v4.html";
     const v6Url1 = "https://www.wetest.vip/page/cloudflare/address_v6.html";
@@ -1129,6 +1235,7 @@ async function handleWsRequest(request) {
 
     let remoteConnWrapper = { socket: null };
     let isDnsQuery = false;
+    let protocolType = null; // 'vless' or 'trojan'
 
     const earlyData = request.headers.get('sec-websocket-protocol') || '';
     const readable = makeReadableStream(serverSock, earlyData);
@@ -1142,16 +1249,41 @@ async function handleWsRequest(request) {
                 writer.releaseLock();
                 return;
             }
-            const { hasError, message, addressType, port, hostname, rawIndex, version, isUDP } = parseWsPacketHeader(chunk, authToken);
-            if (hasError) throw new Error(message);
-            if (isUDP) {
-                if (port === 53) isDnsQuery = true;
-                else throw new Error(E_UDP_DNS_ONLY);
+            
+            // 自动检测协议类型
+            if (!protocolType) {
+                // 尝试 VLESS 协议
+                if (enableVless && chunk.byteLength >= 24) {
+                    const vlessResult = parseWsPacketHeader(chunk, authToken);
+                    if (!vlessResult.hasError) {
+                        protocolType = 'vless';
+                        const { addressType, port, hostname, rawIndex, version, isUDP } = vlessResult;
+                        if (isUDP) {
+                            if (port === 53) isDnsQuery = true;
+                            else throw new Error(E_UDP_DNS_ONLY);
+                        }
+                        const respHeader = new Uint8Array([version[0], 0]);
+                        const rawData = chunk.slice(rawIndex);
+                        if (isDnsQuery) return forwardUDP(rawData, serverSock, respHeader);
+                        await forwardTCP(addressType, hostname, port, rawData, serverSock, respHeader, remoteConnWrapper);
+                        return;
+                    }
+                }
+                
+                // 尝试 Trojan 协议
+                if (enableTrojan && chunk.byteLength >= 56) {
+                    const trojanResult = await parseTrojanHeader(chunk, authToken);
+                    if (!trojanResult.hasError) {
+                        protocolType = 'trojan';
+                        const { addressType, port, hostname, rawClientData } = trojanResult;
+                        await forwardTCP(addressType, hostname, port, rawClientData, serverSock, null, remoteConnWrapper);
+                        return;
+                    }
+                }
+                
+                // 如果两个协议都失败，抛出错误
+                throw new Error('Invalid protocol or authentication failed');
             }
-            const respHeader = new Uint8Array([version[0], 0]);
-            const rawData = chunk.slice(rawIndex);
-            if (isDnsQuery) return forwardUDP(rawData, serverSock, respHeader);
-            await forwardTCP(addressType, hostname, port, rawData, serverSock, respHeader, remoteConnWrapper);
         },
     })).catch((err) => { });
 
@@ -1628,6 +1760,24 @@ async function handleSubscriptionPage(request, user = null) {
                 </form>
                 <form id="otherConfigForm" style="margin-bottom: 20px;">
                     <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">协议选择:</label>
+                        <div style="padding: 15px; background: rgba(0, 20, 0, 0.6); border: 1px solid #00ff00; border-radius: 5px;">
+                            <div style="margin-bottom: 10px;">
+                                <label style="display: inline-flex; align-items: center; cursor: pointer; color: #00ff00;">
+                                    <input type="checkbox" id="enableVless" checked style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
+                                    <span style="font-size: 1.1rem;">启用 VLESS 协议</span>
+                                </label>
+                            </div>
+                            <div style="margin-bottom: 5px;">
+                                <label style="display: inline-flex; align-items: center; cursor: pointer; color: #00ff00;">
+                                    <input type="checkbox" id="enableTrojan" style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
+                                    <span style="font-size: 1.1rem;">启用 Trojan 协议</span>
+                                </label>
+                            </div>
+                            <small style="color: #00aa00; font-size: 0.85rem;">可以同时启用两个协议，也可以只选择一个。订阅将生成选中协议的节点。Trojan 使用 UUID 的 SHA224 哈希作为密码。</small>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 15px;">
                         <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">自定义ProxyIP (p):</label>
                         <input type="text" id="customIP" placeholder="例如: 1.2.3.4:443" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
                         <small style="color: #00aa00; font-size: 0.85rem;">自定义ProxyIP地址和端口</small>
@@ -1995,6 +2145,8 @@ async function handleSubscriptionPage(request, user = null) {
                 
                 // 更新表单值
                 document.getElementById('wkRegion').value = config.wk || '';
+                document.getElementById('enableVless').checked = config.enableVless !== 'no';
+                document.getElementById('enableTrojan').checked = config.enableTrojan === 'yes';
                 document.getElementById('customIP').value = config.p || '';
                 document.getElementById('preferredIPs').value = config.yx || '';
                 document.getElementById('preferredIPsURL').value = config.yxURL || '';
@@ -2173,11 +2325,20 @@ async function handleSubscriptionPage(request, user = null) {
                 otherConfigForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
                     const configData = {
+                        enableVless: document.getElementById('enableVless').checked ? 'yes' : 'no',
+                        enableTrojan: document.getElementById('enableTrojan').checked ? 'yes' : 'no',
                         p: document.getElementById('customIP').value,
                         yx: document.getElementById('preferredIPs').value,
                         yxURL: document.getElementById('preferredIPsURL').value,
                         s: document.getElementById('socksConfig').value
                     };
+                    
+                    // 确保至少选择一个协议
+                    if (!document.getElementById('enableVless').checked && !document.getElementById('enableTrojan').checked) {
+                        alert('至少需要启用一个协议！');
+                        return;
+                    }
+                    
                     await saveConfig(configData);
                 });
             }
@@ -2205,6 +2366,115 @@ async function handleSubscriptionPage(request, user = null) {
 		status: 200, 
 		headers: { 'Content-Type': 'text/html; charset=utf-8' } 
 	});
+}
+
+// Trojan 协议处理函数
+async function parseTrojanHeader(buffer, uuidToken) {
+    // 将 UUID 转换为 SHA224 哈希作为密码
+    const sha224Password = await sha224Hash(uuidToken);
+    
+    if (buffer.byteLength < 56) {
+        return {
+            hasError: true,
+            message: "invalid trojan data"
+        };
+    }
+    let crLfIndex = 56;
+    if (new Uint8Array(buffer.slice(56, 57))[0] !== 0x0d || new Uint8Array(buffer.slice(57, 58))[0] !== 0x0a) {
+        return {
+            hasError: true,
+            message: "invalid trojan header format (missing CR LF)"
+        };
+    }
+    const password = new TextDecoder().decode(buffer.slice(0, crLfIndex));
+    if (password !== sha224Password) {
+        return {
+            hasError: true,
+            message: "invalid trojan password"
+        };
+    }
+
+    const socks5DataBuffer = buffer.slice(crLfIndex + 2);
+    if (socks5DataBuffer.byteLength < 6) {
+        return {
+            hasError: true,
+            message: "invalid SOCKS5 request data"
+        };
+    }
+
+    const view = new DataView(socks5DataBuffer);
+    const cmd = view.getUint8(0);
+    if (cmd !== 1) {
+        return {
+            hasError: true,
+            message: "unsupported command, only TCP (CONNECT) is allowed"
+        };
+    }
+
+    const atype = view.getUint8(1);
+    let addressLength = 0;
+    let addressIndex = 2;
+    let address = "";
+    switch (atype) {
+        case 1:
+            addressLength = 4;
+            address = new Uint8Array(
+              socks5DataBuffer.slice(addressIndex, addressIndex + addressLength)
+            ).join(".");
+            break;
+        case 3:
+            addressLength = new Uint8Array(
+              socks5DataBuffer.slice(addressIndex, addressIndex + 1)
+            )[0];
+            addressIndex += 1;
+            address = new TextDecoder().decode(
+              socks5DataBuffer.slice(addressIndex, addressIndex + addressLength)
+            );
+            break;
+        case 4:
+            addressLength = 16;
+            const dataView = new DataView(socks5DataBuffer.slice(addressIndex, addressIndex + addressLength));
+            const ipv6 = [];
+            for (let i = 0; i < 8; i++) {
+                ipv6.push(dataView.getUint16(i * 2).toString(16));
+            }
+            address = ipv6.join(":");
+            break;
+        default:
+            return {
+                hasError: true,
+                message: `invalid addressType is ${atype}`
+            };
+    }
+
+    if (!address) {
+        return {
+            hasError: true,
+            message: `address is empty, addressType is ${atype}`
+        };
+    }
+
+    const portIndex = addressIndex + addressLength;
+    const portBuffer = socks5DataBuffer.slice(portIndex, portIndex + 2);
+    const portRemote = new DataView(portBuffer).getUint16(0);
+    return {
+        hasError: false,
+        addressRemote: address,
+        addressType: atype,
+        port: portRemote,
+        hostname: address,
+        rawClientData: socks5DataBuffer.slice(portIndex + 4)
+    };
+}
+
+// SHA224 哈希函数
+async function sha224Hash(text) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(text);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    // SHA224 是 SHA256 的前 224 位（28 字节）
+    return hashArray.slice(0, 28).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 function base64ToArray(b64Str) {
@@ -2280,6 +2550,44 @@ function generateLinksFromNewIPs(list, user, workerDomain) {
             // 非CF标准端口，只生成TLS节点（HTTP会被CF拦截）
             const wsNodeName = `${nodeName}-${port}-WS-TLS`;
             const link = `${proto}://${user}@${item.ip}:${port}?encryption=none&security=tls&sni=${workerDomain}&fp=chrome&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
+            links.push(link);
+        }
+    });
+    return links;
+}
+
+// Trojan版本的generateLinksFromNewIPs
+async function generateTrojanLinksFromNewIPs(list, user, workerDomain) {
+    // Cloudflare支持的端口
+    const CF_HTTP_PORTS = [80, 8080, 8880, 2052, 2082, 2086, 2095];
+    const CF_HTTPS_PORTS = [443, 2053, 2083, 2087, 2096, 8443];
+    
+    const links = [];
+    const wsPath = encodeURIComponent('/?ed=2048');
+    
+    // 将 UUID 转换为 SHA224 作为 Trojan 密码
+    const sha224Password = await sha224Hash(user);
+    
+    list.forEach(item => {
+        const nodeName = item.name.replace(/\s/g, '_');
+        const port = item.port;
+        
+        if (CF_HTTPS_PORTS.includes(port)) {
+            // CF HTTPS端口，生成TLS节点
+            const wsNodeName = `${nodeName}-${port}-Trojan-WS-TLS`;
+            const link = `trojan://${sha224Password}@${item.ip}:${port}?security=tls&sni=${workerDomain}&fp=chrome&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
+            links.push(link);
+        } else if (CF_HTTP_PORTS.includes(port)) {
+            // CF HTTP端口，生成非TLS节点（除非启用了disableNonTLS）
+            if (!disableNonTLS) {
+                const wsNodeName = `${nodeName}-${port}-Trojan-WS`;
+                const link = `trojan://${sha224Password}@${item.ip}:${port}?security=none&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
+                links.push(link);
+            }
+        } else {
+            // 非CF标准端口，只生成TLS节点（HTTP会被CF拦截）
+            const wsNodeName = `${nodeName}-${port}-Trojan-WS-TLS`;
+            const link = `trojan://${sha224Password}@${item.ip}:${port}?security=tls&sni=${workerDomain}&fp=chrome&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
             links.push(link);
         }
     });
