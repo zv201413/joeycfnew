@@ -1,0 +1,5 @@
+name = "cfnew"
+main = "worker.js"
+compatibility_date = "2025-10-29"
+usage_model = "bundled"
+workers_dev = true
