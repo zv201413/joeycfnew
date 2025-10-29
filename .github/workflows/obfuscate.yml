@@ -54,7 +54,7 @@ jobs:
                 stringArray: true,
                 stringArrayEncoding: ['base64'],
                 stringArrayThreshold: 0.75,
-                renameGlobals: true,
+                renameGlobals: false,
                 identifierNamesGenerator: 'mangled',
                 numbersToExpressions: true,
                 splitStrings: true,
