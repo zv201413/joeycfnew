@@ -998,7 +998,7 @@ function generateLinksFromSource(list, user, workerDomain) {
     const defaultHttpsPorts = [443];
     const defaultHttpPorts = disableNonTLS ? [] : [80];
     const links = [];
-    const wsPath = encodeURIComponent('/?ed=2048');
+    const wsPath = encodeURIComponent('/');
     const proto = atob('dmxlc3M=');
 
     list.forEach(item => {
