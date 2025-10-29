@@ -29,7 +29,7 @@ jobs:
             const path = require('path');
             
             const sourceFileName = '明文源吗';
-            const outputFileName = 'worker.js';
+            const outputFileName = '少年你相信光吗';
             const sourceFilePath = path.join(process.cwd(), sourceFileName);
 
             if (!fs.existsSync(sourceFilePath)) {
@@ -44,21 +44,22 @@ jobs:
               process.exit(1);
             }
 
-            // --- 这是一个非常简单的混淆配置 ---
+            // --- 最终平衡型混淆配置 ---
             const obfuscationOptions = {
-                compact: true,                // 压缩代码
-                stringArray: true,            // 启用字符串数组
-                stringArrayEncoding: ['base64'], // 将字符串数组用 base64 编码
-                stringArrayThreshold: 0.8,    // 80% 的字符串都会被加密
-                identifierNamesGenerator: 'hexadecimal', // 变量名改成 0x...
-                
-                // --- 以下所有复杂选项均被禁用 ---
-                controlFlowFlattening: false, // 禁用控制流平坦化 (修复错误)
-                renameGlobals: false,         // 禁用全局重命名 (修复错误)
-                deadCodeInjection: false,
-                numbersToExpressions: false,
-                splitStrings: false,
-                transformObjectKeys: false,
+                compact: true,
+                controlFlowFlattening: true,
+                controlFlowFlatteningThreshold: 0.75,
+                deadCodeInjection: true,
+                deadCodeInjectionThreshold: 0.4,
+                stringArray: true,
+                stringArrayEncoding: ['base64'],
+                stringArrayThreshold: 0.75,
+                renameGlobals: true,
+                identifierNamesGenerator: 'mangled',
+                numbersToExpressions: true,
+                splitStrings: true,
+                splitStringsChunkLength: 10,
+                transformObjectKeys: true,
                 selfDefending: false,
                 debugProtection: false
             };
@@ -73,7 +74,7 @@ jobs:
         run: |
           git config --global user.name 'GitHub Actions Bot'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add 'worker.js'
+          git add '少年你相信光吗'
           if git diff --staged --quiet; then
             echo "No changes to commit, the obfuscated file is already up-to-date."
           else
