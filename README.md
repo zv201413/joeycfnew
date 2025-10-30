@@ -1,4 +1,56 @@
-<img width="532" height="234" alt="image" src="https://github.com/user-attachments/assets/6c514f8b-1285-4248-8951-538fbf40aec1" />
+### 感觉跳转加群有点流氓行为 改成
+
+<img width="1708" height="884" alt="image" src="https://github.com/user-attachments/assets/ca35ae39-6971-4291-b182-28cb292c0353" />
+
+
+想加群的自己点击添加吧 tg交流群 https://t.me/+ft-zI76oovgwNmRh 
+
+###  Snippets
+
+<img width="1128" height="801" alt="image" src="https://github.com/user-attachments/assets/ae108dd2-c543-4a63-b448-d56d4d520e1d" />
+
+#### 加入多客户端支持 域名/你的uuid即可看见
+
+###  配套工具
+
+| 类型 | 描述 | 链接 |
+| :--- | :--- | :--- |
+|  **文字教程** | 详细的部署与使用说明博客文章 | [https://joeyblog.net/yuanchuang/1146.html](https://joeyblog.net/yuanchuang/1146.html) |
+|  **Workers视频教程** | 直观的操作演示和功能讲解 | https://youtu.be/Rlypv_iswD8 |
+|  **Snippets视频教程** | 直观的操作演示和功能讲解 | https://www.youtube.com/watch?v=xeFeH3Akcu8 |
+
+###  部署
+	
+加入了千呼万唤的订阅每15分钟自动优选一次
+
+#### 🔧 基础配置
+| 变量名 | 值 | 说明 |
+| :--- | :--- | :--- |
+| `u` | `你的 UUID` | **必需**。用于访问订阅和配置管理界面 |
+| `p` | `proxyip` | **可选**。自定义ProxyIP地址和端口 |
+| `s` | `你的SOCKS5地址` | **可选**。用于将所有出站流量通过 SOCKS5 代理转发，格式为 `user:pass@host:port` 或 `host:port` |
+| `d` | `你的订阅地址` | **可选**。不填就是/你的uuid |
+| `wk` | `地区代码` | **可选**。手动指定Worker地区，如：`SG`、`HK`、`US`、`JP`等 |
+
+#### 🎯 图形化配置（推荐）
+- **KV存储配置**：在Workers中创建KV命名空间，绑定环境变量 `C`
+- **访问界面**：部署后访问 `/{你的UUID}` 即可使用图形化配置管理
+- **实时生效**：通过界面修改配置无需重新部署，立即生效
+
+#### 🔧 高级控制
+| 变量名 | 值 | 说明 |
+| :--- | :--- | :--- |
+| `yx` | `自定义优选IP/域名` | **可选**。支持节点命名，格式：`1.1.1.1:443#香港节点,8.8.8.8:53#Google DNS` |
+| `yxURL` | `优选IP来源URL` | **可选**。自定义优选IP列表来源URL，留空则使用默认地址 |
+| `qj` | `no` | **可选**。降级控制，设置为`no`时启用降级模式：CF直连失败→SOCKS5连接→fallback地址 |
+| `dkby` | `yes` | **可选**。TLS控制，设置为`yes`时只生成TLS节点，不生成非TLS节点（如80端口） |
+| `yxby` | `yes` | **可选**。优选控制，设置为`yes`时关闭所有优选功能，只使用原生地址，不生成优选IP和域名节点 |
+| `rm` | `no` | **可选**。地区匹配控制，设置为`no`时关闭地区智能匹配 |
+| `apiEnabled` | `yes` | **可选**。API管理开关，设置为`yes`时允许通过API动态管理优选IP（默认关闭） |
+
+#### 📦 KV存储设置（可选但推荐）
+1. 在Cloudflare Workers中创建KV命名空间
+2. 在Workers设置中绑定KV命名空间，变量名设为 `C`
 3. 重新部署Workers
 4. 访问 `/{你的UUID}` 即可使用图形化配置管理
 
@@ -30,9 +82,11 @@ curl -X DELETE "https://your-worker.workers.dev/{UUID}/api/preferred-ips" \
   -d '{"all": true}'
 ```
 
+
+
 ###  新功能
 
-#### 🎯 图形化配置管理
+### 🎯 图形化配置管理
 - **KV存储支持**：使用Cloudflare KV存储持久化配置
 - **图形化界面**：访问 `/{你的UUID}` 或 `/{自定义路径}` 即可使用配置管理界面
 - **实时配置**：无需重新部署，配置立即生效
