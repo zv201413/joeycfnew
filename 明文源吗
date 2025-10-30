@@ -894,18 +894,16 @@ export default {
             if (inputValue) {
                 addTerminalLine('connect ' + inputValue, 'output');
                 
-                // 如果启用了 d 变量
                 if (customPath) {
-                    const cleanPath = customPath.startsWith('/') ? customPath : '/' + customPath;
+                    const cleanInput = inputValue.startsWith('/') ? inputValue : '/' + inputValue;
                     addTerminalLine('正在连接...', 'output');
                     setTimeout(() => {
                         addTerminalLine('连接成功！返回结果...', 'success');
                         setTimeout(() => {
-                            window.location.href = cleanPath;
+                            window.location.href = cleanInput;
                         }, 1000);
                     }, 500);
                 } else {
-                    // 使用 UUID 模式
                     if (isValidUUID(inputValue)) {
                         addTerminalLine('正在入侵...', 'output');
                         setTimeout(() => {
