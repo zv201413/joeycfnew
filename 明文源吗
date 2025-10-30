@@ -962,8 +962,8 @@ export default {
 					const user = url.pathname.replace(/\/$/, '').replace('/sub', '').substring(1);
 					if (isValidFormat(user)) {
 						return new Response(JSON.stringify({ 
-							error: 'UUID路径已禁用',
-							message: '当前使用自定义路径模式，请使用: ' + cleanCustomPath
+							error: '访问被拒绝',
+							message: '当前 Worker 已启用自定义路径模式，UUID 访问已禁用'
 						}), { 
 							status: 403,
 							headers: { 'Content-Type': 'application/json' }
@@ -1852,7 +1852,7 @@ async function handleSubscriptionPage(request, user = null) {
     <div class="matrix-bg"></div>
     <div class="matrix-rain"></div>
     <div class="matrix-code-rain" id="matrixCodeRain"></div>
-    <div class="matrix-text">代理订阅中心 v2.0</div>
+    <div class="matrix-text">代理订阅中心 v2.1</div>
     <div class="container">
         <div class="header">
             <h1 class="title">代理订阅中心</h1>
@@ -2047,7 +2047,7 @@ async function handleSubscriptionPage(request, user = null) {
                     加载中...
                 </div>
                 <div id="pathTypeInfo" style="background: rgba(0, 20, 0, 0.7); border: 1px solid #00ff00; padding: 15px; margin: 10px 0; font-family: 'Courier New', monospace; color: #00ff00;">
-                    <div style="font-weight: bold; margin-bottom: 8px; color: #44ff44; text-shadow: 0 0 5px #44ff44;"> 当前路径配置</div>
+                    <div style="font-weight: bold; margin-bottom: 8px; color: #44ff44; text-shadow: 0 0 5px #44ff44;">📍 当前路径配置</div>
                     <div id="pathTypeStatus">检测中...</div>
                 </div>
                 <button onclick="loadCurrentConfig()" style="background: rgba(0, 255, 0, 0.15); border: 2px solid #00ff00; padding: 12px 24px; color: #00ff00; font-family: 'Courier New', monospace; font-weight: bold; cursor: pointer; margin-right: 10px; text-shadow: 0 0 8px #00ff00; transition: all 0.4s ease;">刷新配置</button>
