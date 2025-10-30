@@ -889,7 +889,7 @@ export default {
         function handleUUIDInput() {
             const input = document.getElementById('uuidInput');
             const inputValue = input.value.trim();
-            const customPath = '${customPath}';
+            const customPath = "${customPath}";
             
             if (inputValue) {
                 addTerminalLine('connect ' + inputValue, 'output');
@@ -937,6 +937,7 @@ export default {
             createMatrixRain();
             
             const input = document.getElementById('uuidInput');
+            input.focus();
             input.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     handleUUIDInput();
@@ -1162,6 +1163,7 @@ async function handleSubscriptionRequest(request, user, url = null) {
             break;
         case atob('cXVhbnR1bXVsdA=='):
         case atob('cXVhbnR1bXVsdHg='):
+        case 'quanx':
             subscriptionContent = generateQuantumultConfig(finalLinks);
             break;
         case atob('c3M='):
