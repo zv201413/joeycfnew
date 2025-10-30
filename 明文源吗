@@ -1873,25 +1873,25 @@ async function handleSubscriptionPage(request, user = null) {
                         <div style="padding: 15px; background: rgba(0, 20, 0, 0.6); border: 1px solid #00ff00; border-radius: 5px;">
                             <div style="margin-bottom: 10px;">
                                 <label style="display: inline-flex; align-items: center; cursor: pointer; color: #00ff00;">
-                                    <input type="checkbox" id="enableVless" checked style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
+                                    <input type="checkbox" id="ev" checked style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
                                     <span style="font-size: 1.1rem;">启用 VLESS 协议</span>
                                 </label>
                             </div>
                             <div style="margin-bottom: 10px;">
                                 <label style="display: inline-flex; align-items: center; cursor: pointer; color: #00ff00;">
-                                    <input type="checkbox" id="enableTrojan" style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
+                                    <input type="checkbox" id="et" style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
                                     <span style="font-size: 1.1rem;">启用 Trojan 协议</span>
                                 </label>
                             </div>
                             <div style="margin-bottom: 10px;">
                                 <label style="display: inline-flex; align-items: center; cursor: pointer; color: #00ff00;">
-                                    <input type="checkbox" id="enableXhttp" style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
+                                    <input type="checkbox" id="ex" style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
                                     <span style="font-size: 1.1rem;">启用 xhttp 协议</span>
                                 </label>
                             </div>
                             <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(0, 255, 0, 0.3);">
                                 <label style="display: block; margin-bottom: 8px; color: #00ff00; font-size: 0.95rem;">Trojan 密码 (可选):</label>
-                                <input type="text" id="trojanPassword" placeholder="留空则自动使用 UUID" style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.8); border: 1px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 13px;">
+                                <input type="text" id="tp" placeholder="留空则自动使用 UUID" style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.8); border: 1px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 13px;">
                                 <small style="color: #00aa00; font-size: 0.8rem; display: block; margin-top: 5px;">设置自定义 Trojan 密码。留空则使用 UUID。客户端会自动对密码进行 SHA224 哈希。</small>
                             </div>
                             <small style="color: #00aa00; font-size: 0.85rem; display: block; margin-top: 10px;">可以同时启用多个协议。订阅将生成选中协议的节点。<br>• VLESS WS: 基于 atob('V2ViU29ja2V0') 的标准协议<br>• Trojan: 使用 SHA224 密码认证<br>• xhttp: 基于 HTTP POST 的伪装协议（需要绑定自定义域名并开启 gRPC）</small>
@@ -1929,7 +1929,7 @@ async function handleSubscriptionPage(request, user = null) {
                 <form id="advancedConfigForm" style="margin-bottom: 20px;">
                     <div style="margin-bottom: 15px;">
                         <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">订阅转换地址:</label>
-                        <input type="text" id="subConverterUrl" placeholder="默认: https://url.v1.mk/sub" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
+                        <input type="text" id="scu" placeholder="默认: https://url.v1.mk/sub" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
                         <small style="color: #00aa00; font-size: 0.85rem;">自定义订阅转换API地址，留空则使用默认地址</small>
                     </div>
                     <div style="margin-bottom: 15px;">
@@ -1937,19 +1937,19 @@ async function handleSubscriptionPage(request, user = null) {
                         <div style="padding: 15px; background: rgba(0, 20, 0, 0.6); border: 1px solid #00ff00; border-radius: 5px;">
                             <div style="margin-bottom: 10px;">
                                 <label style="display: inline-flex; align-items: center; cursor: pointer; color: #00ff00;">
-                                    <input type="checkbox" id="enablePreferredDomains" checked style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
+                                    <input type="checkbox" id="epd" checked style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
                                     <span style="font-size: 1.1rem;">启用优选域名</span>
                                 </label>
                             </div>
                             <div style="margin-bottom: 10px;">
                                 <label style="display: inline-flex; align-items: center; cursor: pointer; color: #00ff00;">
-                                    <input type="checkbox" id="enablePreferredIPs" checked style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
+                                    <input type="checkbox" id="epi" checked style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
                                     <span style="font-size: 1.1rem;">启用优选 IP</span>
                                 </label>
                             </div>
                             <div style="margin-bottom: 10px;">
                                 <label style="display: inline-flex; align-items: center; cursor: pointer; color: #00ff00;">
-                                    <input type="checkbox" id="enableGithubIPs" checked style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
+                                    <input type="checkbox" id="egi" checked style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
                                     <span style="font-size: 1.1rem;">启用 GitHub 默认优选</span>
                                 </label>
                             </div>
@@ -2291,14 +2291,14 @@ async function handleSubscriptionPage(request, user = null) {
                 
                 // 更新表单值
                 document.getElementById('wkRegion').value = config.wk || '';
-                document.getElementById('enableVless').checked = config.ev !== 'no';
-                document.getElementById('enableTrojan').checked = config.et === 'yes';
-                document.getElementById('enableXhttp').checked = config.ex === 'yes';
-                document.getElementById('trojanPassword').value = config.tp || '';
-                document.getElementById('subConverterUrl').value = config.scu || '';
-                document.getElementById('enablePreferredDomains').checked = config.epd !== 'no';
-                document.getElementById('enablePreferredIPs').checked = config.epi !== 'no';
-                document.getElementById('enableGithubIPs').checked = config.egi !== 'no';
+                document.getElementById('ev').checked = config.ev !== 'no';
+                document.getElementById('et').checked = config.et === 'yes';
+                document.getElementById('ex').checked = config.ex === 'yes';
+                document.getElementById('tp').value = config.tp || '';
+                document.getElementById('scu').value = config.scu || '';
+                document.getElementById('epd').checked = config.epd !== 'no';
+                document.getElementById('epi').checked = config.epi !== 'no';
+                document.getElementById('egi').checked = config.egi !== 'no';
                 document.getElementById('customPath').value = config.d || '';
                 document.getElementById('customIP').value = config.p || '';
                 document.getElementById('preferredIPs').value = config.yx || '';
@@ -2519,7 +2519,7 @@ async function handleSubscriptionPage(request, user = null) {
             if (otherConfigForm) {
                 otherConfigForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
-                    const configData = { ev: document.getElementById('enableVless').checked ? 'yes' : 'no', et: document.getElementById('enableTrojan').checked ? 'yes' : 'no', ex: document.getElementById('enableXhttp').checked ? 'yes' : 'no', tp: document.getElementById('trojanPassword').value,
+                    const configData = { ev: document.getElementById('ev').checked ? 'yes' : 'no', et: document.getElementById('et').checked ? 'yes' : 'no', ex: document.getElementById('ex').checked ? 'yes' : 'no', tp: document.getElementById('tp').value,
                         d: document.getElementById('customPath').value,
                         p: document.getElementById('customIP').value,
                         yx: document.getElementById('preferredIPs').value,
@@ -2528,9 +2528,9 @@ async function handleSubscriptionPage(request, user = null) {
                     };
                     
                     // 确保至少选择一个协议
-                    if (!document.getElementById('enableVless').checked && 
-                        !document.getElementById('enableTrojan').checked && 
-                        !document.getElementById('enableXhttp').checked) {
+                    if (!document.getElementById('ev').checked && 
+                        !document.getElementById('et').checked && 
+                        !document.getElementById('ex').checked) {
                         alert('至少需要启用一个协议！');
                         return;
                     }
@@ -2543,7 +2543,7 @@ async function handleSubscriptionPage(request, user = null) {
             if (advancedConfigForm) {
                 advancedConfigForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
-                    const configData = { scu: document.getElementById('subConverterUrl').value, epd: document.getElementById('enablePreferredDomains').checked ? 'yes' : 'no', epi: document.getElementById('enablePreferredIPs').checked ? 'yes' : 'no', egi: document.getElementById('enableGithubIPs').checked ? 'yes' : 'no', ae: document.getElementById('apiEnabled').value,
+                    const configData = { scu: document.getElementById('scu').value, epd: document.getElementById('epd').checked ? 'yes' : 'no', epi: document.getElementById('epi').checked ? 'yes' : 'no', egi: document.getElementById('egi').checked ? 'yes' : 'no', ae: document.getElementById('apiEnabled').value,
                         rm: document.getElementById('regionMatching').value,
                         qj: document.getElementById('downgradeControl').value,
                         dkby: document.getElementById('portControl').value,
