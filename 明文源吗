@@ -14,23 +14,19 @@ let enableRegionMatching = true;
 let currentWorkerRegion = '';
 let manualWorkerRegion = '';
 let preferredIPsURL = '';
-let customPath = '';  // 自定义路径 (d 变量)
+let customPath = '';  
 
-// 协议选择配置
-let enableVless = true;   // 默认启用 VLESS
-let enableTrojan = false; // 默认禁用 Trojan
-let enableXhttp = false;  // 默认禁用 xhttp 协议（基于 HTTP POST 的 VLESS）
-let trojanPassword = '';  // Trojan 自定义密码，为空则使用 UUID
+let enableVless = true;   
+let enableTrojan = false; 
+let enableXhttp = false;  
+let trojanPassword = '';  
 
-// 订阅转换配置
-let subConverterUrl = 'https://url.v1.mk/sub';  // 默认订阅转换地址
+let subConverterUrl = 'https://url.v1.mk/sub';  
 
-// 优选类型控制
-let enablePreferredDomains = true;   // 启用优选域名
-let enablePreferredIPs = true;       // 启用优选 IP
-let enableGithubIPs = true;          // 启用 GitHub 默认优选
+let enablePreferredDomains = true;   
+let enablePreferredIPs = true;       
+let enableGithubIPs = true;          
 
-// KV存储相关变量
 let kvStore = null;
 let kvConfig = {};
 
@@ -116,7 +112,6 @@ function isValidIP(ip) {
     return false;
 }
 
-// KV存储相关函数
 async function initKVStore(env) {
     console.log('🔧 初始化 KV 存储...');
     console.log('  env.C 是否存在:', !!env.C);
@@ -188,12 +183,12 @@ async function saveKVConfig() {
         console.error('  错误类型:', error.constructor.name);
         console.error('  错误消息:', error.message);
         console.error('  错误堆栈:', error.stack);
-        throw error; // 重新抛出错误，让上层 catch 捕获
+        throw error; 
     }
 }
 
 function getConfigValue(key, defaultValue = '') {
-    // 优先使用KV配置，然后使用环境变量
+    
     if (kvConfig[key] !== undefined) {
         return kvConfig[key];
     }
@@ -229,7 +224,6 @@ async function detectWorkerRegion(request) {
         return 'HK';
     }
 }
-
 
 async function checkIPAvailability(domain, port = 443, timeout = 2000) {
     try {
@@ -273,16 +267,16 @@ async function getBestBackupIP(workerRegion = '') {
 
 function getNearbyRegions(region) {
     const nearbyMap = {
-        'US': ['SG', 'JP', 'HK', 'KR'], // 美国 -> 亚太地区
-        'SG': ['JP', 'HK', 'KR', 'US'], // 新加坡 -> 亚太地区
-        'JP': ['SG', 'HK', 'KR', 'US'], // 日本 -> 亚太地区
-        'HK': ['SG', 'JP', 'KR', 'US'], // 香港 -> 亚太地区
-        'KR': ['JP', 'HK', 'SG', 'US'], // 韩国 -> 亚太地区
-        'DE': ['NL', 'GB', 'SE', 'FI'], // 德国 -> 欧洲地区
-        'SE': ['DE', 'NL', 'FI', 'GB'], // 瑞典 -> 北欧地区
-        'NL': ['DE', 'GB', 'SE', 'FI'], // 荷兰 -> 西欧地区
-        'FI': ['SE', 'DE', 'NL', 'GB'], // 芬兰 -> 北欧地区
-        'GB': ['DE', 'NL', 'SE', 'FI']  // 英国 -> 西欧地区
+        'US': ['SG', 'JP', 'HK', 'KR'], 
+        'SG': ['JP', 'HK', 'KR', 'US'], 
+        'JP': ['SG', 'HK', 'KR', 'US'], 
+        'HK': ['SG', 'JP', 'KR', 'US'], 
+        'KR': ['JP', 'HK', 'SG', 'US'], 
+        'DE': ['NL', 'GB', 'SE', 'FI'], 
+        'SE': ['DE', 'NL', 'FI', 'GB'], 
+        'NL': ['DE', 'GB', 'SE', 'FI'], 
+        'FI': ['SE', 'DE', 'NL', 'GB'], 
+        'GB': ['DE', 'NL', 'SE', 'FI']  
     };
     
     return nearbyMap[region] || [];
@@ -341,7 +335,7 @@ function parseAddressAndPort(input) {
 export default {
 	async fetch(request, env, ctx) {
 		try {
-			// 初始化KV存储
+			
 			await initKVStore(env);
 			
 			authToken = (env.u || env.U || authToken).toLowerCase();
@@ -350,7 +344,6 @@ export default {
 			const customIP = getConfigValue('p', env.p || env.P);
 			let useCustomIP = false;
 			
-			// 检查是否手动指定了wk地区 (优先使用KV配置)
 			const manualRegion = getConfigValue('wk', env.wk || env.WK);
 			if (manualRegion && manualRegion.trim()) {
 				manualWorkerRegion = manualRegion.trim().toUpperCase();
@@ -392,7 +385,6 @@ export default {
 				}
 			}
 
-			// 优先使用KV配置，然后使用环境变量
 			const customPreferred = getConfigValue('yx', env.yx || env.YX);
 			if (customPreferred) {
 				try {
@@ -401,7 +393,7 @@ export default {
 					customPreferredDomains = [];
 					
 					preferredList.forEach(item => {
-						// 检查是否包含节点名称 (#)
+						
 						let nodeName = '';
 						let addressPart = item;
 						
@@ -413,7 +405,6 @@ export default {
 						
 						const { address, port } = parseAddressAndPort(addressPart);
 						
-						// 如果没有设置节点名称，使用默认格式
 						if (!nodeName) {
 							nodeName = '自定义优选-' + address + (port ? ':' + port : '');
 						}
@@ -443,7 +434,6 @@ export default {
 				enableSocksDowngrade = true;
 			}
 
-			// 优先使用KV配置，然后使用环境变量
 			const dkbyControl = getConfigValue('dkby', env.dkby || env.DKBY);
 			if (dkbyControl && dkbyControl.toLowerCase() === 'yes') {
 				disableNonTLS = true;
@@ -454,7 +444,6 @@ export default {
 				disablePreferred = true;
 			}
 
-			// 协议选择配置（优先使用KV配置）
 			const vlessControl = getConfigValue('enableVless', env.enableVless || env.ENABLEVLESS);
 			if (vlessControl !== undefined && vlessControl !== '') {
 				enableVless = vlessControl === 'yes' || vlessControl === true || vlessControl === 'true';
@@ -465,19 +454,15 @@ export default {
 				enableTrojan = trojanControl === 'yes' || trojanControl === true || trojanControl === 'true';
 			}
 			
-			// Trojan 密码配置
 			trojanPassword = getConfigValue('trojanPassword', env.trojanPassword || env.TROJANPASSWORD) || '';
 			
-			// xhttp 协议配置
 			const xhttpControl = getConfigValue('enableXhttp', env.enableXhttp || env.ENABLEXHTTP);
 			if (xhttpControl !== undefined && xhttpControl !== '') {
 				enableXhttp = xhttpControl === 'yes' || xhttpControl === true || xhttpControl === 'true';
 			}
 			
-			// 订阅转换地址配置
 			subConverterUrl = getConfigValue('subConverterUrl', env.subConverterUrl || env.SUBCONVERTERURL) || 'https://url.v1.mk/sub';
 			
-			// 优选类型控制配置
 			const preferredDomainsControl = getConfigValue('enablePreferredDomains', env.enablePreferredDomains || env.ENABLEPREFERREDDOMAINS);
 			if (preferredDomainsControl !== undefined && preferredDomainsControl !== '') {
 				enablePreferredDomains = preferredDomainsControl !== 'no' && preferredDomainsControl !== false && preferredDomainsControl !== 'false';
@@ -493,18 +478,14 @@ export default {
 				enableGithubIPs = githubIPsControl !== 'no' && githubIPsControl !== false && githubIPsControl !== 'false';
 			}
 			
-			// 确保至少有一个协议启用
 			if (!enableVless && !enableTrojan && !enableXhttp) {
 				enableVless = true;
 			}
 
-		// 优先使用KV配置，然后使用环境变量，如果都没有则使用默认URL
 		preferredIPsURL = getConfigValue('yxURL', env.yxURL || env.YXURL) || 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
 		
-		// 自定义路径配置 (d 变量)
 		customPath = getConfigValue('d', env.d || env.D) || '';
 		
-		// 如果yxURL不是默认值，清空域名但保留backupIPs作为后备选项
 		const defaultURL = 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
 		if (preferredIPsURL !== defaultURL) {
 			directDomains.length = 0;
@@ -514,22 +495,20 @@ export default {
 
 		const url = new URL(request.url);
 
-		// 配置管理API路由（支持GET和POST）- 优先处理，避免被 xhttp 拦截
 		if (url.pathname.includes('/api/config')) {
 				const pathParts = url.pathname.split('/').filter(p => p);
-				// 查找路径标识 - 应该在 api 之前
+				
 				const apiIndex = pathParts.indexOf('api');
 				if (apiIndex > 0) {
 					const pathIdentifier = pathParts[apiIndex - 1];
 					
-					// 检查是否使用自定义路径或 UUID
 					let isValid = false;
 					if (customPath && customPath.trim()) {
-						// 使用自定义路径模式
+						
 						const cleanCustomPath = (customPath.startsWith('/') ? customPath : '/' + customPath).replace(/^\//, '');
 						isValid = (pathIdentifier === cleanCustomPath);
 					} else {
-						// 使用 UUID 模式
+						
 						isValid = (isValidFormat(pathIdentifier) && pathIdentifier === authToken);
 					}
 					
@@ -542,29 +521,27 @@ export default {
 						});
 					}
 				}
-				// 如果路径格式不正确，返回JSON错误
+				
 				return new Response(JSON.stringify({ error: '无效的API路径' }), { 
 					status: 404,
 					headers: { 'Content-Type': 'application/json' }
 				});
 			}
 			
-		// 优选IP管理API路由
 		if (url.pathname.includes('/api/preferred-ips')) {
 			const pathParts = url.pathname.split('/').filter(p => p);
-			// 查找路径标识 - 应该在 api 之前
+			
 			const apiIndex = pathParts.indexOf('api');
 			if (apiIndex > 0) {
 				const pathIdentifier = pathParts[apiIndex - 1];
 				
-				// 检查是否使用自定义路径或 UUID
 				let isValid = false;
 				if (customPath && customPath.trim()) {
-					// 使用自定义路径模式
+					
 					const cleanCustomPath = (customPath.startsWith('/') ? customPath : '/' + customPath).replace(/^\//, '');
 					isValid = (pathIdentifier === cleanCustomPath);
 				} else {
-					// 使用 UUID 模式
+					
 					isValid = (isValidFormat(pathIdentifier) && pathIdentifier === authToken);
 				}
 				
@@ -577,14 +554,13 @@ export default {
 					});
 				}
 			}
-			// 如果路径格式不正确，返回JSON错误
+			
 			return new Response(JSON.stringify({ error: '无效的API路径' }), { 
 				status: 404,
 				headers: { 'Content-Type': 'application/json' }
 			});
 		}
 		
-		// xhttp POST 请求处理（在 API 路由之后）
 		if (request.method === 'POST' && enableXhttp) {
 			const r = await handleXhttpPost(request);
 			if (r) {
@@ -608,7 +584,7 @@ export default {
 		
 		if (request.method === 'GET') {
 				if (url.pathname === '/region') {
-					// 优先使用KV配置，然后使用环境变量
+					
 					const customIP = getConfigValue('p', env.p || env.P);
 					const manualRegion = getConfigValue('wk', env.wk || env.WK);
 					
@@ -662,7 +638,6 @@ export default {
 						});
 					}
 				}
-				
 				
 				if (url.pathname === '/') {
 					const terminalHtml = `<!DOCTYPE html>
@@ -953,7 +928,6 @@ export default {
             createMatrixRain();
             
             const input = document.getElementById('uuidInput');
-            // 自动聚焦到输入框，确保回车键可用
             input.focus();
             input.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
@@ -966,21 +940,18 @@ export default {
 </html>`;
 					return new Response(terminalHtml, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
 				}
-			// 检查是否使用自定义路径 (d 变量)
+			
 			if (customPath && customPath.trim()) {
 				const cleanCustomPath = customPath.startsWith('/') ? customPath : '/' + customPath;
 				
-				// 自定义路径的订阅页面
 				if (url.pathname === cleanCustomPath || url.pathname === cleanCustomPath + '/') {
 					return await handleSubscriptionPage(request, authToken);
 				}
 				
-				// 自定义路径的订阅请求
 				if (url.pathname === cleanCustomPath + '/sub') {
 					return await handleSubscriptionRequest(request, authToken, url);
 				}
 				
-				// 启用 d 变量后，禁用 UUID 路径访问
 				if (url.pathname.length > 1 && url.pathname !== '/') {
 					const user = url.pathname.replace(/\/$/, '').replace('/sub', '').substring(1);
 					if (isValidFormat(user)) {
@@ -994,7 +965,7 @@ export default {
 					}
 				}
 			} else {
-				// UUID 路径处理（仅在未启用 d 变量时）
+				
 				if (url.pathname.length > 1 && url.pathname !== '/' && !url.pathname.includes('/sub')) {
 					const user = url.pathname.replace(/\/$/, '').substring(1);
 					if (isValidFormat(user)) {
@@ -1039,9 +1010,7 @@ export default {
 	},
 };
 
-// Quantumult X 配置生成函数
 function generateQuantumultConfig(links) {
-	// Quantumult X 支持 base64 编码的节点列表
 	return btoa(links.join('\n'));
 }
 
@@ -1052,7 +1021,6 @@ async function handleSubscriptionRequest(request, user, url = null) {
     const workerDomain = url.hostname;
     const target = url.searchParams.get('target') || 'base64';
 
-    // 生成节点的辅助函数
     async function addNodesFromList(list) {
         if (enableVless) {
             finalLinks.push(...generateLinksFromSource(list, user, workerDomain));
@@ -1094,7 +1062,7 @@ async function handleSubscriptionRequest(request, user, url = null) {
     
     if (disablePreferred) {
     } else if (hasCustomPreferred) {
-        // 使用yx配置的优选IP（包含API添加的）
+        
         if (customPreferredIPs.length > 0 && enablePreferredIPs) {
             await addNodesFromList(customPreferredIPs);
         }
@@ -1104,13 +1072,12 @@ async function handleSubscriptionRequest(request, user, url = null) {
             await addNodesFromList(customDomainList);
         }
     } else {
-        // 优选域名
+        
         if (enablePreferredDomains) {
             const domainList = directDomains.map(d => ({ ip: d.domain, isp: d.name || d.domain }));
             await addNodesFromList(domainList);
         }
 
-        // 优选 IP
         if (enablePreferredIPs) {
             const defaultURL = 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
             if (preferredIPsURL === defaultURL) {
@@ -1136,7 +1103,6 @@ async function handleSubscriptionRequest(request, user, url = null) {
             }
         }
 
-        // GitHub 默认优选
         if (enableGithubIPs) {
             try {
                 const newIPList = await fetchAndParseNewIPs();
@@ -1187,7 +1153,7 @@ async function handleSubscriptionRequest(request, user, url = null) {
             subscriptionContent = generateSurgeConfig(finalLinks);
             break;
         case atob('cXVhbnR1bXVsdA=='):
-        case atob('cXVhbnR1bXVsdHg='):
+        case atob('cXVhbng='):
         case 'quanx':
             subscriptionContent = generateQuantumultConfig(finalLinks);
             break;
@@ -1214,7 +1180,7 @@ async function handleSubscriptionRequest(request, user, url = null) {
 }
 
 function generateLinksFromSource(list, user, workerDomain) {
-    // Cloudflare支持的端口
+    
     const CF_HTTP_PORTS = [80, 8080, 8880, 2052, 2082, 2086, 2095];
     const CF_HTTPS_PORTS = [443, 2053, 2083, 2087, 2096, 8443];
     
@@ -1231,23 +1197,23 @@ function generateLinksFromSource(list, user, workerDomain) {
         let portsToGenerate = [];
         
         if (item.port) {
-            // 有指定端口时，根据端口类型决定生成TLS或非TLS
+            
             const port = item.port;
             
             if (CF_HTTPS_PORTS.includes(port)) {
-                // CF HTTPS端口，只生成TLS节点
+                
                 portsToGenerate.push({ port: port, tls: true });
             } else if (CF_HTTP_PORTS.includes(port)) {
-                // CF HTTP端口，只生成非TLS节点（除非启用了disableNonTLS）
+                
                 if (!disableNonTLS) {
                     portsToGenerate.push({ port: port, tls: false });
                 }
             } else {
-                // 非CF标准端口，只生成TLS节点（HTTP会被CF拦截）
+                
                 portsToGenerate.push({ port: port, tls: true });
             }
         } else {
-            // 没有指定端口时，使用默认端口
+            
             defaultHttpsPorts.forEach(port => {
                 portsToGenerate.push({ port: port, tls: true });
             });
@@ -1256,10 +1222,9 @@ function generateLinksFromSource(list, user, workerDomain) {
             });
         }
 
-        // 生成节点
         portsToGenerate.forEach(({ port, tls }) => {
             if (tls) {
-                // TLS节点
+                
                 const wsNodeName = `${nodeNameBase}-${port}-WS-TLS`;
                 const wsParams = new URLSearchParams({ 
                     encryption: 'none', 
@@ -1272,7 +1237,7 @@ function generateLinksFromSource(list, user, workerDomain) {
                 });
                 links.push(`${proto}://${user}@${safeIP}:${port}?${wsParams.toString()}#${encodeURIComponent(wsNodeName)}`);
             } else {
-                // 非TLS节点
+                
                 const wsNodeName = `${nodeNameBase}-${port}-WS`;
                 const wsParams = new URLSearchParams({
                     encryption: 'none',
@@ -1288,9 +1253,8 @@ function generateLinksFromSource(list, user, workerDomain) {
     return links;
 }
 
-// Trojan 链接生成函数
 async function generateTrojanLinksFromSource(list, user, workerDomain) {
-    // Cloudflare支持的端口
+    
     const CF_HTTP_PORTS = [80, 8080, 8880, 2052, 2082, 2086, 2095];
     const CF_HTTPS_PORTS = [443, 2053, 2083, 2087, 2096, 8443];
     
@@ -1299,8 +1263,6 @@ async function generateTrojanLinksFromSource(list, user, workerDomain) {
     const links = [];
     const wsPath = encodeURIComponent('/');
     
-    // 使用自定义 Trojan 密码，如果未设置则使用 UUID
-    // Trojan 客户端会自动对密码进行 SHA224
     const password = trojanPassword || user;
     console.log('生成 Trojan 链接，密码:', password, '(trojanPassword变量:', trojanPassword, ')');
 
@@ -1331,10 +1293,9 @@ async function generateTrojanLinksFromSource(list, user, workerDomain) {
             });
         }
 
-        // 生成 Trojan 节点
         portsToGenerate.forEach(({ port, tls }) => {
             if (tls) {
-                // TLS节点
+                
                 const wsNodeName = `${nodeNameBase}-${port}-Trojan-WS-TLS`;
                 const wsParams = new URLSearchParams({ 
                     security: 'tls', 
@@ -1346,7 +1307,7 @@ async function generateTrojanLinksFromSource(list, user, workerDomain) {
                 });
                 links.push(`trojan://${password}@${safeIP}:${port}?${wsParams.toString()}#${encodeURIComponent(wsNodeName)}`);
             } else {
-                // 非TLS节点
+                
                 const wsNodeName = `${nodeNameBase}-${port}-Trojan-WS`;
                 const wsParams = new URLSearchParams({
                     security: 'none',
@@ -1381,7 +1342,6 @@ async function fetchDynamicIPs() {
 
             return [];
         }
-
 
 async function fetchAndParseWetest(url) {
     try {
@@ -1425,7 +1385,7 @@ async function handleWsRequest(request) {
 
     let remoteConnWrapper = { socket: null };
     let isDnsQuery = false;
-    let protocolType = null; // 'vless' or 'trojan'
+    let protocolType = null; 
 
     const earlyData = request.headers.get('sec-websocket-protocol') || '';
     const readable = makeReadableStream(serverSock, earlyData);
@@ -1440,9 +1400,8 @@ async function handleWsRequest(request) {
                 return;
             }
             
-            // 自动检测协议类型
             if (!protocolType) {
-                // 尝试 VLESS 协议
+                
                 if (enableVless && chunk.byteLength >= 24) {
                     const vlessResult = parseWsPacketHeader(chunk, authToken);
                     if (!vlessResult.hasError) {
@@ -1460,7 +1419,6 @@ async function handleWsRequest(request) {
                     }
                 }
                 
-                // 尝试 Trojan 协议
                 if (enableTrojan && chunk.byteLength >= 56) {
                     const trojanResult = await parseTrojanHeader(chunk, authToken);
                     console.log('Trojan 解析结果:', { 
@@ -1477,7 +1435,6 @@ async function handleWsRequest(request) {
                     }
                 }
                 
-                // 如果两个协议都失败，抛出错误
                 throw new Error('Invalid protocol or authentication failed');
             }
         },
@@ -1894,7 +1851,7 @@ async function handleSubscriptionPage(request, user = null) {
     <div class="matrix-bg"></div>
     <div class="matrix-rain"></div>
     <div class="matrix-code-rain" id="matrixCodeRain"></div>
-    <div class="matrix-text">代理订阅中心 v2.0</div>
+    <div class="matrix-text">代理订阅中心 v1.1</div>
     <div class="container">
         <div class="header">
             <h1 class="title">代理订阅中心</h1>
@@ -1907,7 +1864,7 @@ async function handleSubscriptionPage(request, user = null) {
                 <button class="client-btn" onclick="generateClientLink(atob('c3VyZ2U='))">SURGE</button>
                 <button class="client-btn" onclick="generateClientLink(atob('c2luZ2JveA=='))">SING-BOX</button>
                 <button class="client-btn" onclick="generateClientLink(atob('bG9vbg=='))">LOON</button>
-                <button class="client-btn" onclick="generateClientLink(atob('cXVhbnR1bXVsdHg='))">QUANTUMULT X</button>
+                <button class="client-btn" onclick="generateClientLink(atob('cXVhbng='))">QUANTUMULT X</button>
                 <button class="client-btn" onclick="generateClientLink(atob('djJyYXk='))">V2RAY</button>
             </div>
             <div class="subscription-url" id="clientSubscriptionUrl"></div>
@@ -2122,20 +2079,15 @@ async function handleSubscriptionPage(request, user = null) {
                     alert("V2Ray 订阅链接已复制");
                 });
             } else {
-                // Quantumult X 需要使用 quanx 作为 target 参数
-                var targetType = clientType;
-                if (clientType === atob('cXVhbnR1bXVsdHg=')) {
-                    targetType = 'quanx';
-                }
                 var encodedUrl = encodeURIComponent(subscriptionUrl);
-                var apiUrl = SUB_CONVERTER_URL + "?target=" + targetType + "&url=" + encodedUrl + "&insert=false";
+                var apiUrl = SUB_CONVERTER_URL + "?target=" + clientType + "&url=" + encodedUrl + "&insert=false";
                 document.getElementById("clientSubscriptionUrl").textContent = apiUrl;
                 document.getElementById("clientSubscriptionUrl").style.display = "block";
                 navigator.clipboard.writeText(apiUrl).then(function() {
                     var displayName = clientType.toUpperCase();
                     if (clientType === atob('c3VyZ2U=')) displayName = 'SURGE';
                     if (clientType === atob('c2luZ2JveA==')) displayName = 'SING-BOX';
-                    if (clientType === atob('cXVhbnR1bXVsdHg=')) displayName = 'QUANTUMULT X';
+                    if (clientType === atob('cXVhbng=')) displayName = 'QUANTUMULT X';
                     alert(displayName + " 订阅链接已复制");
                 });
             }
@@ -2225,7 +2177,6 @@ async function handleSubscriptionPage(request, user = null) {
                     const response = await fetch('/region');
                     const data = await response.json();
                     
-                    
                     if (data.region === 'CUSTOM') {
                         isCustomIPMode = true;
                         detectedRegion = 'CUSTOM';
@@ -2267,7 +2218,6 @@ async function handleSubscriptionPage(request, user = null) {
                 
                 regionStatus.innerHTML = 'Worker地区: <span style="color: #44ff44;">✅ ' + regionNames[detectedRegion] + '</span>';
                 
-                
                 // 直接显示配置状态，不再进行检测
                 if (backupStatus) {
                     backupStatus.innerHTML = 'ProxyIP状态: <span style="color: #44ff44;">✅ 10/10 可用 (ProxyIP域名预设可用)</span>';
@@ -2295,7 +2245,6 @@ async function handleSubscriptionPage(request, user = null) {
             try {
                 const response = await fetch('/test-api');
                 const data = await response.json();
-                
                 
                 if (data.detectedRegion) {
                     alert('API检测结果: ' + data.detectedRegion + '\\n检测时间: ' + data.timestamp);
@@ -2709,9 +2658,8 @@ async function handleSubscriptionPage(request, user = null) {
 	});
 }
 
-// Trojan 协议处理函数
 async function parseTrojanHeader(buffer, uuidToken) {
-    // 使用自定义密码或 UUID，然后转换为 SHA224 哈希
+    
     const passwordToHash = trojanPassword || uuidToken;
     const sha224Password = await sha224Hash(passwordToHash);
     
@@ -2805,10 +2753,6 @@ async function parseTrojanHeader(buffer, uuidToken) {
     const portBuffer = socks5DataBuffer.slice(portIndex, portIndex + 2);
     const portRemote = new DataView(portBuffer).getUint16(0);
     
-    // Trojan 协议格式：端口后面还有 CRLF (2 bytes)，然后才是 Payload
-    // portIndex + 0~2: 端口
-    // portIndex + 2~4: CRLF
-    // portIndex + 4: Payload 开始
     return {
         hasError: false,
         addressRemote: address,
@@ -2819,12 +2763,10 @@ async function parseTrojanHeader(buffer, uuidToken) {
     };
 }
 
-// 正确的 SHA224 哈希函数
 async function sha224Hash(text) {
     const encoder = new TextEncoder();
     const data = encoder.encode(text);
     
-    // SHA-224 使用与 SHA-256 相同的算法，但使用不同的初始值
     const K = [
         0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
         0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
@@ -2836,13 +2778,11 @@ async function sha224Hash(text) {
         0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
     ];
     
-    // SHA-224 初始哈希值（与 SHA-256 不同）
     let H = [
         0xc1059ed8, 0x367cd507, 0x3070dd17, 0xf70e5939,
         0xffc00b31, 0x68581511, 0x64f98fa7, 0xbefa4fa4
     ];
     
-    // 预处理
     const msgLen = data.length;
     const bitLen = msgLen * 8;
     const paddedLen = Math.ceil((msgLen + 9) / 64) * 64;
@@ -2853,7 +2793,6 @@ async function sha224Hash(text) {
     const view = new DataView(padded.buffer);
     view.setUint32(paddedLen - 4, bitLen, false);
     
-    // 处理每个 512 位块
     for (let chunk = 0; chunk < paddedLen; chunk += 64) {
         const W = new Uint32Array(64);
         
@@ -2897,7 +2836,6 @@ async function sha224Hash(text) {
         H[7] = (H[7] + h) >>> 0;
     }
     
-    // SHA-224 只使用前 7 个 32 位字（224 位 = 28 字节）
     const result = [];
     for (let i = 0; i < 7; i++) {
         result.push(
@@ -2914,8 +2852,6 @@ async function sha224Hash(text) {
 function rightRotate(value, amount) {
     return (value >>> amount) | (value << (32 - amount));
 }
-
-// ==================== xhttp 协议相关函数 ====================
 
 let ACTIVE_CONNECTIONS = 0;
 const XHTTP_BUFFER_SIZE = 128 * 1024;
@@ -3131,7 +3067,7 @@ function create_xhttp_uploader(httpx, writable) {
             try {
                 await writer.close();
             } catch (error) {
-                // ignore close errors
+                
             }
         }
     })();
@@ -3287,7 +3223,6 @@ async function handle_xhttp_client(body, uuid) {
             return null;
         }
 
-        // 尝试连接：直连 -> fallbackAddress -> 兜底IP
         const remoteConnection = await connect_to_remote_xhttp(httpx, fallbackAddress, '13.230.34.30');
         if (remoteConnection === null) {
             return null;
@@ -3298,18 +3233,18 @@ async function handle_xhttp_client(body, uuid) {
                 try {
                     await remoteConnection.downloader.done;
                 } catch (err) {
-                    // ignore download errors
+                    
                 }
             })(),
             (async () => {
                 try {
                     await remoteConnection.uploader.done;
                 } catch (err) {
-                    // ignore upload errors
+                    
                 }
             })(),
             xhttp_sleep(IDLE_TIMEOUT_MS).then(() => {
-                // global timeout
+                
             })
         ]).finally(() => {
             try { remoteConnection.close(); } catch (_) {}
@@ -3337,8 +3272,6 @@ async function handleXhttpPost(request) {
     }
 }
 
-// ==================== xhttp 协议相关函数结束 ====================
-
 function base64ToArray(b64Str) {
 	if (!b64Str) return { error: null };
 	try { b64Str = b64Str.replace(/-/g, '+').replace(/_/g, '/'); return { earlyData: Uint8Array.from(atob(b64Str), (c) => c.charCodeAt(0)).buffer, error: null }; } 
@@ -3355,7 +3288,7 @@ function formatIdentifier(arr, offset = 0) {
 }
 
 async function fetchAndParseNewIPs() {
-    // 使用配置的URL，如果没有配置则使用默认URL
+    
     const url = preferredIPsURL || "https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt";
     try {
         const response = await fetch(url);
@@ -3384,7 +3317,7 @@ async function fetchAndParseNewIPs() {
 }
 
 function generateLinksFromNewIPs(list, user, workerDomain) {
-    // Cloudflare支持的端口
+    
     const CF_HTTP_PORTS = [80, 8080, 8880, 2052, 2082, 2086, 2095];
     const CF_HTTPS_PORTS = [443, 2053, 2083, 2087, 2096, 8443];
     
@@ -3397,19 +3330,19 @@ function generateLinksFromNewIPs(list, user, workerDomain) {
         const port = item.port;
         
         if (CF_HTTPS_PORTS.includes(port)) {
-            // CF HTTPS端口，生成TLS节点
+            
             const wsNodeName = `${nodeName}-${port}-WS-TLS`;
             const link = `${proto}://${user}@${item.ip}:${port}?encryption=none&security=tls&sni=${workerDomain}&fp=chrome&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
             links.push(link);
         } else if (CF_HTTP_PORTS.includes(port)) {
-            // CF HTTP端口，生成非TLS节点（除非启用了disableNonTLS）
+            
             if (!disableNonTLS) {
                 const wsNodeName = `${nodeName}-${port}-WS`;
                 const link = `${proto}://${user}@${item.ip}:${port}?encryption=none&security=none&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
                 links.push(link);
             }
         } else {
-            // 非CF标准端口，只生成TLS节点（HTTP会被CF拦截）
+            
             const wsNodeName = `${nodeName}-${port}-WS-TLS`;
             const link = `${proto}://${user}@${item.ip}:${port}?encryption=none&security=tls&sni=${workerDomain}&fp=chrome&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
             links.push(link);
@@ -3418,7 +3351,6 @@ function generateLinksFromNewIPs(list, user, workerDomain) {
     return links;
 }
 
-// xhttp 链接生成函数
 function generateXhttpLinksFromSource(list, user, workerDomain) {
     const links = [];
     const nodePath = user.substring(0, 8);
@@ -3428,7 +3360,6 @@ function generateXhttpLinksFromSource(list, user, workerDomain) {
         const safeIP = item.ip.includes(':') ? `[${item.ip}]` : item.ip;
         const port = item.port || 443;
         
-        // xhttp 只支持 TLS
         const wsNodeName = `${nodeNameBase}-${port}-xhttp`;
         const params = new URLSearchParams({
             encryption: 'none',
@@ -3448,17 +3379,14 @@ function generateXhttpLinksFromSource(list, user, workerDomain) {
     return links;
 }
 
-// Trojan版本的generateLinksFromNewIPs
 async function generateTrojanLinksFromNewIPs(list, user, workerDomain) {
-    // Cloudflare支持的端口
+    
     const CF_HTTP_PORTS = [80, 8080, 8880, 2052, 2082, 2086, 2095];
     const CF_HTTPS_PORTS = [443, 2053, 2083, 2087, 2096, 8443];
     
     const links = [];
     const wsPath = encodeURIComponent('/?ed=2048');
     
-    // 使用自定义 Trojan 密码，如果未设置则使用 UUID
-    // Trojan 客户端会自动对密码进行 SHA224
     const password = trojanPassword || user;
     
     list.forEach(item => {
@@ -3466,19 +3394,19 @@ async function generateTrojanLinksFromNewIPs(list, user, workerDomain) {
         const port = item.port;
         
         if (CF_HTTPS_PORTS.includes(port)) {
-            // CF HTTPS端口，生成TLS节点
+            
             const wsNodeName = `${nodeName}-${port}-Trojan-WS-TLS`;
             const link = `trojan://${password}@${item.ip}:${port}?security=tls&sni=${workerDomain}&fp=chrome&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
             links.push(link);
         } else if (CF_HTTP_PORTS.includes(port)) {
-            // CF HTTP端口，生成非TLS节点（除非启用了disableNonTLS）
+            
             if (!disableNonTLS) {
                 const wsNodeName = `${nodeName}-${port}-Trojan-WS`;
                 const link = `trojan://${password}@${item.ip}:${port}?security=none&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
                 links.push(link);
             }
         } else {
-            // 非CF标准端口，只生成TLS节点（HTTP会被CF拦截）
+            
             const wsNodeName = `${nodeName}-${port}-Trojan-WS-TLS`;
             const link = `trojan://${password}@${item.ip}:${port}?security=tls&sni=${workerDomain}&fp=chrome&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
             links.push(link);
@@ -3487,10 +3415,9 @@ async function generateTrojanLinksFromNewIPs(list, user, workerDomain) {
     return links;
 }
 
-// 配置API处理函数
 async function handleConfigAPI(request) {
     if (request.method === 'GET') {
-        // 检查KV是否真正可用
+        
         if (!kvStore) {
             return new Response(JSON.stringify({
                 error: 'KV存储未配置',
@@ -3501,7 +3428,6 @@ async function handleConfigAPI(request) {
             });
         }
         
-        // 获取当前配置
         return new Response(JSON.stringify({
             ...kvConfig,
             kvEnabled: true
@@ -3509,7 +3435,7 @@ async function handleConfigAPI(request) {
             headers: { 'Content-Type': 'application/json' }
         });
     } else if (request.method === 'POST') {
-        // 检查KV是否真正可用
+        
         if (!kvStore) {
             return new Response(JSON.stringify({
                 success: false,
@@ -3520,12 +3446,10 @@ async function handleConfigAPI(request) {
             });
         }
         
-        // 更新配置
         try {
             const newConfig = await request.json();
             console.log('📥 接收到的配置数据:', JSON.stringify(newConfig));
             
-            // 更新KV配置
             for (const [key, value] of Object.entries(newConfig)) {
                 if (value === '' || value === null || value === undefined) {
                     delete kvConfig[key];
@@ -3648,9 +3572,8 @@ async function handleConfigAPI(request) {
     });
 }
 
-// 优选IP管理API处理函数
 async function handlePreferredIPsAPI(request) {
-    // 检查KV是否可用
+    
     if (!kvStore) {
         return new Response(JSON.stringify({
             success: false,
@@ -3662,7 +3585,6 @@ async function handlePreferredIPsAPI(request) {
         });
     }
     
-    // 检查API功能是否启用（安全开关）
     const apiEnabled = getConfigValue('apiEnabled', '') === 'yes';
     if (!apiEnabled) {
         return new Response(JSON.stringify({
@@ -3677,7 +3599,7 @@ async function handlePreferredIPsAPI(request) {
     
     try {
         if (request.method === 'GET') {
-            // 从yx变量获取优选IP列表
+            
             const yxValue = getConfigValue('yx', '');
             const preferredIPs = parseYxToArray(yxValue);
             
@@ -3690,10 +3612,9 @@ async function handlePreferredIPsAPI(request) {
             });
             
         } else if (request.method === 'POST') {
-            // 添加优选IP（支持单个或批量）
+            
             const body = await request.json();
             
-            // 支持批量添加
             const ipsToAdd = Array.isArray(body) ? body : [body];
             
             if (ipsToAdd.length === 0) {
@@ -3707,7 +3628,6 @@ async function handlePreferredIPsAPI(request) {
                 });
             }
             
-            // 从yx变量获取现有列表
             const yxValue = getConfigValue('yx', '');
             const preferredIPs = parseYxToArray(yxValue);
             
@@ -3716,23 +3636,20 @@ async function handlePreferredIPsAPI(request) {
             const errors = [];
             
             for (const item of ipsToAdd) {
-                // 验证必需字段
+                
                 if (!item.ip) {
                     errors.push({ ip: '未知', reason: 'IP地址是必需的' });
                     continue;
                 }
                 
-                // 解析端口，默认443
                 const port = item.port || 443;
                 const name = item.name || `API优选-${item.ip}:${port}`;
                 
-                // 验证IP格式
                 if (!isValidIP(item.ip) && !isValidDomain(item.ip)) {
                     errors.push({ ip: item.ip, reason: '无效的IP或域名格式' });
                     continue;
                 }
                 
-                // 检查是否已存在
                 const exists = preferredIPs.some(existItem => 
                     existItem.ip === item.ip && existItem.port === port
                 );
@@ -3742,7 +3659,6 @@ async function handlePreferredIPsAPI(request) {
                     continue;
                 }
                 
-                // 添加新IP
                 const newIP = {
                     ip: item.ip,
                     port: port,
@@ -3754,13 +3670,11 @@ async function handlePreferredIPsAPI(request) {
                 addedIPs.push(newIP);
             }
             
-            // 如果有IP被添加，保存到yx变量
             if (addedIPs.length > 0) {
                 const newYxValue = arrayToYx(preferredIPs);
                 await setConfigValue('yx', newYxValue);
             }
             
-            // 返回结果
             return new Response(JSON.stringify({
                 success: addedIPs.length > 0,
                 message: `成功添加 ${addedIPs.length} 个IP`,
@@ -3777,17 +3691,15 @@ async function handlePreferredIPsAPI(request) {
             });
             
         } else if (request.method === 'DELETE') {
-            // 删除优选IP（支持单个删除或一键清空）
+            
             const body = await request.json();
             
-            // 检查是否为一键清空
             if (body.all === true) {
-                // 从yx变量获取现有列表
+                
                 const yxValue = getConfigValue('yx', '');
                 const preferredIPs = parseYxToArray(yxValue);
                 const deletedCount = preferredIPs.length;
                 
-                // 清空yx变量
                 await setConfigValue('yx', '');
                 
                 return new Response(JSON.stringify({
@@ -3799,7 +3711,6 @@ async function handlePreferredIPsAPI(request) {
                 });
             }
             
-            // 单个删除逻辑
             if (!body.ip) {
                 return new Response(JSON.stringify({
                     success: false,
@@ -3813,12 +3724,10 @@ async function handlePreferredIPsAPI(request) {
             
             const port = body.port || 443;
             
-            // 从yx变量获取现有列表
             const yxValue = getConfigValue('yx', '');
             const preferredIPs = parseYxToArray(yxValue);
             const initialLength = preferredIPs.length;
             
-            // 删除匹配的IP
             const filteredIPs = preferredIPs.filter(item => 
                 !(item.ip === body.ip && item.port === port)
             );
@@ -3834,7 +3743,6 @@ async function handlePreferredIPsAPI(request) {
                 });
             }
             
-            // 转换回yx格式并保存
             const newYxValue = arrayToYx(filteredIPs);
             await setConfigValue('yx', newYxValue);
             
@@ -3868,8 +3776,6 @@ async function handlePreferredIPsAPI(request) {
     }
 }
 
-// 解析yx格式字符串为数组
-// 格式: IP:端口#节点名称,IP:端口#节点名称
 function parseYxToArray(yxValue) {
     if (!yxValue || !yxValue.trim()) return [];
     
@@ -3877,7 +3783,7 @@ function parseYxToArray(yxValue) {
     const result = [];
     
     for (const item of items) {
-        // 检查是否包含节点名称 (#)
+        
         let nodeName = '';
         let addressPart = item;
         
@@ -3887,10 +3793,8 @@ function parseYxToArray(yxValue) {
             nodeName = parts[1].trim();
         }
         
-        // 解析地址和端口
         const { address, port } = parseAddressAndPort(addressPart);
         
-        // 如果没有设置节点名称，使用默认格式
         if (!nodeName) {
             nodeName = address + (port ? ':' + port : '');
         }
@@ -3906,7 +3810,6 @@ function parseYxToArray(yxValue) {
     return result;
 }
 
-// 将数组转换为yx格式字符串
 function arrayToYx(array) {
     if (!array || array.length === 0) return '';
     
@@ -3916,7 +3819,6 @@ function arrayToYx(array) {
     }).join(',');
 }
 
-// 验证域名格式
 function isValidDomain(domain) {
     const domainRegex = /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
     return domainRegex.test(domain);
