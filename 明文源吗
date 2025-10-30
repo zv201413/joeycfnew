@@ -889,7 +889,7 @@ export default {
         function handleUUIDInput() {
             const input = document.getElementById('uuidInput');
             const inputValue = input.value.trim();
-            const customPath = "${customPath}";
+            const customPath = '${customPath}';
             
             if (inputValue) {
                 addTerminalLine('connect ' + inputValue, 'output');
@@ -897,22 +897,13 @@ export default {
                 // 如果启用了 d 变量
                 if (customPath) {
                     const cleanPath = customPath.startsWith('/') ? customPath : '/' + customPath;
-                    const cleanInput = inputValue.startsWith('/') ? inputValue : '/' + inputValue;
-                    const pathWithoutSlash = cleanPath.replace(/^\//, '');
-                    const inputWithoutSlash = cleanInput.replace(/^\//, '');
-                    
-                    if (inputWithoutSlash === pathWithoutSlash) {
-                        addTerminalLine('正在连接...', 'output');
+                    addTerminalLine('正在连接...', 'output');
+                    setTimeout(() => {
+                        addTerminalLine('连接成功！返回结果...', 'success');
                         setTimeout(() => {
-                            addTerminalLine('连接成功！返回结果...', 'success');
-                            setTimeout(() => {
-                                window.location.href = cleanPath;
-                            }, 1000);
-                        }, 500);
-                    } else {
-                        addTerminalLine('错误: 路径不匹配', 'error');
-                        addTerminalLine('请重新输入正确的自定义路径', 'output');
-                    }
+                            window.location.href = cleanPath;
+                        }, 1000);
+                    }, 500);
                 } else {
                     // 使用 UUID 模式
                     if (isValidUUID(inputValue)) {
@@ -937,7 +928,6 @@ export default {
             createMatrixRain();
             
             const input = document.getElementById('uuidInput');
-            input.focus();
             input.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     handleUUIDInput();
@@ -1020,7 +1010,7 @@ export default {
 };
 
 function generateQuantumultConfig(links) {
-    return btoa(links.join('\n'));
+	return btoa(links.join('\n'));
 }
 
 async function handleSubscriptionRequest(request, user, url = null) {
@@ -1860,7 +1850,7 @@ async function handleSubscriptionPage(request, user = null) {
     <div class="matrix-bg"></div>
     <div class="matrix-rain"></div>
     <div class="matrix-code-rain" id="matrixCodeRain"></div>
-    <div class="matrix-text">代理订阅中心 v2.2</div>
+    <div class="matrix-text">代理订阅中心 v1.1</div>
     <div class="container">
         <div class="header">
             <h1 class="title">代理订阅中心</h1>
