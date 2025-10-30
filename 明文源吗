@@ -898,8 +898,10 @@ export default {
                 if (customPath) {
                     const cleanPath = customPath.startsWith('/') ? customPath : '/' + customPath;
                     const cleanInput = inputValue.startsWith('/') ? inputValue : '/' + inputValue;
+                    const pathWithoutSlash = cleanPath.replace(/^\//, '');
+                    const inputWithoutSlash = cleanInput.replace(/^\//, '');
                     
-                    if (cleanInput === cleanPath) {
+                    if (inputWithoutSlash === pathWithoutSlash) {
                         addTerminalLine('正在连接...', 'output');
                         setTimeout(() => {
                             addTerminalLine('连接成功！返回结果...', 'success');
@@ -909,7 +911,7 @@ export default {
                         }, 500);
                     } else {
                         addTerminalLine('错误: 路径不匹配', 'error');
-                        addTerminalLine('请输入正确的D变量路径: ' + cleanPath, 'output');
+                        addTerminalLine('请重新输入正确的自定义路径', 'output');
                     }
                 } else {
                     // 使用 UUID 模式
@@ -1015,6 +1017,10 @@ export default {
 		}
 	},
 };
+
+function generateQuantumultConfig(links) {
+    return btoa(links.join('\n'));
+}
 
 async function handleSubscriptionRequest(request, user, url = null) {
     if (!url) url = new URL(request.url);
@@ -1852,7 +1858,7 @@ async function handleSubscriptionPage(request, user = null) {
     <div class="matrix-bg"></div>
     <div class="matrix-rain"></div>
     <div class="matrix-code-rain" id="matrixCodeRain"></div>
-    <div class="matrix-text">代理订阅中心 v2.1</div>
+    <div class="matrix-text">代理订阅中心 v2.2</div>
     <div class="container">
         <div class="header">
             <h1 class="title">代理订阅中心</h1>
@@ -1865,6 +1871,7 @@ async function handleSubscriptionPage(request, user = null) {
                 <button class="client-btn" onclick="generateClientLink(atob('c3VyZ2U='))">SURGE</button>
                 <button class="client-btn" onclick="generateClientLink(atob('c2luZ2JveA=='))">SING-BOX</button>
                 <button class="client-btn" onclick="generateClientLink(atob('bG9vbg=='))">LOON</button>
+                <button class="client-btn" onclick="generateClientLink(atob('cXVhbnR1bXVsdHg='))">QUANTUMULT X</button>
                 <button class="client-btn" onclick="generateClientLink(atob('djJyYXk='))">V2RAY</button>
             </div>
             <div class="subscription-url" id="clientSubscriptionUrl"></div>
@@ -2087,6 +2094,7 @@ async function handleSubscriptionPage(request, user = null) {
                     var displayName = clientType.toUpperCase();
                     if (clientType === atob('c3VyZ2U=')) displayName = 'SURGE';
                     if (clientType === atob('c2luZ2JveA==')) displayName = 'SING-BOX';
+                    if (clientType === atob('cXVhbnR1bXVsdHg=')) displayName = 'QUANTUMULT X';
                     alert(displayName + " 订阅链接已复制");
                 });
             }
