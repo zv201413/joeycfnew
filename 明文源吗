@@ -317,9 +317,9 @@ export default {
 			if (manualRegion && manualRegion.trim()) {
 				manualWorkerRegion = manualRegion.trim().toUpperCase();
 				currentWorkerRegion = manualWorkerRegion;
-			} else if (ci && customIP.trim()) {
-				useCustomIP = true;
-				currentWorkerRegion = 'CUSTOM';
+		} else if (ci && ci.trim()) {
+			useCustomIP = true;
+			currentWorkerRegion = 'CUSTOM';
 			} else {
 				currentWorkerRegion = await detectWorkerRegion(request);
 			}
@@ -566,10 +566,10 @@ export default {
 						}), {
 							headers: { 'Content-Type': 'application/json' }
 						});
-					} else if (ci && customIP.trim()) {
-						return new Response(JSON.stringify({
-							region: 'CUSTOM',
-							detectionMethod: '自定义ProxyIP模式', ci: ci,
+				} else if (ci && ci.trim()) {
+					return new Response(JSON.stringify({
+						region: 'CUSTOM',
+						detectionMethod: '自定义ProxyIP模式', ci: ci,
 							timestamp: new Date().toISOString()
 						}), {
 							headers: { 'Content-Type': 'application/json' }
