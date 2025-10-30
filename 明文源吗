@@ -1,6 +1,6 @@
 import { connect } from 'cloudflare:sockets';
 
-let authToken = '351c9981-04b6-4103-aa4b-864aa9c91469';
+let at = '351c9981-04b6-4103-aa4b-864aa9c91469';
 let fallbackAddress = '';
 let fallbackPort = '443';
 let socks5Config = '';
@@ -13,19 +13,19 @@ let disablePreferred = false;
 let enableRegionMatching = true;
 let currentWorkerRegion = '';
 let manualWorkerRegion = '';
-let preferredIPsURL = '';
-let customPath = '';  
+let piu = '';
+let cp = '';  
 
-let enableVless = true;   
-let enableTrojan = false; 
-let enableXhttp = false;  
-let trojanPassword = '';  
+let ev = true;   
+let et = false; 
+let ex = false;  
+let tp = '';  
 
-let subConverterUrl = 'https://url.v1.mk/sub';  
+let scu = 'https://url.v1.mk/sub';  
 
-let enablePreferredDomains = true;   
-let enablePreferredIPs = true;       
-let enableGithubIPs = true;          
+let epd = true;   
+let epi = true;       
+let egi = true;          
 
 let kvStore = null;
 let kvConfig = {};
@@ -113,76 +113,45 @@ function isValidIP(ip) {
 }
 
 async function initKVStore(env) {
-    console.log('🔧 初始化 KV 存储...');
-    console.log('  env.C 是否存在:', !!env.C);
     
     if (env.C) {
         try {
             kvStore = env.C;
-            console.log('  kvStore 已设置');
-            console.log('  调用 loadKVConfig()...');
             await loadKVConfig();
-            console.log('✅ KV 存储初始化成功');
         } catch (error) {
-            console.error('❌ KV初始化失败，将禁用KV功能');
-            console.error('  错误类型:', error.constructor.name);
-            console.error('  错误消息:', error.message);
-            console.error('  错误堆栈:', error.stack);
             kvStore = null;
         }
     } else {
-        console.log('⚠️ env.C 未配置，KV 存储不可用');
     }
 }
 
 async function loadKVConfig() {
-    console.log('📖 加载 KV 配置...');
-    console.log('  kvStore 是否存在:', !!kvStore);
     
     if (!kvStore) {
-        console.log('⚠️ kvStore 不存在，跳过加载');
         return;
     }
     
     try {
-        console.log('  调用 kvStore.get("c")...');
         const configData = await kvStore.get('c');
-        console.log('  获取到的数据长度:', configData ? configData.length : 0);
         
         if (configData) {
-            console.log('  解析配置数据...');
             kvConfig = JSON.parse(configData);
-            console.log('  配置项数量:', Object.keys(kvConfig).length);
-            console.log('  配置内容:', JSON.stringify(kvConfig));
         } else {
-            console.log('  KV 中没有配置数据');
         }
-        console.log('✅ KV 配置加载成功');
     } catch (error) {
-        console.error('❌ 加载KV配置失败');
-        console.error('  错误类型:', error.constructor.name);
-        console.error('  错误消息:', error.message);
-        console.error('  错误堆栈:', error.stack);
         kvConfig = {};
     }
 }
 
 async function saveKVConfig() {
     if (!kvStore) {
-        console.error('⚠️ kvStore 不存在，无法保存');
         return;
     }
     
     try {
         const configString = JSON.stringify(kvConfig);
-        console.log('🔄 正在调用 kvStore.put，数据长度:', configString.length);
         await kvStore.put('c', configString);
-        console.log('✅ kvStore.put 执行成功');
     } catch (error) {
-        console.error('❌ 保存KV配置失败:');
-        console.error('  错误类型:', error.constructor.name);
-        console.error('  错误消息:', error.message);
-        console.error('  错误堆栈:', error.stack);
         throw error; 
     }
 }
@@ -338,17 +307,17 @@ export default {
 			
 			await initKVStore(env);
 			
-			authToken = (env.u || env.U || authToken).toLowerCase();
-			const subPath = (env.d || env.D || authToken).toLowerCase();
+			at = (env.u || env.U || at).toLowerCase();
+			const subPath = (env.d || env.D || at).toLowerCase();
 			
-			const customIP = getConfigValue('p', env.p || env.P);
+			const ci = getConfigValue('p', env.p || env.P);
 			let useCustomIP = false;
 			
 			const manualRegion = getConfigValue('wk', env.wk || env.WK);
 			if (manualRegion && manualRegion.trim()) {
 				manualWorkerRegion = manualRegion.trim().toUpperCase();
 				currentWorkerRegion = manualWorkerRegion;
-			} else if (customIP && customIP.trim()) {
+			} else if (ci && customIP.trim()) {
 				useCustomIP = true;
 				currentWorkerRegion = 'CUSTOM';
 			} else {
@@ -429,8 +398,8 @@ export default {
 				}
 			}
 
-			const downgradeControl = env.qj || env.QJ;
-			if (downgradeControl && downgradeControl.toLowerCase() === 'no') {
+			const dc = env.qj || env.QJ;
+			if (dc && downgradeControl.toLowerCase() === 'no') {
 				enableSocksDowngrade = true;
 			}
 
@@ -444,50 +413,50 @@ export default {
 				disablePreferred = true;
 			}
 
-			const vlessControl = getConfigValue('enableVless', env.enableVless || env.ENABLEVLESS);
+			const vlessControl = getConfigValue('ev', env.ev || env.ENABLEVLESS);
 			if (vlessControl !== undefined && vlessControl !== '') {
-				enableVless = vlessControl === 'yes' || vlessControl === true || vlessControl === 'true';
+				ev = vlessControl === 'yes' || vlessControl === true || vlessControl === 'true';
 			}
 			
-			const trojanControl = getConfigValue('enableTrojan', env.enableTrojan || env.ENABLETROJAN);
+			const trojanControl = getConfigValue('et', env.et || env.ENABLETROJAN);
 			if (trojanControl !== undefined && trojanControl !== '') {
-				enableTrojan = trojanControl === 'yes' || trojanControl === true || trojanControl === 'true';
+				et = trojanControl === 'yes' || trojanControl === true || trojanControl === 'true';
 			}
 			
-			trojanPassword = getConfigValue('trojanPassword', env.trojanPassword || env.TROJANPASSWORD) || '';
+			tp = getConfigValue('tp', env.tp || env.TROJANPASSWORD) || '';
 			
-			const xhttpControl = getConfigValue('enableXhttp', env.enableXhttp || env.ENABLEXHTTP);
+			const xhttpControl = getConfigValue('ex', env.ex || env.ENABLEXHTTP);
 			if (xhttpControl !== undefined && xhttpControl !== '') {
-				enableXhttp = xhttpControl === 'yes' || xhttpControl === true || xhttpControl === 'true';
+				ex = xhttpControl === 'yes' || xhttpControl === true || xhttpControl === 'true';
 			}
 			
-			subConverterUrl = getConfigValue('subConverterUrl', env.subConverterUrl || env.SUBCONVERTERURL) || 'https://url.v1.mk/sub';
+			scu = getConfigValue('scu', env.scu || env.SUBCONVERTERURL) || 'https://url.v1.mk/sub';
 			
-			const preferredDomainsControl = getConfigValue('enablePreferredDomains', env.enablePreferredDomains || env.ENABLEPREFERREDDOMAINS);
+			const preferredDomainsControl = getConfigValue('epd', env.epd || env.ENABLEPREFERREDDOMAINS);
 			if (preferredDomainsControl !== undefined && preferredDomainsControl !== '') {
-				enablePreferredDomains = preferredDomainsControl !== 'no' && preferredDomainsControl !== false && preferredDomainsControl !== 'false';
+				epd = preferredDomainsControl !== 'no' && preferredDomainsControl !== false && preferredDomainsControl !== 'false';
 			}
 			
-			const preferredIPsControl = getConfigValue('enablePreferredIPs', env.enablePreferredIPs || env.ENABLEPREFERREDIPS);
+			const preferredIPsControl = getConfigValue('epi', env.epi || env.ENABLEPREFERREDIPS);
 			if (preferredIPsControl !== undefined && preferredIPsControl !== '') {
-				enablePreferredIPs = preferredIPsControl !== 'no' && preferredIPsControl !== false && preferredIPsControl !== 'false';
+				epi = preferredIPsControl !== 'no' && preferredIPsControl !== false && preferredIPsControl !== 'false';
 			}
 			
-			const githubIPsControl = getConfigValue('enableGithubIPs', env.enableGithubIPs || env.ENABLEGITHUBIPS);
+			const githubIPsControl = getConfigValue('egi', env.egi || env.ENABLEGITHUBIPS);
 			if (githubIPsControl !== undefined && githubIPsControl !== '') {
-				enableGithubIPs = githubIPsControl !== 'no' && githubIPsControl !== false && githubIPsControl !== 'false';
+				egi = githubIPsControl !== 'no' && githubIPsControl !== false && githubIPsControl !== 'false';
 			}
 			
-			if (!enableVless && !enableTrojan && !enableXhttp) {
-				enableVless = true;
+			if (!ev && !et && !ex) {
+				ev = true;
 			}
 
-		preferredIPsURL = getConfigValue('yxURL', env.yxURL || env.YXURL) || 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
+		piu = getConfigValue('yxURL', env.yxURL || env.YXURL) || 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
 		
-		customPath = getConfigValue('d', env.d || env.D) || '';
+		cp = getConfigValue('d', env.d || env.D) || '';
 		
 		const defaultURL = 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
-		if (preferredIPsURL !== defaultURL) {
+		if (piu !== defaultURL) {
 			directDomains.length = 0;
 			customPreferredIPs = [];
 			customPreferredDomains = [];
@@ -502,14 +471,14 @@ export default {
 				if (apiIndex > 0) {
 					const pathIdentifier = pathParts[apiIndex - 1];
 					
-					let isValid = false;
-					if (customPath && customPath.trim()) {
-						
-						const cleanCustomPath = (customPath.startsWith('/') ? customPath : '/' + customPath).replace(/^\//, '');
-						isValid = (pathIdentifier === cleanCustomPath);
+				let isValid = false;
+				if (cp && cp.trim()) {
+					
+					const cleanCustomPath = (cp.startsWith('/') ? cp : '/' + cp).replace(/^\//, '');
+					isValid = (pathIdentifier === cleanCustomPath);
 					} else {
 						
-						isValid = (isValidFormat(pathIdentifier) && pathIdentifier === authToken);
+						isValid = (isValidFormat(pathIdentifier) && pathIdentifier === at);
 					}
 					
 					if (isValid) {
@@ -536,13 +505,13 @@ export default {
 				const pathIdentifier = pathParts[apiIndex - 1];
 				
 				let isValid = false;
-				if (customPath && customPath.trim()) {
+				if (cp && cp.trim()) {
 					
-					const cleanCustomPath = (customPath.startsWith('/') ? customPath : '/' + customPath).replace(/^\//, '');
+					const cleanCustomPath = (cp.startsWith('/') ? cp : '/' + cp).replace(/^\//, '');
 					isValid = (pathIdentifier === cleanCustomPath);
 				} else {
 					
-					isValid = (isValidFormat(pathIdentifier) && pathIdentifier === authToken);
+					isValid = (isValidFormat(pathIdentifier) && pathIdentifier === at);
 				}
 				
 				if (isValid) {
@@ -561,7 +530,7 @@ export default {
 			});
 		}
 		
-		if (request.method === 'POST' && enableXhttp) {
+		if (request.method === 'POST' && ex) {
 			const r = await handleXhttpPost(request);
 			if (r) {
 				ctx.waitUntil(r.closed);
@@ -578,14 +547,14 @@ export default {
 			return new Response('Internal Server Error', { status: 500 });
 		}
 
-		if (request.headers.get('Upgrade') === 'websocket') {
+		if (request.headers.get('Upgrade') === atob('d2Vic29ja2V0')) {
 			return await handleWsRequest(request);
 		}
 		
 		if (request.method === 'GET') {
 				if (url.pathname === '/region') {
 					
-					const customIP = getConfigValue('p', env.p || env.P);
+					const ci = getConfigValue('p', env.p || env.P);
 					const manualRegion = getConfigValue('wk', env.wk || env.WK);
 					
 					if (manualRegion && manualRegion.trim()) {
@@ -597,11 +566,10 @@ export default {
 						}), {
 							headers: { 'Content-Type': 'application/json' }
 						});
-					} else if (customIP && customIP.trim()) {
+					} else if (ci && customIP.trim()) {
 						return new Response(JSON.stringify({
 							region: 'CUSTOM',
-							detectionMethod: '自定义ProxyIP模式',
-							customIP: customIP,
+							detectionMethod: '自定义ProxyIP模式', ci: ci,
 							timestamp: new Date().toISOString()
 						}), {
 							headers: { 'Content-Type': 'application/json' }
@@ -805,15 +773,15 @@ export default {
             </div>
             <div class="terminal-line">
                 <span class="terminal-prompt">root:~$</span>
-                <span class="terminal-output">${customPath && customPath.trim() ? '请输入你D变量的值' : '请输入你U变量的值'}</span>
+                <span class="terminal-output">${cp && cp.trim() ? '请输入你D变量的值' : '请输入你U变量的值'}</span>
             </div>
             <div class="terminal-line">
                 <span class="terminal-prompt">root:~$</span>
-                <span class="terminal-output">命令: connect [${customPath && customPath.trim() ? 'PATH' : 'UUID'}]</span>
+                <span class="terminal-output">命令: connect [${cp && cp.trim() ? 'PATH' : 'UUID'}]</span>
             </div>
             <div class="terminal-line">
                 <span class="terminal-prompt">root:~$</span>
-                <input type="text" class="terminal-input" id="uuidInput" placeholder="${customPath && customPath.trim() ? '输入D变量的内容并且回车...' : '输入U变量的内容并且回车...'}" autofocus>
+                <input type="text" class="terminal-input" id="uuidInput" placeholder="${cp && cp.trim() ? '输入D变量的内容并且回车...' : '输入U变量的内容并且回车...'}" autofocus>
                 <span class="terminal-cursor"></span>
             </div>
         </div>
@@ -889,12 +857,12 @@ export default {
         function handleUUIDInput() {
             const input = document.getElementById('uuidInput');
             const inputValue = input.value.trim();
-            const customPath = '${customPath}';
+            const cp = '${ cp }';
             
             if (inputValue) {
-                addTerminalLine('connect ' + inputValue, 'output');
+                addTerminalLine(atob('Y29ubmVjdCA=') + inputValue, 'output');
                 
-                if (customPath) {
+                if (cp) {
                     const cleanInput = inputValue.startsWith('/') ? inputValue : '/' + inputValue;
                     addTerminalLine('正在连接...', 'output');
                     setTimeout(() => {
@@ -939,15 +907,15 @@ export default {
 					return new Response(terminalHtml, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
 				}
 			
-			if (customPath && customPath.trim()) {
-				const cleanCustomPath = customPath.startsWith('/') ? customPath : '/' + customPath;
+		if (cp && cp.trim()) {
+			const cleanCustomPath = cp.startsWith('/') ? cp : '/' + cp;
 				
 				if (url.pathname === cleanCustomPath || url.pathname === cleanCustomPath + '/') {
-					return await handleSubscriptionPage(request, authToken);
+					return await handleSubscriptionPage(request, at);
 				}
 				
 				if (url.pathname === cleanCustomPath + '/sub') {
-					return await handleSubscriptionRequest(request, authToken, url);
+					return await handleSubscriptionRequest(request, at, url);
 				}
 				
 				if (url.pathname.length > 1 && url.pathname !== '/') {
@@ -967,7 +935,7 @@ export default {
 				if (url.pathname.length > 1 && url.pathname !== '/' && !url.pathname.includes('/sub')) {
 					const user = url.pathname.replace(/\/$/, '').substring(1);
 					if (isValidFormat(user)) {
-						if (user === authToken) {
+						if (user === at) {
 							return await handleSubscriptionPage(request, user);
 						} else {
 							return new Response(JSON.stringify({ error: 'UUID错误 请注意变量名称是u不是uuid' }), { 
@@ -982,7 +950,7 @@ export default {
 					if (pathParts.length === 2 && pathParts[1] === 'sub') {
 						const user = pathParts[0].substring(1);
 						if (isValidFormat(user)) {
-							if (user === authToken) {
+							if (user === at) {
 								return await handleSubscriptionRequest(request, user, url);
 							} else {
 								return new Response(JSON.stringify({ error: 'UUID错误' }), { 
@@ -995,7 +963,7 @@ export default {
 				}
 			}
 				if (url.pathname.toLowerCase().includes(`/${subPath}`)) {
-					return await handleSubscriptionRequest(request, authToken);
+					return await handleSubscriptionRequest(request, at);
 				}
 			}
 			return new Response(JSON.stringify({ error: 'Not Found' }), { 
@@ -1020,13 +988,13 @@ async function handleSubscriptionRequest(request, user, url = null) {
     const target = url.searchParams.get('target') || 'base64';
 
     async function addNodesFromList(list) {
-        if (enableVless) {
+        if (ev) {
             finalLinks.push(...generateLinksFromSource(list, user, workerDomain));
         }
-        if (enableTrojan) {
+        if (et) {
             finalLinks.push(...await generateTrojanLinksFromSource(list, user, workerDomain));
         }
-        if (enableXhttp) {
+        if (ex) {
             finalLinks.push(...generateXhttpLinksFromSource(list, user, workerDomain));
         }
     }
@@ -1061,24 +1029,24 @@ async function handleSubscriptionRequest(request, user, url = null) {
     if (disablePreferred) {
     } else if (hasCustomPreferred) {
         
-        if (customPreferredIPs.length > 0 && enablePreferredIPs) {
+        if (customPreferredIPs.length > 0 && epi) {
             await addNodesFromList(customPreferredIPs);
         }
         
-        if (customPreferredDomains.length > 0 && enablePreferredDomains) {
+        if (customPreferredDomains.length > 0 && epd) {
             const customDomainList = customPreferredDomains.map(d => ({ ip: d.domain, isp: d.name || d.domain }));
             await addNodesFromList(customDomainList);
         }
     } else {
         
-        if (enablePreferredDomains) {
+        if (epd) {
             const domainList = directDomains.map(d => ({ ip: d.domain, isp: d.name || d.domain }));
             await addNodesFromList(domainList);
         }
 
-        if (enablePreferredIPs) {
+        if (epi) {
             const defaultURL = 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
-            if (preferredIPsURL === defaultURL) {
+            if (piu === defaultURL) {
                 try {
                     const dynamicIPList = await fetchDynamicIPs();
                     if (dynamicIPList.length > 0) {
@@ -1101,14 +1069,14 @@ async function handleSubscriptionRequest(request, user, url = null) {
             }
         }
 
-        if (enableGithubIPs) {
+        if (egi) {
             try {
                 const newIPList = await fetchAndParseNewIPs();
                 if (newIPList.length > 0) {
-                    if (enableVless) {
+                    if (ev) {
                         finalLinks.push(...generateLinksFromNewIPs(newIPList, user, workerDomain));
                     }
-                    if (enableTrojan) {
+                    if (et) {
                         finalLinks.push(...await generateTrojanLinksFromNewIPs(newIPList, user, workerDomain));
                     }
                 }
@@ -1261,8 +1229,7 @@ async function generateTrojanLinksFromSource(list, user, workerDomain) {
     const links = [];
     const wsPath = encodeURIComponent('/');
     
-    const password = trojanPassword || user;
-    console.log('生成 Trojan 链接，密码:', password, '(trojanPassword变量:', trojanPassword, ')');
+    const password = tp || user;
 
     list.forEach(item => {
         const nodeNameBase = item.isp.replace(/\s/g, '_');
@@ -1335,7 +1302,6 @@ async function fetchDynamicIPs() {
             return results;
         }
     } catch (e) {
-        console.error("Failed to fetch from wetest.vip:", e);
     }
 
             return [];
@@ -1345,7 +1311,6 @@ async function fetchAndParseWetest(url) {
     try {
         const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
         if (!response.ok) {
-            console.error(`Failed to fetch ${url}, status: ${response.status}`);
             return [];
         }
         const html = await response.text();
@@ -1366,12 +1331,10 @@ async function fetchAndParseWetest(url) {
         }
         
         if (results.length === 0) {
-            console.warn(`Warning: Could not parse any IPs from ${url}. The site structure might have changed.`);
         }
 
         return results;
     } catch (error) {
-        console.error(`Error parsing ${url}:`, error);
         return [];
     }
 }
@@ -1385,7 +1348,7 @@ async function handleWsRequest(request) {
     let isDnsQuery = false;
     let protocolType = null; 
 
-    const earlyData = request.headers.get('sec-websocket-protocol') || '';
+    const earlyData = request.headers.get(atob('c2VjLXdlYnNvY2tldC1wcm90b2NvbA==')) || '';
     const readable = makeReadableStream(serverSock, earlyData);
 
     readable.pipeTo(new WritableStream({
@@ -1400,8 +1363,8 @@ async function handleWsRequest(request) {
             
             if (!protocolType) {
                 
-                if (enableVless && chunk.byteLength >= 24) {
-                    const vlessResult = parseWsPacketHeader(chunk, authToken);
+                if (ev && chunk.byteLength >= 24) {
+                    const vlessResult = parseWsPacketHeader(chunk, at);
                     if (!vlessResult.hasError) {
                         protocolType = 'vless';
                         const { addressType, port, hostname, rawIndex, version, isUDP } = vlessResult;
@@ -1417,17 +1380,11 @@ async function handleWsRequest(request) {
                     }
                 }
                 
-                if (enableTrojan && chunk.byteLength >= 56) {
-                    const trojanResult = await parseTrojanHeader(chunk, authToken);
-                    console.log('Trojan 解析结果:', { 
-                        hasError: trojanResult.hasError, 
-                        message: trojanResult.message,
-                        chunkSize: chunk.byteLength 
-                    });
+                if (et && chunk.byteLength >= 56) {
+                    const trojanResult = await parseTrojanHeader(chunk, at);
                     if (!trojanResult.hasError) {
                         protocolType = 'trojan';
                         const { addressType, port, hostname, rawClientData } = trojanResult;
-                        console.log(`Trojan 连接: ${hostname}:${port}`);
                         await forwardTCP(addressType, hostname, port, rawClientData, serverSock, null, remoteConnWrapper);
                         return;
                     }
@@ -1557,9 +1514,9 @@ async function connectStreams(remoteSocket, webSocket, headerData, retryFunc) {
 				if (header) { webSocket.send(await new Blob([header, chunk]).arrayBuffer()); header = null; } 
                 else { webSocket.send(chunk); }
 			},
-			abort(reason) { console.error("Readable aborted:", reason); },
+			abort(reason) { },
 		})
-	).catch((error) => { console.error("Stream connection error:", error); closeSocketQuietly(webSocket); });
+	).catch((error) => { closeSocketQuietly(webSocket); });
 	if (!hasData && retryFunc) retryFunc();
 }
 
@@ -1578,7 +1535,7 @@ async function forwardUDP(udpChunk, webSocket, respHeader) {
 				}
 			},
 		}));
-	} catch (error) { console.error(`DNS forward error: ${error.message}`); }
+	} catch (error) { }
 }
 
 async function establishSocksConnection(addrType, address, port) {
@@ -1632,7 +1589,7 @@ function parseSocksConfig(address) {
 }
 
 async function handleSubscriptionPage(request, user = null) {
-	if (!user) user = authToken;
+	if (!user) user = at;
 	
 	const pageHtml = `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -1808,7 +1765,7 @@ async function handleSubscriptionPage(request, user = null) {
             transform: translateY(-4px) scale(1.08);
             text-shadow: 0 0 15px #00ff00, 0 0 25px #00ff00;
         }
-        .subscription-url {
+        .atob('c3Vic2NyaXB0aW9u')-url {
             background: rgba(0, 0, 0, 0.9);
             border: 2px solid #00ff00; padding: 15px;
             word-break: break-all; font-family: "Courier New", monospace;
@@ -1823,7 +1780,7 @@ async function handleSubscriptionPage(request, user = null) {
             from { box-shadow: inset 0 0 15px rgba(0, 255, 0, 0.4), 0 0 20px rgba(0, 255, 0, 0.3); }
             to { box-shadow: inset 0 0 20px rgba(0, 255, 0, 0.6), 0 0 30px rgba(0, 255, 0, 0.5); }
         }
-        .subscription-url::before {
+        .atob('c3Vic2NyaXB0aW9u')-url::before {
             content: ""; position: absolute; top: 0; left: -100%;
             width: 100%; height: 100%;
             background: linear-gradient(90deg, transparent, rgba(0,255,0,0.1), transparent);
@@ -1849,7 +1806,7 @@ async function handleSubscriptionPage(request, user = null) {
     <div class="matrix-bg"></div>
     <div class="matrix-rain"></div>
     <div class="matrix-code-rain" id="matrixCodeRain"></div>
-    <div class="matrix-text">代理订阅中心 v1.1</div>
+    <div class="matrix-text">终端 v2.0</div>
     <div class="container">
         <div class="header">
             <h1 class="title">代理订阅中心</h1>
@@ -1865,12 +1822,12 @@ async function handleSubscriptionPage(request, user = null) {
                 <button class="client-btn" onclick="generateClientLink(atob('cXVhbng='))">QUANTUMULT X</button>
                 <button class="client-btn" onclick="generateClientLink(atob('djJyYXk='))">V2RAY</button>
             </div>
-            <div class="subscription-url" id="clientSubscriptionUrl"></div>
+            <div class=atob('c3Vic2NyaXB0aW9uLXVybA==') id="clientSubscriptionUrl"></div>
         </div>
         <div class="card">
             <h2 class="card-title">[ 快速获取 ]</h2>
             <button class="generate-btn" onclick="getBase64Subscription()">获取订阅链接</button>
-            <div class="subscription-url" id="base64SubscriptionUrl"></div>
+            <div class=atob('c3Vic2NyaXB0aW9uLXVybA==') id="base64SubscriptionUrl"></div>
         </div>
         <div class="card">
             <h2 class="card-title">[ 系统状态 ]</h2>
@@ -1937,7 +1894,7 @@ async function handleSubscriptionPage(request, user = null) {
                                 <input type="text" id="trojanPassword" placeholder="留空则自动使用 UUID" style="width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.8); border: 1px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 13px;">
                                 <small style="color: #00aa00; font-size: 0.8rem; display: block; margin-top: 5px;">设置自定义 Trojan 密码。留空则使用 UUID。客户端会自动对密码进行 SHA224 哈希。</small>
                             </div>
-                            <small style="color: #00aa00; font-size: 0.85rem; display: block; margin-top: 10px;">可以同时启用多个协议。订阅将生成选中协议的节点。<br>• VLESS WS: 基于 WebSocket 的标准协议<br>• Trojan: 使用 SHA224 密码认证<br>• xhttp: 基于 HTTP POST 的伪装协议（需要绑定自定义域名并开启 gRPC）</small>
+                            <small style="color: #00aa00; font-size: 0.85rem; display: block; margin-top: 10px;">可以同时启用多个协议。订阅将生成选中协议的节点。<br>• VLESS WS: 基于 atob('V2ViU29ja2V0') 的标准协议<br>• Trojan: 使用 SHA224 密码认证<br>• xhttp: 基于 HTTP POST 的伪装协议（需要绑定自定义域名并开启 gRPC）</small>
                         </div>
                     </div>
                     <div style="margin-bottom: 15px;">
@@ -2000,7 +1957,7 @@ async function handleSubscriptionPage(request, user = null) {
                         </div>
                     </div>
                     <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">允许API管理 (apiEnabled):</label>
+                        <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">允许API管理 (ae):</label>
                         <select id="apiEnabled" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
                             <option value="">默认（关闭API）</option>
                             <option value="yes">开启API管理</option>
@@ -2064,7 +2021,7 @@ async function handleSubscriptionPage(request, user = null) {
     </div>
     <script>
         // 订阅转换地址（从服务器配置注入）
-        var SUB_CONVERTER_URL = "${subConverterUrl}";
+        var SUB_CONVERTER_URL = "${ scu }";
         
         function generateClientLink(clientType) {
             var currentUrl = window.location.href;
@@ -2074,7 +2031,7 @@ async function handleSubscriptionPage(request, user = null) {
                 document.getElementById("clientSubscriptionUrl").textContent = subscriptionUrl;
                 document.getElementById("clientSubscriptionUrl").style.display = "block";
                 navigator.clipboard.writeText(subscriptionUrl).then(function() {
-                    alert("V2Ray 订阅链接已复制");
+                    alert(atob('VjJSYXkg6K6i6ZiF6ZO+5o6l5bey5aSN5Yi2'));
                 });
             } else {
                 var encodedUrl = encodeURIComponent(subscriptionUrl);
@@ -2106,7 +2063,6 @@ async function handleSubscriptionPage(request, user = null) {
                     });
                 })
                 .catch(function(error) {
-                    console.error("获取订阅失败:", error);
                     alert("获取订阅失败，请重试");
                 });
         }
@@ -2180,7 +2136,7 @@ async function handleSubscriptionPage(request, user = null) {
                         detectedRegion = 'CUSTOM';
                         
                         // 获取自定义IP的详细信息
-                        const customIPInfo = data.customIP || '未知';
+                        const customIPInfo = data.ci || '未知';
                         
                         geoInfo.innerHTML = '检测方式: <span style="color: #ffaa00;">⚙️ 自定义ProxyIP模式 (p变量启用)</span>';
                         regionStatus.innerHTML = 'Worker地区: <span style="color: #ffaa00;">🔧 自定义IP模式 (已禁用地区匹配)</span>';
@@ -2230,7 +2186,6 @@ async function handleSubscriptionPage(request, user = null) {
                 }
                 
             } catch (error) {
-                console.error('状态检测失败:', error);
                 document.getElementById('regionStatus').innerHTML = 'Worker地区: <span style="color: #ff4444;">❌ 检测失败</span>';
                 document.getElementById('geoInfo').innerHTML = '地理位置: <span style="color: #ff4444;">❌ 检测失败</span>';
                 document.getElementById('backupStatus').innerHTML = 'ProxyIP状态: <span style="color: #ff4444;">❌ 检测失败</span>';
@@ -2250,7 +2205,6 @@ async function handleSubscriptionPage(request, user = null) {
                     alert('API检测失败: ' + (data.error || '未知错误'));
                 }
             } catch (error) {
-                console.error('API测试失败:', error);
                 alert('API测试失败: ' + error.message);
             }
         }
@@ -2258,53 +2212,41 @@ async function handleSubscriptionPage(request, user = null) {
         // 配置管理相关函数
         async function checkKVStatus() {
             const apiUrl = window.location.pathname + '/api/config';
-            console.log('🔍 调试信息 - 检查KV状态');
-            console.log('请求URL:', apiUrl);
             
             try {
                 const response = await fetch(apiUrl);
-                console.log('响应状态:', response.status);
-                console.log('响应头:', Object.fromEntries(response.headers.entries()));
                 
                 if (response.status === 503) {
                     // KV未配置
-                    console.log('❌ KV存储未配置 (503)');
                     document.getElementById('kvStatus').innerHTML = '<span style="color: #ffaa00;">⚠️ KV存储未启用或未配置</span>';
                     document.getElementById('configCard').style.display = 'block';
                     document.getElementById('currentConfig').textContent = 'KV存储未配置，无法使用配置管理功能。\\n\\n请在Cloudflare Workers中:\\n1. 创建KV命名空间\\n2. 绑定环境变量 C\\n3. 重新部署代码';
                 } else if (response.ok) {
                     try {
                         const data = await response.json();
-                        console.log('响应数据:', data);
-                        console.log('kvEnabled:', data.kvEnabled);
                         
                         // 检查响应是否包含KV配置信息
                         if (data && data.kvEnabled === true) {
-                            console.log('✅ KV存储已启用');
                             document.getElementById('kvStatus').innerHTML = '<span style="color: #44ff44;">✅ KV存储已启用，可以使用配置管理功能</span>';
                             document.getElementById('configContent').style.display = 'block';
                             document.getElementById('configCard').style.display = 'block';
                             await loadCurrentConfig();
                         } else {
-                            console.log('❌ KV存储未启用 (响应中kvEnabled不为true)');
                             document.getElementById('kvStatus').innerHTML = '<span style="color: #ffaa00;">⚠️ KV存储未启用或未配置</span>';
                             document.getElementById('configCard').style.display = 'block';
                             document.getElementById('currentConfig').textContent = 'KV存储未配置';
                         }
                     } catch (jsonError) {
-                        console.log('❌ 解析响应JSON失败:', jsonError);
                         document.getElementById('kvStatus').innerHTML = '<span style="color: #ffaa00;">⚠️ KV存储检测失败</span>';
                         document.getElementById('configCard').style.display = 'block';
                         document.getElementById('currentConfig').textContent = 'KV存储检测失败: 响应格式错误';
                     }
                 } else {
-                    console.log('❌ 响应错误:', response.status, response.statusText);
                     document.getElementById('kvStatus').innerHTML = '<span style="color: #ffaa00;">⚠️ KV存储未启用或未配置</span>';
                     document.getElementById('configCard').style.display = 'block';
                     document.getElementById('currentConfig').textContent = 'KV存储检测失败 - 状态码: ' + response.status;
                 }
             } catch (error) {
-                console.log('❌ 请求失败:', error);
                 document.getElementById('kvStatus').innerHTML = '<span style="color: #ffaa00;">⚠️ KV存储未启用或未配置</span>';
                 document.getElementById('configCard').style.display = 'block';
                 document.getElementById('currentConfig').textContent = 'KV存储检测失败 - 错误: ' + error.message;
@@ -2313,26 +2255,20 @@ async function handleSubscriptionPage(request, user = null) {
         
         async function loadCurrentConfig() {
             const apiUrl = window.location.pathname + '/api/config';
-            console.log('📥 调试信息 - 加载配置');
-            console.log('请求URL:', apiUrl);
             
             try {
                 const response = await fetch(apiUrl);
-                console.log('加载响应状态:', response.status);
                 
                 if (response.status === 503) {
-                    console.log('❌ KV存储未配置，无法加载配置');
                     document.getElementById('currentConfig').textContent = 'KV存储未配置，无法加载配置';
                     return;
                 }
                 if (!response.ok) {
                     const errorText = await response.text();
-                    console.log('❌ 加载配置失败，状态码:', response.status, '错误:', errorText);
                     document.getElementById('currentConfig').textContent = '加载配置失败: ' + errorText;
                     return;
                 }
                 const config = await response.json();
-                console.log('加载的配置数据:', config);
                 
                 // 过滤掉内部字段 kvEnabled
                 const displayConfig = {};
@@ -2355,20 +2291,20 @@ async function handleSubscriptionPage(request, user = null) {
                 
                 // 更新表单值
                 document.getElementById('wkRegion').value = config.wk || '';
-                document.getElementById('enableVless').checked = config.enableVless !== 'no';
-                document.getElementById('enableTrojan').checked = config.enableTrojan === 'yes';
-                document.getElementById('enableXhttp').checked = config.enableXhttp === 'yes';
-                document.getElementById('trojanPassword').value = config.trojanPassword || '';
-                document.getElementById('subConverterUrl').value = config.subConverterUrl || '';
-                document.getElementById('enablePreferredDomains').checked = config.enablePreferredDomains !== 'no';
-                document.getElementById('enablePreferredIPs').checked = config.enablePreferredIPs !== 'no';
-                document.getElementById('enableGithubIPs').checked = config.enableGithubIPs !== 'no';
+                document.getElementById('enableVless').checked = config.ev !== 'no';
+                document.getElementById('enableTrojan').checked = config.et === 'yes';
+                document.getElementById('enableXhttp').checked = config.ex === 'yes';
+                document.getElementById('trojanPassword').value = config.tp || '';
+                document.getElementById('subConverterUrl').value = config.scu || '';
+                document.getElementById('enablePreferredDomains').checked = config.epd !== 'no';
+                document.getElementById('enablePreferredIPs').checked = config.epi !== 'no';
+                document.getElementById('enableGithubIPs').checked = config.egi !== 'no';
                 document.getElementById('customPath').value = config.d || '';
                 document.getElementById('customIP').value = config.p || '';
                 document.getElementById('preferredIPs').value = config.yx || '';
                 document.getElementById('preferredIPsURL').value = config.yxURL || '';
                 document.getElementById('socksConfig').value = config.s || '';
-                document.getElementById('apiEnabled').value = config.apiEnabled || '';
+                document.getElementById('apiEnabled').value = config.ae || '';
                 document.getElementById('regionMatching').value = config.rm || '';
                 document.getElementById('downgradeControl').value = config.qj || '';
                 document.getElementById('portControl').value = config.dkby || '';
@@ -2386,18 +2322,18 @@ async function handleSubscriptionPage(request, user = null) {
         }
         
         // 更新路径类型显示
-        function updatePathTypeStatus(customPath) {
+        function updatePathTypeStatus(cp) {
             const pathTypeStatus = document.getElementById('pathTypeStatus');
             const currentUrl = window.location.href;
             const pathParts = window.location.pathname.split('/').filter(p => p);
             const currentPath = pathParts.length > 0 ? pathParts[0] : '';
             
-            if (customPath && customPath.trim()) {
+            if (cp && cp.trim()) {
                 // 使用自定义路径 (d)
                 pathTypeStatus.innerHTML = '<div style="color: #44ff44;">使用类型: <strong>自定义路径 (d)</strong></div>' +
-                    '<div style="margin-top: 5px; color: #00ff00;">当前路径: <span style="color: #ffaa00;">' + customPath + '</span></div>' +
+                    '<div style="margin-top: 5px; color: #00ff00;">当前路径: <span style="color: #ffaa00;">' + cp + '</span></div>' +
                     '<div style="margin-top: 5px; font-size: 0.9rem; color: #00aa00;">访问地址: ' + 
-                    (currentUrl.split('/')[0] + '//' + currentUrl.split('/')[2]) + customPath + '/sub</div>';
+                    (currentUrl.split('/')[0] + '//' + currentUrl.split('/')[2]) + cp + '/sub</div>';
             } else {
                 // 使用 UUID (u)
                 pathTypeStatus.innerHTML = '<div style="color: #44ff44;">使用类型: <strong>UUID 路径 (u)</strong></div>' +
@@ -2408,12 +2344,12 @@ async function handleSubscriptionPage(request, user = null) {
         
         // 更新wk地区选择的启用/禁用状态
         function updateWkRegionState() {
-            const customIP = document.getElementById('customIP');
+            const customIPInput = document.getElementById('customIP');
             const wkRegion = document.getElementById('wkRegion');
             const wkRegionHint = document.getElementById('wkRegionHint');
             
-            if (customIP && wkRegion) {
-                const hasCustomIP = customIP.value.trim() !== '';
+            if (customIPInput && wkRegion) {
+                const hasCustomIP = customIPInput.value.trim() !== '';
                 wkRegion.disabled = hasCustomIP;
                 
                 // 添加视觉反馈
@@ -2440,9 +2376,6 @@ async function handleSubscriptionPage(request, user = null) {
         
         async function saveConfig(configData) {
             const apiUrl = window.location.pathname + '/api/config';
-            console.log('💾 调试信息 - 保存配置');
-            console.log('请求URL:', apiUrl);
-            console.log('配置数据:', configData);
             
             try {
                 const response = await fetch(apiUrl, {
@@ -2451,18 +2384,14 @@ async function handleSubscriptionPage(request, user = null) {
                     body: JSON.stringify(configData)
                 });
                 
-                console.log('保存响应状态:', response.status);
-                console.log('保存响应头:', Object.fromEntries(response.headers.entries()));
                 
                 if (response.status === 503) {
-                    console.log('❌ KV存储未配置，无法保存');
                     showStatus('KV存储未配置，无法保存配置。请先在Cloudflare Workers中配置KV存储。', 'error');
                     return;
                 }
                 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    console.log('❌ 保存失败，状态码:', response.status, '错误:', errorText);
                     
                     // 尝试解析 JSON 错误信息
                     try {
@@ -2476,12 +2405,10 @@ async function handleSubscriptionPage(request, user = null) {
                 }
                 
                 const result = await response.json();
-                console.log('保存响应数据:', result);
                 
                 showStatus(result.message, result.success ? 'success' : 'error');
                 
                 if (result.success) {
-                    console.log('✅ 保存成功，重新加载配置');
                     await loadCurrentConfig();
                     // 更新wk地区选择状态
                     updateWkRegionState();
@@ -2490,10 +2417,8 @@ async function handleSubscriptionPage(request, user = null) {
                         window.location.reload();
                     }, 1500);
                 } else {
-                    console.log('❌ 保存失败:', result.message);
                 }
             } catch (error) {
-                console.log('❌ 保存请求失败:', error);
                 showStatus('保存失败: ' + error.message, 'error');
             }
         }
@@ -2522,20 +2447,11 @@ async function handleSubscriptionPage(request, user = null) {
                             p: '',
                             yx: '',
                             yxURL: '',
-                            s: '',
-                            apiEnabled: '',
+                            s: '', ae: '',
                             rm: '',
                             qj: '',
                             dkby: '',
-                            yxby: '',
-                            enableVless: '',
-                            enableTrojan: '',
-                            enableXhttp: '',
-                            trojanPassword: '',
-                            subConverterUrl: '',
-                            enablePreferredDomains: '',
-                            enablePreferredIPs: '',
-                            enableGithubIPs: ''
+                            yxby: '', ev: '', et: '', ex: '', tp: '', scu: '', epd: '', epi: '', egi: ''
                         })
                     });
                     
@@ -2603,11 +2519,7 @@ async function handleSubscriptionPage(request, user = null) {
             if (otherConfigForm) {
                 otherConfigForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
-                    const configData = {
-                        enableVless: document.getElementById('enableVless').checked ? 'yes' : 'no',
-                        enableTrojan: document.getElementById('enableTrojan').checked ? 'yes' : 'no',
-                        enableXhttp: document.getElementById('enableXhttp').checked ? 'yes' : 'no',
-                        trojanPassword: document.getElementById('trojanPassword').value,
+                    const configData = { ev: document.getElementById('enableVless').checked ? 'yes' : 'no', et: document.getElementById('enableTrojan').checked ? 'yes' : 'no', ex: document.getElementById('enableXhttp').checked ? 'yes' : 'no', tp: document.getElementById('trojanPassword').value,
                         d: document.getElementById('customPath').value,
                         p: document.getElementById('customIP').value,
                         yx: document.getElementById('preferredIPs').value,
@@ -2631,12 +2543,7 @@ async function handleSubscriptionPage(request, user = null) {
             if (advancedConfigForm) {
                 advancedConfigForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
-                    const configData = {
-                        subConverterUrl: document.getElementById('subConverterUrl').value,
-                        enablePreferredDomains: document.getElementById('enablePreferredDomains').checked ? 'yes' : 'no',
-                        enablePreferredIPs: document.getElementById('enablePreferredIPs').checked ? 'yes' : 'no',
-                        enableGithubIPs: document.getElementById('enableGithubIPs').checked ? 'yes' : 'no',
-                        apiEnabled: document.getElementById('apiEnabled').value,
+                    const configData = { scu: document.getElementById('subConverterUrl').value, epd: document.getElementById('enablePreferredDomains').checked ? 'yes' : 'no', epi: document.getElementById('enablePreferredIPs').checked ? 'yes' : 'no', egi: document.getElementById('enableGithubIPs').checked ? 'yes' : 'no', ae: document.getElementById('apiEnabled').value,
                         rm: document.getElementById('regionMatching').value,
                         qj: document.getElementById('downgradeControl').value,
                         dkby: document.getElementById('portControl').value,
@@ -2656,9 +2563,9 @@ async function handleSubscriptionPage(request, user = null) {
 	});
 }
 
-async function parseTrojanHeader(buffer, uuidToken) {
+async function parseTrojanHeader(buffer, ut) {
     
-    const passwordToHash = trojanPassword || uuidToken;
+    const passwordToHash = tp || ut;
     const sha224Password = await sha224Hash(passwordToHash);
     
     if (buffer.byteLength < 56) {
@@ -2675,11 +2582,6 @@ async function parseTrojanHeader(buffer, uuidToken) {
         };
     }
     const password = new TextDecoder().decode(buffer.slice(0, crLfIndex));
-    console.log('Trojan 密码验证:', {
-        received: password.substring(0, 10) + '...',
-        expected: sha224Password.substring(0, 10) + '...',
-        match: password === sha224Password
-    });
     if (password !== sha224Password) {
         return {
             hasError: true,
@@ -2691,7 +2593,7 @@ async function parseTrojanHeader(buffer, uuidToken) {
     if (socks5DataBuffer.byteLength < 6) {
         return {
             hasError: true,
-            message: "invalid SOCKS5 request data"
+            message: atob('aW52YWxpZCBTT0NLUzUgcmVxdWVzdCBkYXRh')
         };
     }
 
@@ -3173,7 +3075,7 @@ async function connect_to_remote_xhttp(httpx, ...remotes) {
             try {
                 const remote = connect({ hostname, port: httpx.port });
                 const timeoutPromise = xhttp_sleep(CONNECT_TIMEOUT_MS).then(() => {
-                    throw new Error('connect timeout');
+                    throw new Error(atob('Y29ubmVjdCB0aW1lb3V0'));
                 });
                 
                 await Promise.race([remote.opened, timeoutPromise]);
@@ -3264,7 +3166,7 @@ async function handle_xhttp_client(body, uuid) {
 
 async function handleXhttpPost(request) {
     try {
-        return await handle_xhttp_client(request.body, authToken);
+        return await handle_xhttp_client(request.body, at);
     } catch (err) {
         return null;
     }
@@ -3287,7 +3189,7 @@ function formatIdentifier(arr, offset = 0) {
 
 async function fetchAndParseNewIPs() {
     
-    const url = preferredIPsURL || "https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt";
+    const url = piu || "https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt";
     try {
         const response = await fetch(url);
         if (!response.ok) return [];
@@ -3385,7 +3287,7 @@ async function generateTrojanLinksFromNewIPs(list, user, workerDomain) {
     const links = [];
     const wsPath = encodeURIComponent('/');
     
-    const password = trojanPassword || user;
+    const password = tp || user;
     
     list.forEach(item => {
         const nodeName = item.name.replace(/\s/g, '_');
@@ -3446,7 +3348,6 @@ async function handleConfigAPI(request) {
         
         try {
             const newConfig = await request.json();
-            console.log('📥 接收到的配置数据:', JSON.stringify(newConfig));
             
             for (const [key, value] of Object.entries(newConfig)) {
                 if (value === '' || value === null || value === undefined) {
@@ -3456,9 +3357,7 @@ async function handleConfigAPI(request) {
                 }
             }
             
-            console.log('💾 准备保存到 KV，配置内容:', JSON.stringify(kvConfig));
             await saveKVConfig();
-            console.log('✅ KV 保存成功');
             
             const envFallback = getConfigValue('p', '');
             if (envFallback) {
@@ -3547,12 +3446,6 @@ async function handleConfigAPI(request) {
                 headers: { 'Content-Type': 'application/json' }
             });
         } catch (error) {
-            console.error('❌ 保存配置失败 - 详细错误信息:');
-            console.error('错误类型:', error.constructor.name);
-            console.error('错误消息:', error.message);
-            console.error('错误堆栈:', error.stack);
-            console.error('当前 kvConfig:', JSON.stringify(kvConfig));
-            console.error('kvStore 是否存在:', !!kvStore);
             
             return new Response(JSON.stringify({
                 success: false,
@@ -3583,8 +3476,8 @@ async function handlePreferredIPsAPI(request) {
         });
     }
     
-    const apiEnabled = getConfigValue('apiEnabled', '') === 'yes';
-    if (!apiEnabled) {
+    const ae = getConfigValue('ae', '') === 'yes';
+    if (!ae) {
         return new Response(JSON.stringify({
             success: false,
             error: 'API功能未启用',
@@ -3599,12 +3492,12 @@ async function handlePreferredIPsAPI(request) {
         if (request.method === 'GET') {
             
             const yxValue = getConfigValue('yx', '');
-            const preferredIPs = parseYxToArray(yxValue);
+            const pi = parseYxToArray(yxValue);
             
             return new Response(JSON.stringify({
                 success: true,
                 count: preferredIPs.length,
-                data: preferredIPs
+                data: pi
             }), {
                 headers: { 'Content-Type': 'application/json' }
             });
@@ -3627,7 +3520,7 @@ async function handlePreferredIPsAPI(request) {
             }
             
             const yxValue = getConfigValue('yx', '');
-            const preferredIPs = parseYxToArray(yxValue);
+            const pi = parseYxToArray(yxValue);
             
             const addedIPs = [];
             const skippedIPs = [];
@@ -3669,7 +3562,7 @@ async function handlePreferredIPsAPI(request) {
             }
             
             if (addedIPs.length > 0) {
-                const newYxValue = arrayToYx(preferredIPs);
+                const newYxValue = arrayToYx(pi);
                 await setConfigValue('yx', newYxValue);
             }
             
@@ -3695,7 +3588,7 @@ async function handlePreferredIPsAPI(request) {
             if (body.all === true) {
                 
                 const yxValue = getConfigValue('yx', '');
-                const preferredIPs = parseYxToArray(yxValue);
+                const pi = parseYxToArray(yxValue);
                 const deletedCount = preferredIPs.length;
                 
                 await setConfigValue('yx', '');
@@ -3723,7 +3616,7 @@ async function handlePreferredIPsAPI(request) {
             const port = body.port || 443;
             
             const yxValue = getConfigValue('yx', '');
-            const preferredIPs = parseYxToArray(yxValue);
+            const pi = parseYxToArray(yxValue);
             const initialLength = preferredIPs.length;
             
             const filteredIPs = preferredIPs.filter(item => 
