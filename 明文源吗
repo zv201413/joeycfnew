@@ -3496,7 +3496,7 @@ async function handlePreferredIPsAPI(request) {
             
             return new Response(JSON.stringify({
                 success: true,
-                count: preferredIPs.length,
+                count: pi.length,
                 data: pi
             }), {
                 headers: { 'Content-Type': 'application/json' }
@@ -3520,7 +3520,7 @@ async function handlePreferredIPsAPI(request) {
             }
             
             const yxValue = getConfigValue('yx', '');
-            const pi = parseYxToArray(yxValue);
+            let pi = parseYxToArray(yxValue);
             
             const addedIPs = [];
             const skippedIPs = [];
@@ -3541,7 +3541,7 @@ async function handlePreferredIPsAPI(request) {
                     continue;
                 }
                 
-                const exists = preferredIPs.some(existItem => 
+                const exists = pi.some(existItem => 
                     existItem.ip === item.ip && existItem.port === port
                 );
                 
@@ -3557,7 +3557,7 @@ async function handlePreferredIPsAPI(request) {
                     addedAt: new Date().toISOString()
                 };
                 
-                preferredIPs.push(newIP);
+                pi.push(newIP);
                 addedIPs.push(newIP);
             }
             
@@ -3589,7 +3589,7 @@ async function handlePreferredIPsAPI(request) {
                 
                 const yxValue = getConfigValue('yx', '');
                 const pi = parseYxToArray(yxValue);
-                const deletedCount = preferredIPs.length;
+                const deletedCount = pi.length;
                 
                 await setConfigValue('yx', '');
                 
@@ -3616,10 +3616,10 @@ async function handlePreferredIPsAPI(request) {
             const port = body.port || 443;
             
             const yxValue = getConfigValue('yx', '');
-            const pi = parseYxToArray(yxValue);
-            const initialLength = preferredIPs.length;
+            let pi = parseYxToArray(yxValue);
+            const initialLength = pi.length;
             
-            const filteredIPs = preferredIPs.filter(item => 
+            const filteredIPs = pi.filter(item => 
                 !(item.ip === body.ip && item.port === port)
             );
             
