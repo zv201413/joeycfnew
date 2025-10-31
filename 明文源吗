@@ -318,8 +318,8 @@ export default {
 				manualWorkerRegion = manualRegion.trim().toUpperCase();
 				currentWorkerRegion = manualWorkerRegion;
 		} else if (ci && ci.trim()) {
-			useCustomIP = true;
-			currentWorkerRegion = 'CUSTOM';
+				useCustomIP = true;
+				currentWorkerRegion = 'CUSTOM';
 			} else {
 				currentWorkerRegion = await detectWorkerRegion(request);
 			}
@@ -455,16 +455,16 @@ export default {
 		
 		cp = getConfigValue('d', env.d || env.D) || '';
 		
-		const defaultURL = 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
+			const defaultURL = 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
 		if (piu !== defaultURL) {
-			directDomains.length = 0;
-			customPreferredIPs = [];
-			customPreferredDomains = [];
-		}
+				directDomains.length = 0;
+				customPreferredIPs = [];
+				customPreferredDomains = [];
+			}
 
-		const url = new URL(request.url);
+			const url = new URL(request.url);
 
-		if (url.pathname.includes('/api/config')) {
+			if (url.pathname.includes('/api/config')) {
 				const pathParts = url.pathname.split('/').filter(p => p);
 				
 				const apiIndex = pathParts.indexOf('api');
@@ -497,11 +497,11 @@ export default {
 				});
 			}
 			
-		if (url.pathname.includes('/api/preferred-ips')) {
-			const pathParts = url.pathname.split('/').filter(p => p);
+			if (url.pathname.includes('/api/preferred-ips')) {
+				const pathParts = url.pathname.split('/').filter(p => p);
 			
-			const apiIndex = pathParts.indexOf('api');
-			if (apiIndex > 0) {
+				const apiIndex = pathParts.indexOf('api');
+				if (apiIndex > 0) {
 				const pathIdentifier = pathParts[apiIndex - 1];
 				
 				let isValid = false;
@@ -515,20 +515,20 @@ export default {
 				}
 				
 				if (isValid) {
-					return await handlePreferredIPsAPI(request);
+						return await handlePreferredIPsAPI(request);
 				} else {
 					return new Response(JSON.stringify({ error: '路径验证失败' }), { 
-						status: 403,
-						headers: { 'Content-Type': 'application/json' }
-					});
+							status: 403,
+							headers: { 'Content-Type': 'application/json' }
+						});
+					}
 				}
-			}
 			
-			return new Response(JSON.stringify({ error: '无效的API路径' }), { 
-				status: 404,
-				headers: { 'Content-Type': 'application/json' }
-			});
-		}
+				return new Response(JSON.stringify({ error: '无效的API路径' }), { 
+					status: 404,
+					headers: { 'Content-Type': 'application/json' }
+				});
+			}
 		
 		if (request.method === 'POST' && ex) {
 			const r = await handleXhttpPost(request);
@@ -549,9 +549,9 @@ export default {
 
 		if (request.headers.get('Upgrade') === atob('d2Vic29ja2V0')) {
 			return await handleWsRequest(request);
-		}
-		
-		if (request.method === 'GET') {
+			}
+			
+			if (request.method === 'GET') {
 				if (url.pathname === '/region') {
 					
 					const ci = getConfigValue('p', env.p || env.P);
@@ -567,8 +567,8 @@ export default {
 							headers: { 'Content-Type': 'application/json' }
 						});
 				} else if (ci && ci.trim()) {
-					return new Response(JSON.stringify({
-						region: 'CUSTOM',
+						return new Response(JSON.stringify({
+							region: 'CUSTOM',
 						detectionMethod: '自定义ProxyIP模式', ci: ci,
 							timestamp: new Date().toISOString()
 						}), {
@@ -873,16 +873,16 @@ export default {
                     }, 500);
                 } else {
                     if (isValidUUID(inputValue)) {
-                        addTerminalLine('正在入侵...', 'output');
+                    addTerminalLine('正在入侵...', 'output');
+                    setTimeout(() => {
+                        addTerminalLine('连接成功！返回结果...', 'success');
                         setTimeout(() => {
-                            addTerminalLine('连接成功！返回结果...', 'success');
-                            setTimeout(() => {
                                 window.location.href = '/' + inputValue;
-                            }, 1000);
-                        }, 500);
-                    } else {
-                        addTerminalLine('错误: 无效的UUID格式', 'error');
-                        addTerminalLine('请重新输入有效的UUID', 'output');
+                        }, 1000);
+                    }, 500);
+                } else {
+                    addTerminalLine('错误: 无效的UUID格式', 'error');
+                    addTerminalLine('请重新输入有效的UUID', 'output');
                     }
                 }
                 
@@ -958,10 +958,10 @@ export default {
 									headers: { 'Content-Type': 'application/json' }
 								});
 							}
+							}
 						}
 					}
 				}
-			}
 				if (url.pathname.toLowerCase().includes(`/${subPath}`)) {
 					return await handleSubscriptionRequest(request, at);
 				}
@@ -1040,45 +1040,17 @@ async function handleSubscriptionRequest(request, user, url = null) {
     } else {
         
         if (epd) {
-            const domainList = directDomains.map(d => ({ ip: d.domain, isp: d.name || d.domain }));
+        const domainList = directDomains.map(d => ({ ip: d.domain, isp: d.name || d.domain }));
             await addNodesFromList(domainList);
         }
 
         if (epi) {
-            const defaultURL = 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
+        const defaultURL = 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
             if (piu === defaultURL) {
-                try {
-                    const dynamicIPList = await fetchDynamicIPs();
-                    if (dynamicIPList.length > 0) {
-                        await addNodesFromList(dynamicIPList);
-                    }
-                } catch (error) {
-                    if (!currentWorkerRegion) {
-                        currentWorkerRegion = await detectWorkerRegion(request);
-                    }
-                    
-                    const bestBackupIP = await getBestBackupIP(currentWorkerRegion);
-                    if (bestBackupIP) {
-                        fallbackAddress = bestBackupIP.domain;
-                        fallbackPort = bestBackupIP.port.toString();
-                        
-                        const backupList = [{ ip: fallbackAddress, isp: 'ProxyIP-' + currentWorkerRegion }];
-                        await addNodesFromList(backupList);
-                    }
-                }
-            }
-        }
-
-        if (egi) {
             try {
-                const newIPList = await fetchAndParseNewIPs();
-                if (newIPList.length > 0) {
-                    if (ev) {
-                        finalLinks.push(...generateLinksFromNewIPs(newIPList, user, workerDomain));
-                    }
-                    if (et) {
-                        finalLinks.push(...await generateTrojanLinksFromNewIPs(newIPList, user, workerDomain));
-                    }
+                const dynamicIPList = await fetchDynamicIPs();
+                if (dynamicIPList.length > 0) {
+                        await addNodesFromList(dynamicIPList);
                 }
             } catch (error) {
                 if (!currentWorkerRegion) {
@@ -1091,6 +1063,34 @@ async function handleSubscriptionRequest(request, user, url = null) {
                     fallbackPort = bestBackupIP.port.toString();
                     
                     const backupList = [{ ip: fallbackAddress, isp: 'ProxyIP-' + currentWorkerRegion }];
+                        await addNodesFromList(backupList);
+                    }
+                }
+            }
+        }
+
+        if (egi) {
+        try {
+            const newIPList = await fetchAndParseNewIPs();
+            if (newIPList.length > 0) {
+                    if (ev) {
+                finalLinks.push(...generateLinksFromNewIPs(newIPList, user, workerDomain));
+                    }
+                    if (et) {
+                        finalLinks.push(...await generateTrojanLinksFromNewIPs(newIPList, user, workerDomain));
+                    }
+            }
+        } catch (error) {
+            if (!currentWorkerRegion) {
+                currentWorkerRegion = await detectWorkerRegion(request);
+            }
+            
+            const bestBackupIP = await getBestBackupIP(currentWorkerRegion);
+            if (bestBackupIP) {
+                fallbackAddress = bestBackupIP.domain;
+                fallbackPort = bestBackupIP.port.toString();
+                
+                const backupList = [{ ip: fallbackAddress, isp: 'ProxyIP-' + currentWorkerRegion }];
                     await addNodesFromList(backupList);
                 }
             }
@@ -1368,14 +1368,14 @@ async function handleWsRequest(request) {
                     if (!vlessResult.hasError) {
                         protocolType = 'vless';
                         const { addressType, port, hostname, rawIndex, version, isUDP } = vlessResult;
-                        if (isUDP) {
-                            if (port === 53) isDnsQuery = true;
-                            else throw new Error(E_UDP_DNS_ONLY);
-                        }
-                        const respHeader = new Uint8Array([version[0], 0]);
-                        const rawData = chunk.slice(rawIndex);
-                        if (isDnsQuery) return forwardUDP(rawData, serverSock, respHeader);
-                        await forwardTCP(addressType, hostname, port, rawData, serverSock, respHeader, remoteConnWrapper);
+            if (isUDP) {
+                if (port === 53) isDnsQuery = true;
+                else throw new Error(E_UDP_DNS_ONLY);
+            }
+            const respHeader = new Uint8Array([version[0], 0]);
+            const rawData = chunk.slice(rawIndex);
+            if (isDnsQuery) return forwardUDP(rawData, serverSock, respHeader);
+            await forwardTCP(addressType, hostname, port, rawData, serverSock, respHeader, remoteConnWrapper);
                         return;
                     }
                 }
@@ -2223,18 +2223,18 @@ async function handleSubscriptionPage(request, user = null) {
                     document.getElementById('currentConfig').textContent = 'KV存储未配置，无法使用配置管理功能。\\n\\n请在Cloudflare Workers中:\\n1. 创建KV命名空间\\n2. 绑定环境变量 C\\n3. 重新部署代码';
                 } else if (response.ok) {
                     try {
-                        const data = await response.json();
-                        
-                        // 检查响应是否包含KV配置信息
-                        if (data && data.kvEnabled === true) {
-                            document.getElementById('kvStatus').innerHTML = '<span style="color: #44ff44;">✅ KV存储已启用，可以使用配置管理功能</span>';
-                            document.getElementById('configContent').style.display = 'block';
-                            document.getElementById('configCard').style.display = 'block';
-                            await loadCurrentConfig();
-                        } else {
-                            document.getElementById('kvStatus').innerHTML = '<span style="color: #ffaa00;">⚠️ KV存储未启用或未配置</span>';
-                            document.getElementById('configCard').style.display = 'block';
-                            document.getElementById('currentConfig').textContent = 'KV存储未配置';
+                    const data = await response.json();
+                    
+                    // 检查响应是否包含KV配置信息
+                    if (data && data.kvEnabled === true) {
+                        document.getElementById('kvStatus').innerHTML = '<span style="color: #44ff44;">✅ KV存储已启用，可以使用配置管理功能</span>';
+                        document.getElementById('configContent').style.display = 'block';
+                        document.getElementById('configCard').style.display = 'block';
+                        await loadCurrentConfig();
+                    } else {
+                        document.getElementById('kvStatus').innerHTML = '<span style="color: #ffaa00;">⚠️ KV存储未启用或未配置</span>';
+                        document.getElementById('configCard').style.display = 'block';
+                        document.getElementById('currentConfig').textContent = 'KV存储未配置';
                         }
                     } catch (jsonError) {
                         document.getElementById('kvStatus').innerHTML = '<span style="color: #ffaa00;">⚠️ KV存储检测失败</span>';
@@ -3359,34 +3359,10 @@ async function handleConfigAPI(request) {
             
             await saveKVConfig();
             
-            const envFallback = getConfigValue('p', '');
-            if (envFallback) {
-                const fallbackValue = envFallback.toLowerCase();
-                if (fallbackValue.includes(']:')) {
-                    const lastColonIndex = fallbackValue.lastIndexOf(':');
-                    fallbackPort = fallbackValue.slice(lastColonIndex + 1);
-                    fallbackAddress = fallbackValue.slice(0, lastColonIndex);
-                } else if (!fallbackValue.includes(']:') && !fallbackValue.includes(']')) {
-                    [fallbackAddress, fallbackPort = '443'] = fallbackValue.split(':');
-                } else {
-                    fallbackAddress = fallbackValue;
-                    fallbackPort = '443';
-                }
-            } else {
-                fallbackAddress = '';
-                fallbackPort = '443';
-            }
+            updateConfigVariables();
             
-            socks5Config = getConfigValue('s', '') || '';
-            if (socks5Config) {
-                try {
-                    parsedSocks5Config = parseSocksConfig(socks5Config);
-                    isSocksEnabled = true;
-                } catch (err) {
-                    isSocksEnabled = false;
-                }
-            } else {
-                isSocksEnabled = false;
+            if (newConfig.yx !== undefined) {
+                updateCustomPreferredFromYx();
             }
             
             const newPreferredIPsURL = getConfigValue('yxURL', '') || 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
@@ -3564,6 +3540,7 @@ async function handlePreferredIPsAPI(request) {
             if (addedIPs.length > 0) {
                 const newYxValue = arrayToYx(pi);
                 await setConfigValue('yx', newYxValue);
+                updateCustomPreferredFromYx();
             }
             
             return new Response(JSON.stringify({
@@ -3592,6 +3569,7 @@ async function handlePreferredIPsAPI(request) {
                 const deletedCount = pi.length;
                 
                 await setConfigValue('yx', '');
+                updateCustomPreferredFromYx();
                 
                 return new Response(JSON.stringify({
                     success: true,
@@ -3636,6 +3614,7 @@ async function handlePreferredIPsAPI(request) {
             
             const newYxValue = arrayToYx(filteredIPs);
             await setConfigValue('yx', newYxValue);
+            updateCustomPreferredFromYx();
             
             return new Response(JSON.stringify({
                 success: true,
@@ -3664,6 +3643,162 @@ async function handlePreferredIPsAPI(request) {
             status: 500,
             headers: { 'Content-Type': 'application/json' }
         });
+    }
+}
+
+function updateConfigVariables() {
+    const manualRegion = getConfigValue('wk', '');
+    if (manualRegion && manualRegion.trim()) {
+        manualWorkerRegion = manualRegion.trim().toUpperCase();
+        currentWorkerRegion = manualWorkerRegion;
+    } else {
+        const ci = getConfigValue('p', '');
+        if (ci && ci.trim()) {
+            currentWorkerRegion = 'CUSTOM';
+        } else {
+            manualWorkerRegion = '';
+        }
+    }
+    
+    const regionMatchingControl = getConfigValue('rm', '');
+    if (regionMatchingControl && regionMatchingControl.toLowerCase() === 'no') {
+        enableRegionMatching = false;
+    } else {
+        enableRegionMatching = true;
+    }
+    
+    const vlessControl = getConfigValue('ev', '');
+    if (vlessControl !== undefined && vlessControl !== '') {
+        ev = vlessControl === 'yes' || vlessControl === true || vlessControl === 'true';
+    }
+    
+    const tjControl = getConfigValue('et', '');
+    if (tjControl !== undefined && tjControl !== '') {
+        et = tjControl === 'yes' || tjControl === true || tjControl === 'true';
+    }
+    
+    tp = getConfigValue('tp', '') || '';
+    
+    const xhttpControl = getConfigValue('ex', '');
+    if (xhttpControl !== undefined && xhttpControl !== '') {
+        ex = xhttpControl === 'yes' || xhttpControl === true || xhttpControl === 'true';
+    }
+    
+    if (!ev && !et && !ex) {
+        ev = true;
+    }
+    
+    scu = getConfigValue('scu', '') || 'https://url.v1.mk/sub';
+    
+    const preferredDomainsControl = getConfigValue('epd', '');
+    if (preferredDomainsControl !== undefined && preferredDomainsControl !== '') {
+        epd = preferredDomainsControl !== 'no' && preferredDomainsControl !== false && preferredDomainsControl !== 'false';
+    }
+    
+    const preferredIPsControl = getConfigValue('epi', '');
+    if (preferredIPsControl !== undefined && preferredIPsControl !== '') {
+        epi = preferredIPsControl !== 'no' && preferredIPsControl !== false && preferredIPsControl !== 'false';
+    }
+    
+    const githubIPsControl = getConfigValue('egi', '');
+    if (githubIPsControl !== undefined && githubIPsControl !== '') {
+        egi = githubIPsControl !== 'no' && githubIPsControl !== false && githubIPsControl !== 'false';
+    }
+    
+    cp = getConfigValue('d', '') || '';
+    
+    piu = getConfigValue('yxURL', '') || 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
+    
+    const envFallback = getConfigValue('p', '');
+    if (envFallback) {
+        const fallbackValue = envFallback.toLowerCase();
+        if (fallbackValue.includes(']:')) {
+            const lastColonIndex = fallbackValue.lastIndexOf(':');
+            fallbackPort = fallbackValue.slice(lastColonIndex + 1);
+            fallbackAddress = fallbackValue.slice(0, lastColonIndex);
+        } else if (!fallbackValue.includes(']:') && !fallbackValue.includes(']')) {
+            [fallbackAddress, fallbackPort = '443'] = fallbackValue.split(':');
+        } else {
+            fallbackAddress = fallbackValue;
+            fallbackPort = '443';
+        }
+    } else {
+        fallbackAddress = '';
+        fallbackPort = '443';
+    }
+    
+    socks5Config = getConfigValue('s', '') || '';
+    if (socks5Config) {
+        try {
+            parsedSocks5Config = parseSocksConfig(socks5Config);
+            isSocksEnabled = true;
+        } catch (err) {
+            isSocksEnabled = false;
+        }
+    } else {
+        isSocksEnabled = false;
+    }
+    
+    const yxbyControl = getConfigValue('yxby', '');
+    if (yxbyControl && yxbyControl.toLowerCase() === 'yes') {
+        disablePreferred = true;
+    } else {
+        disablePreferred = false;
+    }
+    
+    const defaultURL = 'https://raw.githubusercontent.com/qwer-search/bestip/refs/heads/main/kejilandbestip.txt';
+    if (piu !== defaultURL) {
+        directDomains.length = 0;
+        customPreferredIPs = [];
+        customPreferredDomains = [];
+    }
+}
+
+function updateCustomPreferredFromYx() {
+    const yxValue = getConfigValue('yx', '');
+    if (yxValue) {
+        try {
+            const preferredList = yxValue.split(',').map(item => item.trim()).filter(item => item);
+            customPreferredIPs = [];
+            customPreferredDomains = [];
+            
+            preferredList.forEach(item => {
+                let nodeName = '';
+                let addressPart = item;
+                
+                if (item.includes('#')) {
+                    const parts = item.split('#');
+                    addressPart = parts[0].trim();
+                    nodeName = parts[1].trim();
+                }
+                
+                const { address, port } = parseAddressAndPort(addressPart);
+                
+                if (!nodeName) {
+                    nodeName = '自定义优选-' + address + (port ? ':' + port : '');
+                }
+                
+                if (isValidIP(address)) {
+                    customPreferredIPs.push({ 
+                        ip: address, 
+                        port: port,
+                        isp: nodeName
+                    });
+                } else {
+                    customPreferredDomains.push({ 
+                        domain: address, 
+                        port: port,
+                        name: nodeName
+                    });
+                }
+            });
+        } catch (err) {
+            customPreferredIPs = [];
+            customPreferredDomains = [];
+        }
+    } else {
+        customPreferredIPs = [];
+        customPreferredDomains = [];
     }
 }
 
