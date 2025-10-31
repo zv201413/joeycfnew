@@ -44,24 +44,40 @@ jobs:
               process.exit(1);
             }
 
-            // --- 最终平衡型混淆配置 ---
+            // --- 最强混淆配置：无明文内容 ---
             const obfuscationOptions = {
                 compact: true,
                 controlFlowFlattening: true,
-                controlFlowFlatteningThreshold: 0.75,
+                controlFlowFlatteningThreshold: 1.0,
                 deadCodeInjection: true,
-                deadCodeInjectionThreshold: 0.4,
+                deadCodeInjectionThreshold: 0.75,
                 stringArray: true,
-                stringArrayEncoding: ['base64'],
-                stringArrayThreshold: 0.75,
+                stringArrayEncoding: ['base64', 'rc4'],
+                stringArrayThreshold: 1.0,
+                stringArrayRotate: true,
+                stringArrayShuffle: true,
+                stringArrayWrappersCount: 5,
+                stringArrayWrappersChainedCalls: true,
+                stringArrayWrappersParametersMaxCount: 5,
                 renameGlobals: true,
-                identifierNamesGenerator: 'mangled',
+                identifierNamesGenerator: 'mangled-shuffled',
+                identifierNamesCache: null,
+                identifiersPrefix: '',
+                renameProperties: false,
+                renamePropertiesMode: 'safe',
+                ignoreImports: false,
+                target: 'browser',
                 numbersToExpressions: true,
+                simplify: false,
                 splitStrings: true,
-                splitStringsChunkLength: 10,
+                splitStringsChunkLength: 5,
                 transformObjectKeys: true,
-                selfDefending: false,
-                debugProtection: false
+                unicodeEscapeSequence: true,
+                selfDefending: true,
+                debugProtection: false,
+                debugProtectionInterval: 0,
+                disableConsoleOutput: true,
+                domainLock: []
             };
 
             const obfuscatedCode = JavaScriptObfuscator.obfuscate(originalCode, obfuscationOptions).getObfuscatedCode();
