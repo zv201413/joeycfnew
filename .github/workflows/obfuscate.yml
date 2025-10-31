@@ -44,20 +44,19 @@ jobs:
             process.exit(1);
           }
 
-          // --- 最强混淆配置：无明文内容 ---
           const obfuscationOptions = {
               compact: true,
-              controlFlowFlattening: true,
-              controlFlowFlatteningThreshold: 1.0,
+              controlFlowFlattening: false,
+              controlFlowFlatteningThreshold: 0,
               deadCodeInjection: false,
               stringArray: true,
-              stringArrayEncoding: ['base64', 'rc4'],
+              stringArrayEncoding: ['base64'],
               stringArrayThreshold: 1.0,
               stringArrayRotate: true,
               stringArrayShuffle: true,
-              stringArrayWrappersCount: 5,
-              stringArrayWrappersChainedCalls: true,
-              stringArrayWrappersParametersMaxCount: 5,
+              stringArrayWrappersCount: 2,
+              stringArrayWrappersChainedCalls: false,
+              stringArrayWrappersParametersMaxCount: 3,
               renameGlobals: true,
               identifierNamesGenerator: 'mangled-shuffled',
               identifierNamesCache: null,
@@ -66,13 +65,13 @@ jobs:
               renamePropertiesMode: 'safe',
               ignoreImports: false,
               target: 'browser',
-              numbersToExpressions: true,
+              numbersToExpressions: false,
               simplify: false,
               splitStrings: true,
-              splitStringsChunkLength: 5,
-              transformObjectKeys: true,
+              splitStringsChunkLength: 1,
+              transformObjectKeys: false,
               unicodeEscapeSequence: true,
-              selfDefending: true,
+              selfDefending: false,
               debugProtection: false,
               debugProtectionInterval: 0,
               disableConsoleOutput: true,
@@ -94,6 +93,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit, the obfuscated file is already up-to-date."
           else
-            git commit -m "少年你相信光吗"
+            git commit -m "每一小时混淆一次自动能用就别更新了"
             git push
           fi
