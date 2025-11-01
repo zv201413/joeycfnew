@@ -469,12 +469,13 @@ export default {
 				
 				const apiIndex = pathParts.indexOf('api');
 				if (apiIndex > 0) {
-					const pathIdentifier = pathParts[apiIndex - 1];
+					const pathSegments = pathParts.slice(0, apiIndex);
+					const pathIdentifier = pathSegments.join('/');
 					
 				let isValid = false;
 				if (cp && cp.trim()) {
 					
-					const cleanCustomPath = (cp.startsWith('/') ? cp : '/' + cp).replace(/^\//, '');
+					const cleanCustomPath = cp.trim().startsWith('/') ? cp.trim().substring(1) : cp.trim();
 					isValid = (pathIdentifier === cleanCustomPath);
 					} else {
 						
@@ -502,12 +503,13 @@ export default {
 			
 				const apiIndex = pathParts.indexOf('api');
 				if (apiIndex > 0) {
-				const pathIdentifier = pathParts[apiIndex - 1];
+				const pathSegments = pathParts.slice(0, apiIndex);
+				const pathIdentifier = pathSegments.join('/');
 				
 				let isValid = false;
 				if (cp && cp.trim()) {
 					
-					const cleanCustomPath = (cp.startsWith('/') ? cp : '/' + cp).replace(/^\//, '');
+					const cleanCustomPath = cp.trim().startsWith('/') ? cp.trim().substring(1) : cp.trim();
 					isValid = (pathIdentifier === cleanCustomPath);
 				} else {
 					
@@ -908,13 +910,15 @@ export default {
 				}
 			
 		if (cp && cp.trim()) {
-			const cleanCustomPath = cp.startsWith('/') ? cp : '/' + cp;
+			const cleanCustomPath = cp.trim().startsWith('/') ? cp.trim() : '/' + cp.trim();
+			const normalizedCustomPath = cleanCustomPath.endsWith('/') && cleanCustomPath.length > 1 ? cleanCustomPath.slice(0, -1) : cleanCustomPath;
+			const normalizedPath = url.pathname.endsWith('/') && url.pathname.length > 1 ? url.pathname.slice(0, -1) : url.pathname;
 				
-				if (url.pathname === cleanCustomPath || url.pathname === cleanCustomPath + '/') {
+				if (normalizedPath === normalizedCustomPath) {
 					return await handleSubscriptionPage(request, at);
 				}
 				
-				if (url.pathname === cleanCustomPath + '/sub') {
+				if (normalizedPath === normalizedCustomPath + '/sub') {
 					return await handleSubscriptionRequest(request, at, url);
 				}
 				
@@ -1199,7 +1203,8 @@ function generateLinksFromSource(list, user, workerDomain) {
                     fp: 'chrome', 
                     type: 'ws', 
                     host: workerDomain, 
-                    path: wsPath 
+                    path: wsPath,
+                    alpn: 'h3,h2,http/1.1'
                 });
                 links.push(`${proto}://${user}@${safeIP}:${port}?${wsParams.toString()}#${encodeURIComponent(wsNodeName)}`);
             } else {
@@ -1268,7 +1273,8 @@ async function generateTrojanLinksFromSource(list, user, workerDomain) {
                     fp: 'chrome', 
                     type: 'ws', 
                     host: workerDomain, 
-                    path: wsPath 
+                    path: wsPath,
+                    alpn: 'h3,h2,http/1.1'
                 });
                 links.push(`${atob('dHJvamFuOi8v')}${password}@${safeIP}:${port}?${wsParams.toString()}#${encodeURIComponent(wsNodeName)}`);
             } else {
@@ -1806,7 +1812,7 @@ async function handleSubscriptionPage(request, user = null) {
     <div class="matrix-bg"></div>
     <div class="matrix-rain"></div>
     <div class="matrix-code-rain" id="matrixCodeRain"></div>
-    <div class="matrix-text">终端 v2.0</div>
+    <div class="matrix-text">终端 v2.1</div>
     <div class="container">
         <div class="header">
             <h1 class="title">代理订阅中心</h1>
@@ -1821,13 +1827,13 @@ async function handleSubscriptionPage(request, user = null) {
                 <button class="client-btn" onclick="generateClientLink(atob('bG9vbg=='))">LOON</button>
                 <button class="client-btn" onclick="generateClientLink(atob('cXVhbng='))">QUANTUMULT X</button>
                 <button class="client-btn" onclick="generateClientLink(atob('djJyYXk='))">V2RAY</button>
+                <button class="client-btn" onclick="generateClientLink(atob('c2hhZG93cm9ja2V0'))">Shadowrocket</button>
+                <button class="client-btn" onclick="generateClientLink(atob('c3Rhc2g='))">STASH</button>
+                <button class="client-btn" onclick="generateClientLink(atob('bmVrb3JheQ=='))">NEKORAY</button>
+                <button class="client-btn" onclick="generateClientLink(atob('djJyYXluZw=='))">V2RAYNG</button>
+                <button class="client-btn" onclick="generateAutoLink()">自动识别</button>
             </div>
             <div class=atob('c3Vic2NyaXB0aW9uLXVybA==') id="clientSubscriptionUrl"></div>
-        </div>
-        <div class="card">
-            <h2 class="card-title">[ 快速获取 ]</h2>
-            <button class="generate-btn" onclick="getBase64Subscription()">获取订阅链接</button>
-            <div class=atob('c3Vic2NyaXB0aW9uLXVybA==') id="base64SubscriptionUrl"></div>
         </div>
         <div class="card">
             <h2 class="card-title">[ 系统状态 ]</h2>
@@ -1895,6 +1901,7 @@ async function handleSubscriptionPage(request, user = null) {
                                 <small style="color: #00aa00; font-size: 0.8rem; display: block; margin-top: 5px;">设置自定义 Trojan 密码。留空则使用 UUID。客户端会自动对密码进行 SHA224 哈希。</small>
                             </div>
                             <small style="color: #00aa00; font-size: 0.85rem; display: block; margin-top: 10px;">可以同时启用多个协议。订阅将生成选中协议的节点。<br>• VLESS WS: 基于 atob('V2ViU29ja2V0') 的标准协议<br>• Trojan: 使用 SHA224 密码认证<br>• xhttp: 基于 HTTP POST 的伪装协议（需要绑定自定义域名并开启 gRPC）</small>
+                            <button type="button" id="saveProtocolBtn" style="margin-top: 15px; background: rgba(0, 255, 0, 0.15); border: 2px solid #00ff00; padding: 10px 20px; color: #00ff00; font-family: 'Courier New', monospace; font-weight: bold; cursor: pointer; text-shadow: 0 0 8px #00ff00; transition: all 0.4s ease; width: 100%;">保存协议配置</button>
                         </div>
                     </div>
                     <div style="margin-bottom: 15px;">
@@ -2023,6 +2030,51 @@ async function handleSubscriptionPage(request, user = null) {
         // 订阅转换地址（从服务器配置注入）
         var SUB_CONVERTER_URL = "${ scu }";
         
+        function tryOpenApp(schemeUrl, fallbackCallback, timeout) {
+            timeout = timeout || 2500;
+            var appOpened = false;
+            var callbackExecuted = false;
+            var startTime = Date.now();
+            
+            var blurHandler = function() {
+                var elapsed = Date.now() - startTime;
+                if (elapsed < 3000 && !callbackExecuted) {
+                    appOpened = true;
+                }
+            };
+            
+            window.addEventListener('blur', blurHandler);
+            
+            var hiddenHandler = function() {
+                var elapsed = Date.now() - startTime;
+                if (elapsed < 3000 && !callbackExecuted) {
+                    appOpened = true;
+                }
+            };
+            
+            document.addEventListener('visibilitychange', hiddenHandler);
+            
+            var iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.style.width = '1px';
+            iframe.style.height = '1px';
+            iframe.src = schemeUrl;
+            document.body.appendChild(iframe);
+            
+            setTimeout(function() {
+                iframe.parentNode && iframe.parentNode.removeChild(iframe);
+                window.removeEventListener('blur', blurHandler);
+                document.removeEventListener('visibilitychange', hiddenHandler);
+                
+                if (!callbackExecuted) {
+                    callbackExecuted = true;
+                    if (!appOpened && fallbackCallback) {
+                        fallbackCallback();
+                    }
+                }
+            }, timeout);
+        }
+        
         function generateClientLink(clientType) {
             var currentUrl = window.location.href;
             var subscriptionUrl = currentUrl + "/sub";
@@ -2030,41 +2082,73 @@ async function handleSubscriptionPage(request, user = null) {
             if (clientType === atob('djJyYXk=')) {
                 document.getElementById("clientSubscriptionUrl").textContent = subscriptionUrl;
                 document.getElementById("clientSubscriptionUrl").style.display = "block";
-                navigator.clipboard.writeText(subscriptionUrl).then(function() {
-                    alert(decodeURIComponent(escape(atob('VjJSYXkg6K6i6ZiF6ZO+5o6l5bey5aSN5Yi2'))));
+                var schemeUrl = 'v2ray://install?url=' + encodeURIComponent(subscriptionUrl);
+                tryOpenApp(schemeUrl, function() {
+                    navigator.clipboard.writeText(subscriptionUrl).then(function() {
+                        alert(decodeURIComponent(escape(atob('VjJSYXkg6K6i6ZiF6ZO+5o6l5bey5aSN5Yi2'))));
+                    });
                 });
             } else {
                 var encodedUrl = encodeURIComponent(subscriptionUrl);
-                var apiUrl = SUB_CONVERTER_URL + "?target=" + clientType + "&url=" + encodedUrl + "&insert=false";
+                var apiUrl = SUB_CONVERTER_URL + "?target=auto&url=" + encodedUrl + "&insert=false";
                 document.getElementById("clientSubscriptionUrl").textContent = apiUrl;
                 document.getElementById("clientSubscriptionUrl").style.display = "block";
-                navigator.clipboard.writeText(apiUrl).then(function() {
-                    var displayName = clientType.toUpperCase();
-                    if (clientType === atob('c3VyZ2U=')) displayName = 'SURGE';
-                    if (clientType === atob('c2luZ2JveA==')) displayName = 'SING-BOX';
-                    if (clientType === atob('cXVhbng=')) displayName = 'QUANTUMULT X';
-                    alert(displayName + " 订阅链接已复制");
-                });
+                
+                var schemeUrl = '';
+                var displayName = clientType.toUpperCase();
+                
+                if (clientType === atob('Y2xhc2g=')) {
+                    schemeUrl = 'clash://install-config?url=' + encodeURIComponent(apiUrl);
+                    displayName = 'CLASH';
+                } else if (clientType === atob('c3VyZ2U=')) {
+                    schemeUrl = 'surge:///install-config?url=' + encodeURIComponent(apiUrl);
+                    displayName = 'SURGE';
+                } else if (clientType === atob('c2luZ2JveA==')) {
+                    schemeUrl = 'sing-box://install-config?url=' + encodeURIComponent(apiUrl);
+                    displayName = 'SING-BOX';
+                } else if (clientType === atob('bG9vbg==')) {
+                    schemeUrl = 'loon://install?url=' + encodeURIComponent(apiUrl);
+                    displayName = 'LOON';
+                } else if (clientType === atob('cXVhbng=')) {
+                    schemeUrl = 'quantumult-x://install-config?url=' + encodeURIComponent(apiUrl);
+                    displayName = 'QUANTUMULT X';
+                } else if (clientType === atob('c2hhZG93cm9ja2V0')) {
+                    schemeUrl = 'shadowrocket://add/' + encodeURIComponent(apiUrl);
+                    displayName = 'Shadowrocket';
+                } else if (clientType === atob('c3Rhc2g=')) {
+                    schemeUrl = 'stash://install?url=' + encodeURIComponent(apiUrl);
+                    displayName = 'STASH';
+                } else if (clientType === atob('bmVrb3JheQ==')) {
+                    schemeUrl = 'nekoray://install-config?url=' + encodeURIComponent(apiUrl);
+                    displayName = 'NEKORAY';
+                } else if (clientType === atob('djJyYXluZw==')) {
+                    schemeUrl = 'v2rayng://install?url=' + encodeURIComponent(apiUrl);
+                    displayName = 'V2RAYNG';
+                }
+                
+                if (schemeUrl) {
+                    tryOpenApp(schemeUrl, function() {
+                        navigator.clipboard.writeText(apiUrl).then(function() {
+                            alert(displayName + " 订阅链接已复制");
+                        });
+                    });
+                } else {
+                    navigator.clipboard.writeText(apiUrl).then(function() {
+                        alert(displayName + " 订阅链接已复制");
+                    });
+                }
             }
         }
-        function getBase64Subscription() {
+        function generateAutoLink() {
             var currentUrl = window.location.href;
             var subscriptionUrl = currentUrl + "/sub";
-            
-            fetch(subscriptionUrl)
-                .then(function(response) {
-                    return response.text();
-                })
-                .then(function(base64Content) {
-                    document.getElementById("base64SubscriptionUrl").textContent = base64Content;
-                    document.getElementById("base64SubscriptionUrl").style.display = "block";
-                    navigator.clipboard.writeText(base64Content).then(function() {
-                        alert("Base64订阅内容已复制");
-                    });
-                })
-                .catch(function(error) {
-                    alert("获取订阅失败，请重试");
-                });
+            var encodedUrl = encodeURIComponent(subscriptionUrl);
+            var apiUrl = SUB_CONVERTER_URL + "?target=auto&url=" + encodedUrl + "&insert=false";
+            document.getElementById("clientSubscriptionUrl").textContent = apiUrl;
+            document.getElementById("clientSubscriptionUrl").style.display = "block";
+            navigator.clipboard.writeText(apiUrl).then(function() {
+                alert("自动识别订阅链接已复制，客户端访问时会根据User-Agent自动识别并返回对应格式");
+            });
         }
         
         function createMatrixRain() {
@@ -2512,6 +2596,28 @@ async function handleSubscriptionPage(request, user = null) {
                     e.preventDefault();
                     const wkRegion = document.getElementById('wkRegion').value;
                     await saveConfig({ wk: wkRegion });
+                });
+            }
+            
+            const saveProtocolBtn = document.getElementById('saveProtocolBtn');
+            if (saveProtocolBtn) {
+                saveProtocolBtn.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    const configData = { 
+                        ev: document.getElementById('ev').checked ? 'yes' : 'no', 
+                        et: document.getElementById('et').checked ? 'yes' : 'no', 
+                        ex: document.getElementById('ex').checked ? 'yes' : 'no', 
+                        tp: document.getElementById('tp').value
+                    };
+                    
+                    if (!document.getElementById('ev').checked && 
+                        !document.getElementById('et').checked && 
+                        !document.getElementById('ex').checked) {
+                        alert('至少需要启用一个协议！');
+                        return;
+                    }
+                    
+                    await saveConfig(configData);
                 });
             }
             
@@ -3232,7 +3338,7 @@ function generateLinksFromNewIPs(list, user, workerDomain) {
         if (CF_HTTPS_PORTS.includes(port)) {
             
             const wsNodeName = `${nodeName}-${port}-WS-TLS`;
-            const link = `${proto}://${user}@${item.ip}:${port}?encryption=none&security=tls&sni=${workerDomain}&fp=chrome&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
+            const link = `${proto}://${user}@${item.ip}:${port}?encryption=none&security=tls&sni=${workerDomain}&fp=chrome&alpn=h3%2Ch2%2Chttp%2F1.1&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
             links.push(link);
         } else if (CF_HTTP_PORTS.includes(port)) {
             
@@ -3244,7 +3350,7 @@ function generateLinksFromNewIPs(list, user, workerDomain) {
         } else {
             
             const wsNodeName = `${nodeName}-${port}-WS-TLS`;
-            const link = `${proto}://${user}@${item.ip}:${port}?encryption=none&security=tls&sni=${workerDomain}&fp=chrome&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
+            const link = `${proto}://${user}@${item.ip}:${port}?encryption=none&security=tls&sni=${workerDomain}&fp=chrome&alpn=h3%2Ch2%2Chttp%2F1.1&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
             links.push(link);
         }
     });
@@ -3270,7 +3376,8 @@ function generateXhttpLinksFromSource(list, user, workerDomain) {
             type: 'xhttp',
             host: workerDomain,
             path: `/${nodePath}`,
-            mode: 'stream-one'
+            mode: 'stream-one',
+            alpn: 'h3,h2,http/1.1'
         });
         
         links.push(`vless://${user}@${safeIP}:${port}?${params.toString()}#${encodeURIComponent(wsNodeName)}`);
@@ -3296,7 +3403,7 @@ async function generateTrojanLinksFromNewIPs(list, user, workerDomain) {
         if (CF_HTTPS_PORTS.includes(port)) {
             
             const wsNodeName = `${nodeName}-${port}-${atob('VHJvamFu')}-WS-TLS`;
-            const link = `${atob('dHJvamFuOi8v')}${password}@${item.ip}:${port}?security=tls&sni=${workerDomain}&fp=chrome&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
+            const link = `${atob('dHJvamFuOi8v')}${password}@${item.ip}:${port}?security=tls&sni=${workerDomain}&fp=chrome&alpn=h3%2Ch2%2Chttp%2F1.1&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
             links.push(link);
         } else if (CF_HTTP_PORTS.includes(port)) {
             
@@ -3308,7 +3415,7 @@ async function generateTrojanLinksFromNewIPs(list, user, workerDomain) {
         } else {
             
             const wsNodeName = `${nodeName}-${port}-${atob('VHJvamFu')}-WS-TLS`;
-            const link = `${atob('dHJvamFuOi8v')}${password}@${item.ip}:${port}?security=tls&sni=${workerDomain}&fp=chrome&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
+            const link = `${atob('dHJvamFuOi8v')}${password}@${item.ip}:${port}?security=tls&sni=${workerDomain}&fp=chrome&alpn=h3%2Ch2%2Chttp%2F1.1&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
             links.push(link);
         }
     });
