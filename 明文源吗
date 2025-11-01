@@ -1821,16 +1821,16 @@ async function handleSubscriptionPage(request, user = null) {
         <div class="card">
             <h2 class="card-title">[ 选择客户端 ]</h2>
             <div class="client-grid">
-                <button class="client-btn" onclick="generateClientLink(atob('Y2xhc2g='))">CLASH</button>
-                <button class="client-btn" onclick="generateClientLink(atob('c3VyZ2U='))">SURGE</button>
-                <button class="client-btn" onclick="generateClientLink(atob('c2luZ2JveA=='))">SING-BOX</button>
-                <button class="client-btn" onclick="generateClientLink(atob('bG9vbg=='))">LOON</button>
-                <button class="client-btn" onclick="generateClientLink(atob('cXVhbng='))">QUANTUMULT X</button>
-                <button class="client-btn" onclick="generateClientLink(atob('djJyYXk='))">V2RAY</button>
-                <button class="client-btn" onclick="generateClientLink(atob('c2hhZG93cm9ja2V0'))">Shadowrocket</button>
-                <button class="client-btn" onclick="generateClientLink(atob('c3Rhc2g='))">STASH</button>
-                <button class="client-btn" onclick="generateClientLink(atob('bmVrb3JheQ=='))">NEKORAY</button>
-                <button class="client-btn" onclick="generateClientLink(atob('djJyYXluZw=='))">V2RAYNG</button>
+                <button class="client-btn" onclick="generateClientLink(atob('Y2xhc2g='), 'CLASH')">CLASH</button>
+                <button class="client-btn" onclick="generateClientLink(atob('Y2xhc2g='), 'STASH')">STASH</button>
+                <button class="client-btn" onclick="generateClientLink(atob('c3VyZ2Uz'), 'SURGE')">SURGE</button>
+                <button class="client-btn" onclick="generateClientLink(atob('c2luZ2JveA=='), 'SING-BOX')">SING-BOX</button>
+                <button class="client-btn" onclick="generateClientLink(atob('bG9vbg=='), 'LOON')">LOON</button>
+                <button class="client-btn" onclick="generateClientLink(atob('cXVhbng='), 'QUANTUMULT X')">QUANTUMULT X</button>
+                <button class="client-btn" onclick="generateClientLink(atob('djJyYXk='), 'V2RAY')">V2RAY</button>
+                <button class="client-btn" onclick="generateClientLink(atob('djJyYXk='), 'V2RAYNG')">V2RAYNG</button>
+                <button class="client-btn" onclick="generateClientLink(atob('djJyYXk='), 'NEKORAY')">NEKORAY</button>
+                <button class="client-btn" onclick="generateClientLink(atob('djJyYXk='), 'Shadowrocket')">Shadowrocket</button>
                 <button class="client-btn" onclick="generateAutoLink()">自动识别</button>
             </div>
             <div class=atob('c3Vic2NyaXB0aW9uLXVybA==') id="clientSubscriptionUrl"></div>
@@ -2075,65 +2075,69 @@ async function handleSubscriptionPage(request, user = null) {
             }, timeout);
         }
         
-        function generateClientLink(clientType) {
+        function generateClientLink(clientType, clientName) {
             var currentUrl = window.location.href;
             var subscriptionUrl = currentUrl + "/sub";
+            var schemeUrl = '';
+            var displayName = clientName || '';
+            var finalUrl = subscriptionUrl;
             
             if (clientType === atob('djJyYXk=')) {
-                document.getElementById("clientSubscriptionUrl").textContent = subscriptionUrl;
+                finalUrl = subscriptionUrl;
+                document.getElementById("clientSubscriptionUrl").textContent = finalUrl;
                 document.getElementById("clientSubscriptionUrl").style.display = "block";
-                var schemeUrl = 'v2ray://install?url=' + encodeURIComponent(subscriptionUrl);
+                
+                if (clientName === 'Shadowrocket') {
+                    schemeUrl = 'shadowrocket://add/' + encodeURIComponent(finalUrl);
+                } else if (clientName === 'V2RAYNG') {
+                    schemeUrl = 'v2rayng://install?url=' + encodeURIComponent(finalUrl);
+                } else if (clientName === 'NEKORAY') {
+                    schemeUrl = 'nekoray://install-config?url=' + encodeURIComponent(finalUrl);
+                } else {
+                    schemeUrl = 'v2ray://install?url=' + encodeURIComponent(finalUrl);
+                }
+                
                 tryOpenApp(schemeUrl, function() {
-                    navigator.clipboard.writeText(subscriptionUrl).then(function() {
-                        alert(decodeURIComponent(escape(atob('VjJSYXkg6K6i6ZiF6ZO+5o6l5bey5aSN5Yi2'))));
+                    navigator.clipboard.writeText(finalUrl).then(function() {
+                        alert(displayName + " 订阅链接已复制");
                     });
                 });
             } else {
                 var encodedUrl = encodeURIComponent(subscriptionUrl);
-                var apiUrl = SUB_CONVERTER_URL + "?target=auto&url=" + encodedUrl + "&insert=false";
-                document.getElementById("clientSubscriptionUrl").textContent = apiUrl;
+                finalUrl = SUB_CONVERTER_URL + "?target=" + clientType + "&url=" + encodedUrl + "&insert=false";
+                document.getElementById("clientSubscriptionUrl").textContent = finalUrl;
                 document.getElementById("clientSubscriptionUrl").style.display = "block";
                 
-                var schemeUrl = '';
-                var displayName = clientType.toUpperCase();
-                
                 if (clientType === atob('Y2xhc2g=')) {
-                    schemeUrl = 'clash://install-config?url=' + encodeURIComponent(apiUrl);
-                    displayName = 'CLASH';
-                } else if (clientType === atob('c3VyZ2U=')) {
-                    schemeUrl = 'surge:///install-config?url=' + encodeURIComponent(apiUrl);
+                    if (clientName === 'STASH') {
+                        schemeUrl = 'stash://install?url=' + encodeURIComponent(finalUrl);
+                        displayName = 'STASH';
+                    } else {
+                        schemeUrl = 'clash://install-config?url=' + encodeURIComponent(finalUrl);
+                        displayName = 'CLASH';
+                    }
+                } else if (clientType === atob('c3VyZ2Uz')) {
+                    schemeUrl = 'surge:///install-config?url=' + encodeURIComponent(finalUrl);
                     displayName = 'SURGE';
                 } else if (clientType === atob('c2luZ2JveA==')) {
-                    schemeUrl = 'sing-box://install-config?url=' + encodeURIComponent(apiUrl);
+                    schemeUrl = 'sing-box://install-config?url=' + encodeURIComponent(finalUrl);
                     displayName = 'SING-BOX';
                 } else if (clientType === atob('bG9vbg==')) {
-                    schemeUrl = 'loon://install?url=' + encodeURIComponent(apiUrl);
+                    schemeUrl = 'loon://install?url=' + encodeURIComponent(finalUrl);
                     displayName = 'LOON';
                 } else if (clientType === atob('cXVhbng=')) {
-                    schemeUrl = 'quantumult-x://install-config?url=' + encodeURIComponent(apiUrl);
+                    schemeUrl = 'quantumult-x://install-config?url=' + encodeURIComponent(finalUrl);
                     displayName = 'QUANTUMULT X';
-                } else if (clientType === atob('c2hhZG93cm9ja2V0')) {
-                    schemeUrl = 'shadowrocket://add/' + encodeURIComponent(apiUrl);
-                    displayName = 'Shadowrocket';
-                } else if (clientType === atob('c3Rhc2g=')) {
-                    schemeUrl = 'stash://install?url=' + encodeURIComponent(apiUrl);
-                    displayName = 'STASH';
-                } else if (clientType === atob('bmVrb3JheQ==')) {
-                    schemeUrl = 'nekoray://install-config?url=' + encodeURIComponent(apiUrl);
-                    displayName = 'NEKORAY';
-                } else if (clientType === atob('djJyYXluZw==')) {
-                    schemeUrl = 'v2rayng://install?url=' + encodeURIComponent(apiUrl);
-                    displayName = 'V2RAYNG';
                 }
                 
                 if (schemeUrl) {
                     tryOpenApp(schemeUrl, function() {
-                        navigator.clipboard.writeText(apiUrl).then(function() {
+                        navigator.clipboard.writeText(finalUrl).then(function() {
                             alert(displayName + " 订阅链接已复制");
                         });
                     });
                 } else {
-                    navigator.clipboard.writeText(apiUrl).then(function() {
+                    navigator.clipboard.writeText(finalUrl).then(function() {
                         alert(displayName + " 订阅链接已复制");
                     });
                 }
