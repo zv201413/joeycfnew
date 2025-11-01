@@ -1117,6 +1117,7 @@ async function handleSubscriptionRequest(request, user, url = null) {
             subscriptionContent = await generateClashConfig(finalLinks);
             contentType = 'text/yaml; charset=utf-8';
             break;
+        case atob('c3VyZ2U='):
         case atob('c3VyZ2Uy'):
         case atob('c3VyZ2Uz'):
         case atob('c3VyZ2U0'):
@@ -1823,7 +1824,7 @@ async function handleSubscriptionPage(request, user = null) {
             <div class="client-grid">
                 <button class="client-btn" onclick="generateClientLink(atob('Y2xhc2g='), 'CLASH')">CLASH</button>
                 <button class="client-btn" onclick="generateClientLink(atob('Y2xhc2g='), 'STASH')">STASH</button>
-                <button class="client-btn" onclick="generateClientLink(atob('c3VyZ2Uz'), 'SURGE')">SURGE</button>
+                <button class="client-btn" onclick="generateClientLink(atob('c3VyZ2U='), 'SURGE')">SURGE</button>
                 <button class="client-btn" onclick="generateClientLink(atob('c2luZ2JveA=='), 'SING-BOX')">SING-BOX</button>
                 <button class="client-btn" onclick="generateClientLink(atob('bG9vbg=='), 'LOON')">LOON</button>
                 <button class="client-btn" onclick="generateClientLink(atob('cXVhbng='), 'QUANTUMULT X')">QUANTUMULT X</button>
@@ -2116,7 +2117,7 @@ async function handleSubscriptionPage(request, user = null) {
                         schemeUrl = 'clash://install-config?url=' + encodeURIComponent(finalUrl);
                         displayName = 'CLASH';
                     }
-                } else if (clientType === atob('c3VyZ2Uz')) {
+                } else if (clientType === atob('c3VyZ2U=')) {
                     schemeUrl = 'surge:///install-config?url=' + encodeURIComponent(finalUrl);
                     displayName = 'SURGE';
                 } else if (clientType === atob('c2luZ2JveA==')) {
