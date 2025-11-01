@@ -2088,21 +2088,32 @@ async function handleSubscriptionPage(request, user = null) {
                 document.getElementById("clientSubscriptionUrl").textContent = finalUrl;
                 document.getElementById("clientSubscriptionUrl").style.display = "block";
                 
-                if (clientName === 'Shadowrocket') {
-                    schemeUrl = 'shadowrocket://add/' + encodeURIComponent(finalUrl);
-                } else if (clientName === 'V2RAYNG') {
-                    schemeUrl = 'v2rayng://install?url=' + encodeURIComponent(finalUrl);
-                } else if (clientName === 'NEKORAY') {
-                    schemeUrl = 'nekoray://install-config?url=' + encodeURIComponent(finalUrl);
-                } else {
-                    schemeUrl = 'v2ray://install?url=' + encodeURIComponent(finalUrl);
-                }
-                
-                tryOpenApp(schemeUrl, function() {
+                if (clientName === 'V2RAY') {
                     navigator.clipboard.writeText(finalUrl).then(function() {
                         alert(displayName + " 订阅链接已复制");
                     });
-                });
+                } else if (clientName === 'Shadowrocket') {
+                    schemeUrl = 'shadowrocket://add/' + encodeURIComponent(finalUrl);
+                    tryOpenApp(schemeUrl, function() {
+                        navigator.clipboard.writeText(finalUrl).then(function() {
+                            alert(displayName + " 订阅链接已复制");
+                        });
+                    });
+                } else if (clientName === 'V2RAYNG') {
+                    schemeUrl = 'v2rayng://install?url=' + encodeURIComponent(finalUrl);
+                    tryOpenApp(schemeUrl, function() {
+                        navigator.clipboard.writeText(finalUrl).then(function() {
+                            alert(displayName + " 订阅链接已复制");
+                        });
+                    });
+                } else if (clientName === 'NEKORAY') {
+                    schemeUrl = 'nekoray://install-config?url=' + encodeURIComponent(finalUrl);
+                    tryOpenApp(schemeUrl, function() {
+                        navigator.clipboard.writeText(finalUrl).then(function() {
+                            alert(displayName + " 订阅链接已复制");
+                        });
+                    });
+                }
             } else {
                 var encodedUrl = encodeURIComponent(subscriptionUrl);
                 finalUrl = SUB_CONVERTER_URL + "?target=" + clientType + "&url=" + encodedUrl + "&insert=false";
