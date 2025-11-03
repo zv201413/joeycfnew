@@ -1158,7 +1158,7 @@ function generateLinksFromSource(list, user, workerDomain) {
     const defaultHttpsPorts = [443];
     const defaultHttpPorts = disableNonTLS ? [] : [80];
     const links = [];
-    const wsPath = '/';
+    const wsPath = '/?ed=2048';
     const proto = atob('dmxlc3M=');
 
     list.forEach(item => {
@@ -1232,7 +1232,7 @@ async function generateTrojanLinksFromSource(list, user, workerDomain) {
     const defaultHttpsPorts = [443];
     const defaultHttpPorts = disableNonTLS ? [] : [80];
     const links = [];
-    const wsPath = '/';
+    const wsPath = '/?ed=2048';
     
     const password = tp || user;
 
@@ -3342,7 +3342,7 @@ function generateLinksFromNewIPs(list, user, workerDomain) {
     const CF_HTTPS_PORTS = [443, 2053, 2083, 2087, 2096, 8443];
     
     const links = [];
-    const wsPath = '/';
+    const wsPath = '/?ed=2048';
     const proto = atob('dmxlc3M=');
     
     list.forEach(item => {
@@ -3405,7 +3405,7 @@ async function generateTrojanLinksFromNewIPs(list, user, workerDomain) {
     const CF_HTTPS_PORTS = [443, 2053, 2083, 2087, 2096, 8443];
     
     const links = [];
-    const wsPath = '/';
+    const wsPath = '/?ed=2048';
     
     const password = tp || user;
     
