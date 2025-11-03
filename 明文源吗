@@ -1204,8 +1204,7 @@ function generateLinksFromSource(list, user, workerDomain) {
                     fp: 'chrome', 
                     type: 'ws', 
                     host: workerDomain, 
-                    path: wsPath,
-                    alpn: 'h3,h2,http/1.1'
+                    path: wsPath
                 });
                 links.push(`${proto}://${user}@${safeIP}:${port}?${wsParams.toString()}#${encodeURIComponent(wsNodeName)}`);
             } else {
@@ -1274,8 +1273,7 @@ async function generateTrojanLinksFromSource(list, user, workerDomain) {
                     fp: 'chrome', 
                     type: 'ws', 
                     host: workerDomain, 
-                    path: wsPath,
-                    alpn: 'h3,h2,http/1.1'
+                    path: wsPath
                 });
                 links.push(`${atob('dHJvamFuOi8v')}${password}@${safeIP}:${port}?${wsParams.toString()}#${encodeURIComponent(wsNodeName)}`);
             } else {
@@ -1426,7 +1424,7 @@ async function forwardTCP(addrType, host, portNum, rawData, ws, respHeader, remo
                 return;
             } catch (socksErr) {
                 let backupHost, backupPort;
-                if (fallbackAddress && fallbackPort) {
+                if (fallbackAddress && fallbackAddress.trim() && fallbackPort) {
                     backupHost = fallbackAddress;
                     backupPort = parseInt(fallbackPort, 10) || portNum;
                 } else {
@@ -1446,7 +1444,7 @@ async function forwardTCP(addrType, host, portNum, rawData, ws, respHeader, remo
             }
         } else {
             let backupHost, backupPort;
-            if (fallbackAddress && fallbackPort) {
+            if (fallbackAddress && fallbackAddress.trim() && fallbackPort) {
                 backupHost = fallbackAddress;
                 backupPort = parseInt(fallbackPort, 10) || portNum;
             } else {
@@ -3354,7 +3352,7 @@ function generateLinksFromNewIPs(list, user, workerDomain) {
         if (CF_HTTPS_PORTS.includes(port)) {
             
             const wsNodeName = `${nodeName}-${port}-WS-TLS`;
-            const link = `${proto}://${user}@${item.ip}:${port}?encryption=none&security=tls&sni=${workerDomain}&fp=chrome&alpn=h3%2Ch2%2Chttp%2F1.1&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
+            const link = `${proto}://${user}@${item.ip}:${port}?encryption=none&security=tls&sni=${workerDomain}&fp=chrome&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
             links.push(link);
         } else if (CF_HTTP_PORTS.includes(port)) {
             
@@ -3366,7 +3364,7 @@ function generateLinksFromNewIPs(list, user, workerDomain) {
         } else {
             
             const wsNodeName = `${nodeName}-${port}-WS-TLS`;
-            const link = `${proto}://${user}@${item.ip}:${port}?encryption=none&security=tls&sni=${workerDomain}&fp=chrome&alpn=h3%2Ch2%2Chttp%2F1.1&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
+            const link = `${proto}://${user}@${item.ip}:${port}?encryption=none&security=tls&sni=${workerDomain}&fp=chrome&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
             links.push(link);
         }
     });
@@ -3392,8 +3390,7 @@ function generateXhttpLinksFromSource(list, user, workerDomain) {
             type: 'xhttp',
             host: workerDomain,
             path: `/${nodePath}`,
-            mode: 'stream-one',
-            alpn: 'h3,h2,http/1.1'
+            mode: 'stream-one'
         });
         
         links.push(`vless://${user}@${safeIP}:${port}?${params.toString()}#${encodeURIComponent(wsNodeName)}`);
@@ -3419,7 +3416,7 @@ async function generateTrojanLinksFromNewIPs(list, user, workerDomain) {
         if (CF_HTTPS_PORTS.includes(port)) {
             
             const wsNodeName = `${nodeName}-${port}-${atob('VHJvamFu')}-WS-TLS`;
-            const link = `${atob('dHJvamFuOi8v')}${password}@${item.ip}:${port}?security=tls&sni=${workerDomain}&fp=chrome&alpn=h3%2Ch2%2Chttp%2F1.1&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
+            const link = `${atob('dHJvamFuOi8v')}${password}@${item.ip}:${port}?security=tls&sni=${workerDomain}&fp=chrome&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
             links.push(link);
         } else if (CF_HTTP_PORTS.includes(port)) {
             
@@ -3431,7 +3428,7 @@ async function generateTrojanLinksFromNewIPs(list, user, workerDomain) {
         } else {
             
             const wsNodeName = `${nodeName}-${port}-${atob('VHJvamFu')}-WS-TLS`;
-            const link = `${atob('dHJvamFuOi8v')}${password}@${item.ip}:${port}?security=tls&sni=${workerDomain}&fp=chrome&alpn=h3%2Ch2%2Chttp%2F1.1&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
+            const link = `${atob('dHJvamFuOi8v')}${password}@${item.ip}:${port}?security=tls&sni=${workerDomain}&fp=chrome&type=ws&host=${workerDomain}&path=${wsPath}#${encodeURIComponent(wsNodeName)}`;
             links.push(link);
         }
     });
