@@ -21,7 +21,6 @@
 - 📱 **多客户端支持** - CLASH、SURGE、SING-BOX、LOON、QUANTUMULT X、V2RAY、Shadowrocket、STASH、NEKORAY、V2RAYNG
 - 🚀 **应用唤醒** - 点击按钮自动唤醒对应客户端应用
 - 🔍 **自动识别** - 根据User-Agent自动识别并返回对应格式
-- 🌐 **ALPN支持** - 完整支持 h3, h2, http/1.1 协议协商
 
 ---
 
@@ -44,6 +43,7 @@
 |  **优选工具** | 根据自己的网络环境选择最适合的IP | https://github.com/byJoey/yx-tools/releases |
 |  **文字教程** | 详细的部署与使用说明博客文章 | [https://joeyblog.net/yuanchuang/1146.html](https://joeyblog.net/yuanchuang/1146.html) |
 |  **Workers视频教程** | 直观的操作演示和功能讲解 | https://www.youtube.com/watch?v=aYzTr8FafN4 |
+|  **Pages视频教程** | 直观的操作演示和功能讲解 | https://youtu.be/_-4bG-MCqk4 |
 |  **Snippets视频教程** | 直观的操作演示和功能讲解 | https://www.youtube.com/watch?v=xeFeH3Akcu8 |
 
 ###  部署
