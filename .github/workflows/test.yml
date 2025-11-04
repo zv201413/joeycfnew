@@ -22,25 +22,6 @@ jobs:
         with:
           fetch-depth: 0  # 需要完整的Git历史来获取标签信息
       
-      - name: Get and checkout default branch
-        id: get_branch
-        run: |
-          # 检测主分支名称（可能是main或master）
-          if git show-ref --verify --quiet refs/remotes/origin/main; then
-            BRANCH_NAME="main"
-          elif git show-ref --verify --quiet refs/remotes/origin/master; then
-            BRANCH_NAME="master"
-          else
-            # 尝试获取默认分支
-            BRANCH_NAME=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo "main")
-          fi
-          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
-          echo "默认分支: $BRANCH_NAME"
-          # 检出主分支
-          git checkout $BRANCH_NAME
-          git pull origin $BRANCH_NAME || true
-          echo "已切换到分支: $BRANCH_NAME"
-      
       - name: Check if source file exists
         run: |
           if [ ! -f "少年你相信光吗" ]; then
@@ -53,18 +34,7 @@ jobs:
         run: |
           cp "少年你相信光吗" "_worker.js"
           echo "成功将 '少年你相信光吗' 复制为 '_worker.js'"
-      
-      - name: Commit _worker.js file
-        run: |
-          git config --global user.name 'GitHub Actions Bot'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add "_worker.js"
-          if git diff --staged --quiet; then
-            echo "文件 '_worker.js' 没有变化，跳过提交。"
-          else
-            git commit -m "部署: 更新 _worker.js 文件 (标签: ${{ steps.get_tag.outputs.tag_name }})"
-            git push origin ${{ steps.get_branch.outputs.branch_name }}
-          fi
+          echo "注意：文件不会提交到仓库，仅用于 Release"
       
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
