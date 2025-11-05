@@ -610,6 +610,40 @@ export default {
 				}
 				
 				if (url.pathname === '/') {
+					// 检查是否有自定义首页URL配置
+					const customHomepage = getConfigValue('homepage', env.homepage || env.HOMEPAGE);
+					if (customHomepage && customHomepage.trim()) {
+						try {
+							// 从自定义URL获取内容
+							const homepageResponse = await fetch(customHomepage.trim(), {
+								method: 'GET',
+								headers: {
+									'User-Agent': request.headers.get('User-Agent') || 'Mozilla/5.0',
+									'Accept': request.headers.get('Accept') || '*/*',
+									'Accept-Language': request.headers.get('Accept-Language') || 'en-US,en;q=0.9',
+								},
+								redirect: 'follow'
+							});
+							
+							if (homepageResponse.ok) {
+								// 获取响应内容
+								const contentType = homepageResponse.headers.get('Content-Type') || 'text/html; charset=utf-8';
+								const content = await homepageResponse.text();
+								
+								// 返回自定义首页内容
+								return new Response(content, {
+									status: homepageResponse.status,
+									headers: {
+										'Content-Type': contentType,
+										'Cache-Control': 'no-cache, no-store, must-revalidate',
+									}
+								});
+							}
+						} catch (error) {
+							// 如果获取失败，继续使用默认终端页面
+							console.error('获取自定义首页失败:', error);
+						}
+					}
 					// 优先检查Cookie中的语言设置
 					const cookieHeader = request.headers.get('Cookie') || '';
 					let langFromCookie = null;
@@ -1795,6 +1829,9 @@ async function handleSubscriptionPage(request, user = null) {
                 preferredIPs: '优选IP列表 (yx):',
                 preferredIPsURL: '优选IP来源URL (yxURL):',
                 socks5Config: 'SOCKS5配置 (s):',
+                customHomepage: '自定义首页URL (homepage):',
+                customHomepagePlaceholder: '例如: https://example.com',
+                customHomepageHint: '设置自定义URL作为首页伪装。访问根路径 / 时将显示该URL的内容。留空则显示默认终端页面。',
                 saveConfig: '保存配置',
                 advancedControl: '高级控制',
                 subscriptionConverter: '订阅转换地址:',
@@ -1841,7 +1878,7 @@ async function handleSubscriptionPage(request, user = null) {
                     KR: '🇰🇷 韩国', DE: '🇩🇪 德国', SE: '🇸🇪 瑞典', NL: '🇳🇱 荷兰',
                     FI: '🇫🇮 芬兰', GB: '🇬🇧 英国'
                 },
-                terminal: '终端 v2.1',
+                terminal: '终端 v2.2',
                 githubProject: 'GitHub 项目',
                 autoDetectClient: '自动识别',
 			selectionLogicText: '同地区 → 邻近地区 → 其他地区',
@@ -1899,6 +1936,9 @@ async function handleSubscriptionPage(request, user = null) {
                 preferredIPs: 'لیست IP ترجیحی (yx):',
                 preferredIPsURL: 'URL منبع IP ترجیحی (yxURL):',
                 socks5Config: 'تنظیمات SOCKS5 (s):',
+                customHomepage: 'URL صفحه اصلی سفارشی (homepage):',
+                customHomepagePlaceholder: 'مثال: https://example.com',
+                customHomepageHint: 'تنظیم URL سفارشی به عنوان استتار صفحه اصلی. هنگام دسترسی به مسیر اصلی / محتوای این URL نمایش داده می‌شود. اگر خالی بگذارید صفحه ترمینال پیش‌فرض نمایش داده می‌شود.',
                 saveConfig: 'ذخیره تنظیمات',
                 advancedControl: 'کنترل پیشرفته',
                 subscriptionConverter: 'آدرس تبدیل اشتراک:',
@@ -1945,7 +1985,7 @@ async function handleSubscriptionPage(request, user = null) {
                     KR: '🇰🇷 کره جنوبی', DE: '🇩🇪 آلمان', SE: '🇸🇪 سوئد', NL: '🇳🇱 هلند',
                     FI: '🇫🇮 فنلاند', GB: '🇬🇧 بریتانیا'
                 },
-                terminal: 'ترمینال v2.1',
+                terminal: 'ترمینال v2.2',
                 githubProject: 'پروژه GitHub',
                 autoDetectClient: 'تشخیص خودکار',
 			selectionLogicText: 'هم‌منطقه → منطقه مجاور → سایر مناطق',
@@ -2314,6 +2354,11 @@ async function handleSubscriptionPage(request, user = null) {
                             <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">${t.socks5Config}</label>
                             <input type="text" id="socksConfig" placeholder="${isFarsi ? 'مثال: user:pass@host:port یا host:port' : '例如: user:pass@host:port 或 host:port'}" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
                             <small style="color: #00aa00; font-size: 0.85rem;">${isFarsi ? 'آدرس پروکسی SOCKS5، برای انتقال تمام ترافیک خروجی استفاده می‌شود' : 'SOCKS5代理地址，用于转发所有出站流量'}</small>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">${t.customHomepage}</label>
+                            <input type="text" id="customHomepage" placeholder="${t.customHomepagePlaceholder}" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
+                            <small style="color: #00aa00; font-size: 0.85rem;">${t.customHomepageHint}</small>
                     </div>
                         <button type="submit" style="background: rgba(0, 255, 0, 0.15); border: 2px solid #00ff00; padding: 12px 24px; color: #00ff00; font-family: 'Courier New', monospace; font-weight: bold; cursor: pointer; margin-right: 10px; text-shadow: 0 0 8px #00ff00; transition: all 0.4s ease;">${t.saveConfig}</button>
                 </form>
@@ -3098,6 +3143,7 @@ async function handleSubscriptionPage(request, user = null) {
                 document.getElementById('preferredIPs').value = config.yx || '';
                 document.getElementById('preferredIPsURL').value = config.yxURL || '';
                 document.getElementById('socksConfig').value = config.s || '';
+                document.getElementById('customHomepage').value = config.homepage || '';
                 document.getElementById('apiEnabled').value = config.ae || '';
                 document.getElementById('regionMatching').value = config.rm || '';
                 document.getElementById('downgradeControl').value = config.qj || '';
@@ -3245,7 +3291,8 @@ async function handleSubscriptionPage(request, user = null) {
                             rm: '',
                             qj: '',
                             dkby: '',
-                            yxby: '', ev: '', et: '', ex: '', tp: '', scu: '', epd: '', epi: '', egi: ''
+                            yxby: '', ev: '', et: '', ex: '', tp: '', scu: '', epd: '', epi: '', egi: '',
+                            homepage: ''
                         })
                     });
                     
@@ -3340,7 +3387,8 @@ async function handleSubscriptionPage(request, user = null) {
                         p: document.getElementById('customIP').value,
                         yx: document.getElementById('preferredIPs').value,
                         yxURL: document.getElementById('preferredIPsURL').value,
-                        s: document.getElementById('socksConfig').value
+                        s: document.getElementById('socksConfig').value,
+                        homepage: document.getElementById('customHomepage').value
                     };
                     
                     // 确保至少选择一个协议
