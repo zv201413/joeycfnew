@@ -48,20 +48,20 @@ const regionMapping = {
 };
 
 let backupIPs = [
-    { domain: 'ProxyIP.US.CMLiussss.net', region: 'US', regionCode: 'US', port: 443 },
-    { domain: 'ProxyIP.SG.CMLiussss.net', region: 'SG', regionCode: 'SG', port: 443 },
-    { domain: 'ProxyIP.JP.CMLiussss.net', region: 'JP', regionCode: 'JP', port: 443 },
-    { domain: 'ProxyIP.HK.CMLiussss.net', region: 'HK', regionCode: 'HK', port: 443 },
-    { domain: 'ProxyIP.KR.CMLiussss.net', region: 'KR', regionCode: 'KR', port: 443 },
-    { domain: 'ProxyIP.DE.CMLiussss.net', region: 'DE', regionCode: 'DE', port: 443 },
-    { domain: 'ProxyIP.SE.CMLiussss.net', region: 'SE', regionCode: 'SE', port: 443 },
-    { domain: 'ProxyIP.NL.CMLiussss.net', region: 'NL', regionCode: 'NL', port: 443 },
-    { domain: 'ProxyIP.FI.CMLiussss.net', region: 'FI', regionCode: 'FI', port: 443 },
-    { domain: 'ProxyIP.GB.CMLiussss.net', region: 'GB', regionCode: 'GB', port: 443 },
-    { domain: 'ProxyIP.Oracle.cmliussss.net', region: 'Oracle', regionCode: 'Oracle', port: 443 },
-    { domain: 'ProxyIP.DigitalOcean.CMLiussss.net', region: 'DigitalOcean', regionCode: 'DigitalOcean', port: 443 },
-    { domain: 'ProxyIP.Vultr.CMLiussss.net', region: 'Vultr', regionCode: 'Vultr', port: 443 },
-    { domain: 'ProxyIP.Multacom.CMLiussss.net', region: 'Multacom', regionCode: 'Multacom', port: 443 }
+    { domain: atob('UHJveHlJUC5VUy5DTUxpdXNzc3MubmV0'), region: 'US', regionCode: 'US', port: 443 },
+    { domain: atob('UHJveHlJUC5TRy5DTUxpdXNzc3MubmV0'), region: 'SG', regionCode: 'SG', port: 443 },
+    { domain: atob('UHJveHlJUC5KUC5DTUxpdXNzc3MubmV0'), region: 'JP', regionCode: 'JP', port: 443 },
+    { domain: atob('UHJveHlJUC5ISy5DTUxpdXNzc3MubmV0'), region: 'HK', regionCode: 'HK', port: 443 },
+    { domain: atob('UHJveHlJUC5LUi5DTUxpdXNzc3MubmV0'), region: 'KR', regionCode: 'KR', port: 443 },
+    { domain: atob('UHJveHlJUC5ERS5DTUxpdXNzc3MubmV0'), region: 'DE', regionCode: 'DE', port: 443 },
+    { domain: atob('UHJveHlJUC5TRS5DTUxpdXNzc3MubmV0'), region: 'SE', regionCode: 'SE', port: 443 },
+    { domain: atob('UHJveHlJUC5OTC5DTUxpdXNzc3MubmV0'), region: 'NL', regionCode: 'NL', port: 443 },
+    { domain: atob('UHJveHlJUC5GSS5DTUxpdXNzc3MubmV0'), region: 'FI', regionCode: 'FI', port: 443 },
+    { domain: atob('UHJveHlJUC5HQi5DTUxpdXNzc3MubmV0'), region: 'GB', regionCode: 'GB', port: 443 },
+    { domain: atob('UHJveHlJUC5PcmFjbGUuY21saXVzc3NzLm5ldA=='), region: 'Oracle', regionCode: 'Oracle', port: 443 },
+    { domain: atob('UHJveHlJUC5EaWdpdGFsT2NlYW4uQ01MaXVzc3NzLm5ldA=='), region: 'DigitalOcean', regionCode: 'DigitalOcean', port: 443 },
+    { domain: atob('UHJveHlJUC5WdWx0ci5DTUxpdXNzc3MubmV0'), region: 'Vultr', regionCode: 'Vultr', port: 443 },
+    { domain: atob('UHJveHlJUC5NdWx0YWNvbS5DTUxpdXNzc3MubmV0'), region: 'Multacom', regionCode: 'Multacom', port: 443 }
 ];
 
 const directDomains = [
@@ -571,7 +571,7 @@ export default {
 				} else if (ci && ci.trim()) {
 						return new Response(JSON.stringify({
 							region: 'CUSTOM',
-						detectionMethod: '自定义ProxyIP模式', ci: ci,
+						detectionMethod: '自定义fallbackip模式', ci: ci,
 							timestamp: new Date().toISOString()
 						}), {
 							headers: { 'Content-Type': 'application/json' }
@@ -1019,7 +1019,7 @@ async function handleSubscriptionRequest(request, user, url = null) {
             if (bestBackupIP) {
                 fallbackAddress = bestBackupIP.domain;
                 fallbackPort = bestBackupIP.port.toString();
-                const backupList = [{ ip: fallbackAddress, isp: 'ProxyIP-' + currentWorkerRegion }];
+                const backupList = [{ ip: fallbackAddress, isp: 'fallbackip-' + currentWorkerRegion }];
                 await addNodesFromList(backupList);
             } else {
                 const nativeList = [{ ip: workerDomain, isp: '原生地址' }];
@@ -1066,7 +1066,7 @@ async function handleSubscriptionRequest(request, user, url = null) {
                     fallbackAddress = bestBackupIP.domain;
                     fallbackPort = bestBackupIP.port.toString();
                     
-                    const backupList = [{ ip: fallbackAddress, isp: 'ProxyIP-' + currentWorkerRegion }];
+                    const backupList = [{ ip: fallbackAddress, isp: 'fallbackip-' + currentWorkerRegion }];
                         await addNodesFromList(backupList);
                     }
                 }
@@ -1094,7 +1094,7 @@ async function handleSubscriptionRequest(request, user, url = null) {
                 fallbackAddress = bestBackupIP.domain;
                 fallbackPort = bestBackupIP.port.toString();
                 
-                const backupList = [{ ip: fallbackAddress, isp: 'ProxyIP-' + currentWorkerRegion }];
+                const backupList = [{ ip: fallbackAddress, isp: 'fallbackip-' + currentWorkerRegion }];
                     await addNodesFromList(backupList);
                 }
             }
@@ -1840,7 +1840,7 @@ async function handleSubscriptionPage(request, user = null) {
                 <div style="color: #00ff00; margin-bottom: 15px; font-weight: bold; text-shadow: 0 0 5px #00ff00;">[ 系统检测中... ]</div>
                 <div id="regionStatus" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00;">Worker地区: 检测中...</div>
                 <div id="geoInfo" style="margin: 8px 0; color: #00aa00; font-family: 'Courier New', monospace; font-size: 0.9rem; text-shadow: 0 0 3px #00aa00;">检测方式: 检测中...</div>
-                <div id="backupStatus" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00;">ProxyIP状态: 检测中...</div>
+                <div id="backupStatus" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00;">fallbackip状态: 检测中...</div>
                 <div id="currentIP" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00;">当前使用IP: 检测中...</div>
                 <div id="regionMatch" style="margin: 8px 0; color: #00ff00; font-family: 'Courier New', monospace; text-shadow: 0 0 3px #00ff00;">地区匹配: 检测中...</div>
                 <div id="selectionLogic" style="margin: 8px 0; color: #00aa00; font-family: 'Courier New', monospace; font-size: 0.9rem; text-shadow: 0 0 3px #00aa00;">选择逻辑: 同地区 → 邻近地区 → 其他地区</div>
@@ -1868,7 +1868,7 @@ async function handleSubscriptionPage(request, user = null) {
                             <option value="FI">🇫🇮 芬兰</option>
                             <option value="GB">🇬🇧 英国</option>
                         </select>
-                        <small id="wkRegionHint" style="color: #00aa00; font-size: 0.85rem; display: none;">⚠️ 使用自定义ProxyIP时，地区选择已禁用</small>
+                        <small id="wkRegionHint" style="color: #00aa00; font-size: 0.85rem; display: none;">⚠️ 使用自定义fallbackip时，地区选择已禁用</small>
                     </div>
                     <button type="submit" style="background: rgba(0, 255, 0, 0.15); border: 2px solid #00ff00; padding: 12px 24px; color: #00ff00; font-family: 'Courier New', monospace; font-weight: bold; cursor: pointer; margin-right: 10px; text-shadow: 0 0 8px #00ff00; transition: all 0.4s ease;">保存地区配置</button>
                 </form>
@@ -1909,9 +1909,9 @@ async function handleSubscriptionPage(request, user = null) {
                         <small style="color: #00aa00; font-size: 0.85rem;">自定义订阅路径。留空则使用 UUID 作为路径。</small>
                     </div>
                     <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">自定义ProxyIP (p):</label>
+                        <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">自定义fallbackip (p):</label>
                         <input type="text" id="customIP" placeholder="例如: 1.2.3.4:443" style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 2px solid #00ff00; color: #00ff00; font-family: 'Courier New', monospace; font-size: 14px;">
-                        <small style="color: #00aa00; font-size: 0.85rem;">自定义ProxyIP地址和端口</small>
+                        <small style="color: #00aa00; font-size: 0.85rem;">自定义fallbackip地址和端口</small>
                     </div>
                     <div style="margin-bottom: 15px;">
                         <label style="display: block; margin-bottom: 8px; color: #00ff00; font-weight: bold; text-shadow: 0 0 3px #00ff00;">优选IP列表 (yx):</label>
@@ -2236,11 +2236,11 @@ async function handleSubscriptionPage(request, user = null) {
                         // 获取自定义IP的详细信息
                         const customIPInfo = data.ci || '未知';
                         
-                        geoInfo.innerHTML = '检测方式: <span style="color: #ffaa00;">⚙️ 自定义ProxyIP模式 (p变量启用)</span>';
+                        geoInfo.innerHTML = '检测方式: <span style="color: #ffaa00;">⚙️ 自定义fallbackip模式 (p变量启用)</span>';
                         regionStatus.innerHTML = 'Worker地区: <span style="color: #ffaa00;">🔧 自定义IP模式 (已禁用地区匹配)</span>';
                         
                         // 显示自定义IP配置状态，包含具体IP
-                        if (backupStatus) backupStatus.innerHTML = 'ProxyIP状态: <span style="color: #ffaa00;">🔧 使用自定义ProxyIP: ' + customIPInfo + '</span>';
+                        if (backupStatus) backupStatus.innerHTML = 'fallbackip状态: <span style="color: #ffaa00;">🔧 使用自定义fallbackip: ' + customIPInfo + '</span>';
                         if (currentIP) currentIP.innerHTML = '当前使用IP: <span style="color: #ffaa00;">✅ ' + customIPInfo + ' (p变量配置)</span>';
                         if (regionMatch) regionMatch.innerHTML = '地区匹配: <span style="color: #ffaa00;">⚠️ 自定义IP模式，地区选择已禁用</span>';
                         
@@ -2253,7 +2253,7 @@ async function handleSubscriptionPage(request, user = null) {
                         regionStatus.innerHTML = 'Worker地区: <span style="color: #44ff44;">🎯 ' + regionNames[detectedRegion] + ' (手动指定)</span>';
                         
                         // 显示配置状态而不是检测状态
-                        if (backupStatus) backupStatus.innerHTML = 'ProxyIP状态: <span style="color: #44ff44;">✅ 10/10 可用 (ProxyIP域名预设可用)</span>';
+                        if (backupStatus) backupStatus.innerHTML = 'fallbackip状态: <span style="color: #44ff44;">✅ 10/10 可用 (fallbackip域名预设可用)</span>';
                         if (currentIP) currentIP.innerHTML = '当前使用IP: <span style="color: #44ff44;">✅ 智能就近选择中</span>';
                         if (regionMatch) regionMatch.innerHTML = '地区匹配: <span style="color: #44ff44;">✅ 同地区IP可用 (1个)</span>';
                         
@@ -2272,7 +2272,7 @@ async function handleSubscriptionPage(request, user = null) {
                 
                 // 直接显示配置状态，不再进行检测
                 if (backupStatus) {
-                    backupStatus.innerHTML = 'ProxyIP状态: <span style="color: #44ff44;">✅ 10/10 可用 (ProxyIP域名预设可用)</span>';
+                    backupStatus.innerHTML = 'fallbackip状态: <span style="color: #44ff44;">✅ 10/10 可用 (fallbackip域名预设可用)</span>';
                 }
                 
                 if (currentIP) {
@@ -2286,7 +2286,7 @@ async function handleSubscriptionPage(request, user = null) {
             } catch (error) {
                 document.getElementById('regionStatus').innerHTML = 'Worker地区: <span style="color: #ff4444;">❌ 检测失败</span>';
                 document.getElementById('geoInfo').innerHTML = '地理位置: <span style="color: #ff4444;">❌ 检测失败</span>';
-                document.getElementById('backupStatus').innerHTML = 'ProxyIP状态: <span style="color: #ff4444;">❌ 检测失败</span>';
+                document.getElementById('backupStatus').innerHTML = 'fallbackip状态: <span style="color: #ff4444;">❌ 检测失败</span>';
                 document.getElementById('currentIP').innerHTML = '当前使用IP: <span style="color: #ff4444;">❌ 检测失败</span>';
                 document.getElementById('regionMatch').innerHTML = '地区匹配: <span style="color: #ff4444;">❌ 检测失败</span>';
             }
@@ -3493,20 +3493,20 @@ async function handleConfigAPI(request) {
                 customPreferredDomains = [];
             } else {
                 backupIPs = [
-                    { domain: 'ProxyIP.US.CMLiussss.net', region: 'US', regionCode: 'US', port: 443 },
-                    { domain: 'ProxyIP.SG.CMLiussss.net', region: 'SG', regionCode: 'SG', port: 443 },
-                    { domain: 'ProxyIP.JP.CMLiussss.net', region: 'JP', regionCode: 'JP', port: 443 },
-                    { domain: 'ProxyIP.HK.CMLiussss.net', region: 'HK', regionCode: 'HK', port: 443 },
-                    { domain: 'ProxyIP.KR.CMLiussss.net', region: 'KR', regionCode: 'KR', port: 443 },
-                    { domain: 'ProxyIP.DE.CMLiussss.net', region: 'DE', regionCode: 'DE', port: 443 },
-                    { domain: 'ProxyIP.SE.CMLiussss.net', region: 'SE', regionCode: 'SE', port: 443 },
-                    { domain: 'ProxyIP.NL.CMLiussss.net', region: 'NL', regionCode: 'NL', port: 443 },
-                    { domain: 'ProxyIP.FI.CMLiussss.net', region: 'FI', regionCode: 'FI', port: 443 },
-                    { domain: 'ProxyIP.GB.CMLiussss.net', region: 'GB', regionCode: 'GB', port: 443 },
-                    { domain: 'ProxyIP.Oracle.cmliussss.net', region: 'Oracle', regionCode: 'Oracle', port: 443 },
-                    { domain: 'ProxyIP.DigitalOcean.CMLiussss.net', region: 'DigitalOcean', regionCode: 'DigitalOcean', port: 443 },
-                    { domain: 'ProxyIP.Vultr.CMLiussss.net', region: 'Vultr', regionCode: 'Vultr', port: 443 },
-                    { domain: 'ProxyIP.Multacom.CMLiussss.net', region: 'Multacom', regionCode: 'Multacom', port: 443 }
+                    { domain: atob('UHJveHlJUC5VUy5DTUxpdXNzc3MubmV0'), region: 'US', regionCode: 'US', port: 443 },
+                    { domain: atob('UHJveHlJUC5TRy5DTUxpdXNzc3MubmV0'), region: 'SG', regionCode: 'SG', port: 443 },
+                    { domain: atob('UHJveHlJUC5KUC5DTUxpdXNzc3MubmV0'), region: 'JP', regionCode: 'JP', port: 443 },
+                    { domain: atob('UHJveHlJUC5ISy5DTUxpdXNzc3MubmV0'), region: 'HK', regionCode: 'HK', port: 443 },
+                    { domain: atob('UHJveHlJUC5LUi5DTUxpdXNzc3MubmV0'), region: 'KR', regionCode: 'KR', port: 443 },
+                    { domain: atob('UHJveHlJUC5ERS5DTUxpdXNzc3MubmV0'), region: 'DE', regionCode: 'DE', port: 443 },
+                    { domain: atob('UHJveHlJUC5TRS5DTUxpdXNzc3MubmV0'), region: 'SE', regionCode: 'SE', port: 443 },
+                    { domain: atob('UHJveHlJUC5OTC5DTUxpdXNzc3MubmV0'), region: 'NL', regionCode: 'NL', port: 443 },
+                    { domain: atob('UHJveHlJUC5GSS5DTUxpdXNzc3MubmV0'), region: 'FI', regionCode: 'FI', port: 443 },
+                    { domain: atob('UHJveHlJUC5HQi5DTUxpdXNzc3MubmV0'), region: 'GB', regionCode: 'GB', port: 443 },
+                    { domain: atob('UHJveHlJUC5PcmFjbGUuY21saXVzc3NzLm5ldA=='), region: 'Oracle', regionCode: 'Oracle', port: 443 },
+                    { domain: atob('UHJveHlJUC5EaWdpdGFsT2NlYW4uQ01MaXVzc3NzLm5ldA=='), region: 'DigitalOcean', regionCode: 'DigitalOcean', port: 443 },
+                    { domain: atob('UHJveHlJUC5WdWx0ci5DTUxpdXNzc3MubmV0'), region: 'Vultr', regionCode: 'Vultr', port: 443 },
+                    { domain: atob('UHJveHlJUC5NdWx0YWNvbS5DTUxpdXNzc3MubmV0'), region: 'Multacom', regionCode: 'Multacom', port: 443 }
                 ];
                 directDomains.length = 0;
                 directDomains.push(
