@@ -1,5 +1,11 @@
 # CFnew - 终端 v2.1
 
+<div align="right" style="margin-bottom: 20px;">
+
+**语言 / Language:** [🇨🇳 中文](README.md) | [🇮🇷 فارسی](فارسی)
+
+</div>
+
 <div align="center">
 
 **多协议支持 · 自定义路径 · 代码混淆增强**
@@ -21,6 +27,7 @@
 - 📱 **多客户端支持** - CLASH、SURGE、SING-BOX、LOON、QUANTUMULT X、V2RAY、Shadowrocket、STASH、NEKORAY、V2RAYNG
 - 🚀 **应用唤醒** - 点击按钮自动唤醒对应客户端应用
 - 🔍 **自动识别** - 根据User-Agent自动识别并返回对应格式
+- 🌐 **多语言支持** - 支持中文和波斯语（伊朗语），根据浏览器语言自动切换
 
 ---
 
@@ -32,11 +39,12 @@
 - ✨ 优化自定义路径，支持多级路径（如 `/path/to/sub`）
 - ✨ 完善 ALPN 配置，所有 TLS 链接自动包含 `h3,h2,http/1.1`
 - ✨ 新增协议配置独立保存按钮，更便捷的配置管理
+- 🌐 新增波斯语（伊朗语）翻译支持，根据浏览器语言自动切换
 - 🔧 修复路径处理逻辑，自动补全开头斜杠
 
 ---
 
-###  配套工具
+### 配套工具
 
 | 类型 | 描述 | 链接 |
 | :--- | :--- | :--- |
@@ -46,8 +54,8 @@
 |  **Pages视频教程** | 直观的操作演示和功能讲解 | https://youtu.be/_-4bG-MCqk4 |
 |  **Snippets视频教程** | 直观的操作演示和功能讲解 | https://www.youtube.com/watch?v=xeFeH3Akcu8 |
 
-###  部署
-	
+### 部署
+
 加入了千呼万唤的订阅每15分钟自动优选一次
 
 #### 🔧 基础配置
@@ -124,7 +132,7 @@ curl -X DELETE "https://your-worker.workers.dev/{UUID或自定义路径}/api/pre
   -d '{"all": true}'
 ```
 
-###  新功能
+### 新功能
 
 #### 🎭 多协议支持（v2.1 增强）
 - **VLESS协议**：默认启用，完整的VLESS支持
@@ -149,6 +157,13 @@ curl -X DELETE "https://your-worker.workers.dev/{UUID或自定义路径}/api/pre
 - **图形化界面**：访问 `/{你的UUID}` 或 `/{自定义路径}` 即可使用配置管理界面
 - **实时配置**：无需重新部署，配置立即生效
 - **配置优先级**：KV配置 > 环境变量 > 默认值
+
+#### 🌐 多语言支持（v2.1 新增）
+- **自动语言检测**：根据浏览器语言自动选择中文或波斯语
+- **手动语言切换**：页面右上角提供语言选择器，可手动切换
+- **持久化存储**：用户选择的语言会保存到浏览器，下次访问自动应用
+- **RTL支持**：波斯语版本自动启用从右到左（RTL）布局
+- **完整翻译**：所有界面文本、提示信息、按钮标签都已翻译
 
 #### 🔄 订阅转换控制（v2.0 新增）
 - **自定义转换服务**：支持配置自定义订阅转换URL
@@ -176,7 +191,6 @@ curl -X DELETE "https://your-worker.workers.dev/{UUID或自定义路径}/api/pre
   - `GET /{UUID或路径}/api/preferred-ips` - 查询优选IP列表
   - `POST /{UUID或路径}/api/preferred-ips` - 添加优选IP（支持单个/批量）
   - `DELETE /{UUID或路径}/api/preferred-ips` - 删除优选IP（支持单个/全部）
-
 
 #### 🌍 手动指定地区
 - **地区选择**：支持手动指定Worker地区，覆盖自动检测
@@ -215,13 +229,12 @@ curl -X DELETE "https://your-worker.workers.dev/{UUID或自定义路径}/api/pre
 - **容错机制**：多重备用方案，确保服务稳定性
 - **缓存优化**：智能缓存机制，减少重复计算
 
-###  致谢
+### 致谢
 
   * 本项目基于 [zizifn/edgetunnel](https://github.com/zizifn/edgetunnel) 修改，感谢原作者的贡献。
   * 本项目内置ProxyIP 来自CM [[cmliu](https://github.com/cmliu)) ，感谢作者的贡献。
   * 本项目反代IP来着前端独苗kejiland  [[qwer-search](https://github.com/qwer-search)) ，感谢作者的贡献。
+
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=byJoey/cfnew&type=Timeline)](https://www.star-history.com/#byJoey/cfnew&Timeline&LogScale)
-
-
