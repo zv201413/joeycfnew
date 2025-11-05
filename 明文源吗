@@ -2233,7 +2233,7 @@ async function handleSubscriptionPage(request, user = null) {
     <div class="matrix-rain"></div>
     <div class="matrix-code-rain" id="matrixCodeRain"></div>
         <div class="matrix-text">${t.terminal}</div>
-        <div style="position: fixed; top: 20px; ${isFarsi ? 'left' : 'right'}: 20px; z-index: 1000;">
+        <div style="position: fixed; top: 20px; left: 20px; z-index: 1000;">
             <select id="languageSelector" style="background: rgba(0, 20, 0, 0.9); border: 2px solid #00ff00; color: #00ff00; padding: 8px 12px; font-family: 'Courier New', monospace; font-size: 14px; cursor: pointer; text-shadow: 0 0 5px #00ff00; box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);" onchange="changeLanguage(this.value)">
                 <option value="zh" ${!isFarsi ? 'selected' : ''}>🇨🇳 中文</option>
                 <option value="fa" ${isFarsi ? 'selected' : ''}>🇮🇷 فارسی</option>
