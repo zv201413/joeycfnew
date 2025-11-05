@@ -2,7 +2,7 @@
 
 <div align="center" style="margin-bottom: 20px;">
 
-**语言 / Language:** [🇨🇳 中文](README.md) | [🇮🇷 فارسی](فارسی)
+**语言 / زبان:** [🇨🇳 中文](README.md) | [🇮🇷 فارسی](فارسی)
 
 </div>
 
