@@ -1,6 +1,6 @@
 # CFnew - 终端 v2.1
 
-<div align="right" style="margin-bottom: 20px;">
+<div align="center" style="margin-bottom: 20px;">
 
 **语言 / Language:** [🇨🇳 中文](README.md) | [🇮🇷 فارسی](فارسی)
 
