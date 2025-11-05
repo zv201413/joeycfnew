@@ -610,20 +610,31 @@ export default {
 				}
 				
 				if (url.pathname === '/') {
-                        // 检查URL参数中的语言设置
-                        const langParam = url.searchParams.get('lang');
-                        let isFarsi = false;
-                        
-                        if (langParam === 'fa' || langParam === 'fa-IR') {
-                            isFarsi = true;
-                        } else if (langParam === 'zh' || langParam === 'zh-CN') {
-                            isFarsi = false;
-                        } else {
-                            // 如果没有URL参数，使用浏览器语言检测
-                            const acceptLanguage = request.headers.get('Accept-Language') || '';
-                            const browserLang = acceptLanguage.split(',')[0].split('-')[0].toLowerCase();
-                            isFarsi = browserLang === 'fa' || acceptLanguage.includes('fa-IR') || acceptLanguage.includes('fa');
-                        }
+					// 优先检查Cookie中的语言设置
+					const cookieHeader = request.headers.get('Cookie') || '';
+					let langFromCookie = null;
+					if (cookieHeader) {
+						const cookies = cookieHeader.split(';').map(c => c.trim());
+						for (const cookie of cookies) {
+							if (cookie.startsWith('preferredLanguage=')) {
+								langFromCookie = cookie.split('=')[1];
+								break;
+							}
+						}
+					}
+					
+					let isFarsi = false;
+					
+					if (langFromCookie === 'fa' || langFromCookie === 'fa-IR') {
+						isFarsi = true;
+					} else if (langFromCookie === 'zh' || langFromCookie === 'zh-CN') {
+						isFarsi = false;
+					} else {
+						// 如果没有Cookie，使用浏览器语言检测
+						const acceptLanguage = request.headers.get('Accept-Language') || '';
+						const browserLang = acceptLanguage.split(',')[0].split('-')[0].toLowerCase();
+						isFarsi = browserLang === 'fa' || acceptLanguage.includes('fa-IR') || acceptLanguage.includes('fa');
+					}
                         
                         const lang = isFarsi ? 'fa' : 'zh-CN';
                         const langAttr = isFarsi ? 'fa-IR' : 'zh-CN';
@@ -977,23 +988,46 @@ export default {
             
             function changeLanguage(lang) {
                 localStorage.setItem('preferredLanguage', lang);
-                const currentUrl = new URL(window.location.href);
-                currentUrl.searchParams.set('lang', lang);
-                window.location.href = currentUrl.toString();
+                // 设置Cookie（有效期1年）
+                const expiryDate = new Date();
+                expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+                document.cookie = 'preferredLanguage=' + lang + '; path=/; expires=' + expiryDate.toUTCString() + '; SameSite=Lax';
+                // 刷新页面，不使用URL参数
+                window.location.reload();
             }
             
-            // 页面加载时检查 localStorage 中的语言设置
+            // 页面加载时检查 localStorage 和 Cookie，并清理URL参数
             window.addEventListener('DOMContentLoaded', function() {
-                const savedLang = localStorage.getItem('preferredLanguage');
+                function getCookie(name) {
+                    const value = '; ' + document.cookie;
+                    const parts = value.split('; ' + name + '=');
+                    if (parts.length === 2) return parts.pop().split(';').shift();
+                    return null;
+                }
+                
+                const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage');
                 const urlParams = new URLSearchParams(window.location.search);
                 const urlLang = urlParams.get('lang');
                 
-                // 如果URL中没有语言参数，但localStorage中有，则应用
-                if (!urlLang && savedLang) {
+                // 如果URL中有语言参数，移除它并设置Cookie
+                if (urlLang) {
                     const currentUrl = new URL(window.location.href);
-                    currentUrl.searchParams.set('lang', savedLang);
-                    window.location.href = currentUrl.toString();
-                    return;
+                    currentUrl.searchParams.delete('lang');
+                    const newUrl = currentUrl.toString();
+                    
+                    // 设置Cookie
+                    const expiryDate = new Date();
+                    expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+                    document.cookie = 'preferredLanguage=' + urlLang + '; path=/; expires=' + expiryDate.toUTCString() + '; SameSite=Lax';
+                    localStorage.setItem('preferredLanguage', urlLang);
+                    
+                    // 使用history API移除URL参数，不刷新页面
+                    window.history.replaceState({}, '', newUrl);
+                } else if (savedLang) {
+                    // 如果localStorage中有但Cookie中没有，同步到Cookie
+                    const expiryDate = new Date();
+                    expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+                    document.cookie = 'preferredLanguage=' + savedLang + '; path=/; expires=' + expiryDate.toUTCString() + '; SameSite=Lax';
                 }
             });
         
@@ -1700,22 +1734,33 @@ function parseSocksConfig(address) {
 
 async function handleSubscriptionPage(request, user = null) {
 	if (!user) user = at;
-        
-        const url = new URL(request.url);
-        // 检查URL参数中的语言设置
-        const langParam = url.searchParams.get('lang');
-        let isFarsi = false;
-        
-        if (langParam === 'fa' || langParam === 'fa-IR') {
-            isFarsi = true;
-        } else if (langParam === 'zh' || langParam === 'zh-CN') {
-            isFarsi = false;
-        } else {
-            // 如果没有URL参数，使用浏览器语言检测
-            const acceptLanguage = request.headers.get('Accept-Language') || '';
-            const browserLang = acceptLanguage.split(',')[0].split('-')[0].toLowerCase();
-            isFarsi = browserLang === 'fa' || acceptLanguage.includes('fa-IR') || acceptLanguage.includes('fa');
-        }
+	
+	const url = new URL(request.url);
+	// 优先检查Cookie中的语言设置
+	const cookieHeader = request.headers.get('Cookie') || '';
+	let langFromCookie = null;
+	if (cookieHeader) {
+		const cookies = cookieHeader.split(';').map(c => c.trim());
+		for (const cookie of cookies) {
+			if (cookie.startsWith('preferredLanguage=')) {
+				langFromCookie = cookie.split('=')[1];
+				break;
+			}
+		}
+	}
+	
+	let isFarsi = false;
+	
+	if (langFromCookie === 'fa' || langFromCookie === 'fa-IR') {
+		isFarsi = true;
+	} else if (langFromCookie === 'zh' || langFromCookie === 'zh-CN') {
+		isFarsi = false;
+	} else {
+		// 如果没有Cookie，使用浏览器语言检测
+		const acceptLanguage = request.headers.get('Accept-Language') || '';
+		const browserLang = acceptLanguage.split(',')[0].split('-')[0].toLowerCase();
+		isFarsi = browserLang === 'fa' || acceptLanguage.includes('fa-IR') || acceptLanguage.includes('fa');
+	}
         
         const langAttr = isFarsi ? 'fa-IR' : 'zh-CN';
         
@@ -2383,47 +2428,62 @@ async function handleSubscriptionPage(request, user = null) {
                 }
             };
             
+            function getCookie(name) {
+                const value = '; ' + document.cookie;
+                const parts = value.split('; ' + name + '=');
+                if (parts.length === 2) return parts.pop().split(';').shift();
+                return null;
+            }
+            
             const browserLang = navigator.language || navigator.userLanguage || '';
-            const urlParams = new URLSearchParams(window.location.search);
-            const urlLang = urlParams.get('lang');
+            const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage');
             let isFarsi = false;
             
-            if (urlLang === 'fa' || urlLang === 'fa-IR') {
+            if (savedLang === 'fa' || savedLang === 'fa-IR') {
                 isFarsi = true;
-            } else if (urlLang === 'zh' || urlLang === 'zh-CN') {
+            } else if (savedLang === 'zh' || savedLang === 'zh-CN') {
                 isFarsi = false;
             } else {
-                const savedLang = localStorage.getItem('preferredLanguage');
-                if (savedLang === 'fa' || savedLang === 'fa-IR') {
-                    isFarsi = true;
-                } else if (savedLang === 'zh' || savedLang === 'zh-CN') {
-                    isFarsi = false;
-                } else {
-                    isFarsi = browserLang.includes('fa') || browserLang.includes('fa-IR');
-                }
+                isFarsi = browserLang.includes('fa') || browserLang.includes('fa-IR');
             }
             
             const t = translations[isFarsi ? 'fa' : 'zh'];
             
             function changeLanguage(lang) {
                 localStorage.setItem('preferredLanguage', lang);
-                const currentUrl = new URL(window.location.href);
-                currentUrl.searchParams.set('lang', lang);
-                window.location.href = currentUrl.toString();
+                // 设置Cookie（有效期1年）
+                const expiryDate = new Date();
+                expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+                document.cookie = 'preferredLanguage=' + lang + '; path=/; expires=' + expiryDate.toUTCString() + '; SameSite=Lax';
+                // 刷新页面，不使用URL参数
+                window.location.reload();
             }
             
-            // 页面加载时检查 localStorage 中的语言设置
+            // 页面加载时检查 localStorage 和 Cookie，并清理URL参数
             window.addEventListener('DOMContentLoaded', function() {
-                const savedLang = localStorage.getItem('preferredLanguage');
+                const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage');
                 const urlParams = new URLSearchParams(window.location.search);
                 const urlLang = urlParams.get('lang');
                 
-                // 如果URL中没有语言参数，但localStorage中有，则应用
-                if (!urlLang && savedLang) {
+                // 如果URL中有语言参数，移除它并设置Cookie
+                if (urlLang) {
                     const currentUrl = new URL(window.location.href);
-                    currentUrl.searchParams.set('lang', savedLang);
-                    window.location.href = currentUrl.toString();
-                    return;
+                    currentUrl.searchParams.delete('lang');
+                    const newUrl = currentUrl.toString();
+                    
+                    // 设置Cookie
+                    const expiryDate = new Date();
+                    expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+                    document.cookie = 'preferredLanguage=' + urlLang + '; path=/; expires=' + expiryDate.toUTCString() + '; SameSite=Lax';
+                    localStorage.setItem('preferredLanguage', urlLang);
+                    
+                    // 使用history API移除URL参数，不刷新页面
+                    window.history.replaceState({}, '', newUrl);
+                } else if (savedLang) {
+                    // 如果localStorage中有但Cookie中没有，同步到Cookie
+                    const expiryDate = new Date();
+                    expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+                    document.cookie = 'preferredLanguage=' + savedLang + '; path=/; expires=' + expiryDate.toUTCString() + '; SameSite=Lax';
                 }
             });
         
@@ -2614,25 +2674,24 @@ async function handleSubscriptionPage(request, user = null) {
                 const currentIP = document.getElementById('currentIP');
                 const regionMatch = document.getElementById('regionMatch');
                 
-                    // 获取当前语言设置
+                    // 获取当前语言设置（优先从Cookie/localStorage读取）
+                    function getCookie(name) {
+                        const value = '; ' + document.cookie;
+                        const parts = value.split('; ' + name + '=');
+                        if (parts.length === 2) return parts.pop().split(';').shift();
+                        return null;
+                    }
+                    
                     const browserLang = navigator.language || navigator.userLanguage || '';
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const urlLang = urlParams.get('lang');
+                    const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage');
                     let isFarsi = false;
                     
-                    if (urlLang === 'fa' || urlLang === 'fa-IR') {
+                    if (savedLang === 'fa' || savedLang === 'fa-IR') {
                         isFarsi = true;
-                    } else if (urlLang === 'zh' || urlLang === 'zh-CN') {
+                    } else if (savedLang === 'zh' || savedLang === 'zh-CN') {
                         isFarsi = false;
                     } else {
-                        const savedLang = localStorage.getItem('preferredLanguage');
-                        if (savedLang === 'fa' || savedLang === 'fa-IR') {
-                            isFarsi = true;
-                        } else if (savedLang === 'zh' || savedLang === 'zh-CN') {
-                            isFarsi = false;
-                        } else {
-                            isFarsi = browserLang.includes('fa') || browserLang.includes('fa-IR');
-                        }
+                        isFarsi = browserLang.includes('fa') || browserLang.includes('fa-IR');
                     }
                     
                     const translations = {
@@ -2752,20 +2811,21 @@ async function handleSubscriptionPage(request, user = null) {
                 }
                 
             } catch (error) {
+                    function getCookie(name) {
+                        const value = '; ' + document.cookie;
+                        const parts = value.split('; ' + name + '=');
+                        if (parts.length === 2) return parts.pop().split(';').shift();
+                        return null;
+                    }
+                    
                     const browserLang = navigator.language || navigator.userLanguage || '';
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const urlLang = urlParams.get('lang');
+                    const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage');
                     let isFarsi = false;
                     
-                    if (urlLang === 'fa' || urlLang === 'fa-IR') {
+                    if (savedLang === 'fa' || savedLang === 'fa-IR') {
                         isFarsi = true;
                     } else {
-                        const savedLang = localStorage.getItem('preferredLanguage');
-                        if (savedLang === 'fa' || savedLang === 'fa-IR') {
-                            isFarsi = true;
-                        } else {
-                            isFarsi = browserLang.includes('fa') || browserLang.includes('fa-IR');
-                        }
+                        isFarsi = browserLang.includes('fa') || browserLang.includes('fa-IR');
                     }
                     
                     const translations = {
@@ -2797,22 +2857,23 @@ async function handleSubscriptionPage(request, user = null) {
             }
         }
         
-        async function testAPI() {
-            try {
+            async function testAPI() {
+                try {
+                    function getCookie(name) {
+                        const value = '; ' + document.cookie;
+                        const parts = value.split('; ' + name + '=');
+                        if (parts.length === 2) return parts.pop().split(';').shift();
+                        return null;
+                    }
+                    
                     const browserLang = navigator.language || navigator.userLanguage || '';
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const urlLang = urlParams.get('lang');
+                    const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage');
                     let isFarsi = false;
                     
-                    if (urlLang === 'fa' || urlLang === 'fa-IR') {
+                    if (savedLang === 'fa' || savedLang === 'fa-IR') {
                         isFarsi = true;
                     } else {
-                        const savedLang = localStorage.getItem('preferredLanguage');
-                        if (savedLang === 'fa' || savedLang === 'fa-IR') {
-                            isFarsi = true;
-                        } else {
-                            isFarsi = browserLang.includes('fa') || browserLang.includes('fa-IR');
-                        }
+                        isFarsi = browserLang.includes('fa') || browserLang.includes('fa-IR');
                     }
                     
                     const translations = {
@@ -2843,20 +2904,21 @@ async function handleSubscriptionPage(request, user = null) {
                         alert(t.apiTestFailed + (data.error || t.unknownError));
                 }
             } catch (error) {
+                    function getCookie(name) {
+                        const value = '; ' + document.cookie;
+                        const parts = value.split('; ' + name + '=');
+                        if (parts.length === 2) return parts.pop().split(';').shift();
+                        return null;
+                    }
+                    
                     const browserLang = navigator.language || navigator.userLanguage || '';
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const urlLang = urlParams.get('lang');
+                    const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage');
                     let isFarsi = false;
                     
-                    if (urlLang === 'fa' || urlLang === 'fa-IR') {
+                    if (savedLang === 'fa' || savedLang === 'fa-IR') {
                         isFarsi = true;
                     } else {
-                        const savedLang = localStorage.getItem('preferredLanguage');
-                        if (savedLang === 'fa' || savedLang === 'fa-IR') {
-                            isFarsi = true;
-                        } else {
-                            isFarsi = browserLang.includes('fa') || browserLang.includes('fa-IR');
-                        }
+                        isFarsi = browserLang.includes('fa') || browserLang.includes('fa-IR');
                     }
                     
                     const translations = {
@@ -2876,20 +2938,21 @@ async function handleSubscriptionPage(request, user = null) {
             try {
                 const response = await fetch(apiUrl);
                 
+                    function getCookie(name) {
+                        const value = '; ' + document.cookie;
+                        const parts = value.split('; ' + name + '=');
+                        if (parts.length === 2) return parts.pop().split(';').shift();
+                        return null;
+                    }
+                    
                     const browserLang = navigator.language || navigator.userLanguage || '';
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const urlLang = urlParams.get('lang');
+                    const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage');
                     let isFarsi = false;
                     
-                    if (urlLang === 'fa' || urlLang === 'fa-IR') {
+                    if (savedLang === 'fa' || savedLang === 'fa-IR') {
                         isFarsi = true;
                     } else {
-                        const savedLang = localStorage.getItem('preferredLanguage');
-                        if (savedLang === 'fa' || savedLang === 'fa-IR') {
-                            isFarsi = true;
-                        } else {
-                            isFarsi = browserLang.includes('fa') || browserLang.includes('fa-IR');
-                        }
+                        isFarsi = browserLang.includes('fa') || browserLang.includes('fa-IR');
                     }
                     
                     const translations = {
@@ -2948,20 +3011,21 @@ async function handleSubscriptionPage(request, user = null) {
                     document.getElementById('currentConfig').textContent = t.kvCheckFailedStatus + response.status;
                 }
             } catch (error) {
+                function getCookie(name) {
+                    const value = '; ' + document.cookie;
+                    const parts = value.split('; ' + name + '=');
+                    if (parts.length === 2) return parts.pop().split(';').shift();
+                    return null;
+                }
+                
                 const browserLang = navigator.language || navigator.userLanguage || '';
-                const urlParams = new URLSearchParams(window.location.search);
-                const urlLang = urlParams.get('lang');
+                const savedLang = localStorage.getItem('preferredLanguage') || getCookie('preferredLanguage');
                 let isFarsi = false;
                 
-                if (urlLang === 'fa' || urlLang === 'fa-IR') {
+                if (savedLang === 'fa' || savedLang === 'fa-IR') {
                     isFarsi = true;
                 } else {
-                    const savedLang = localStorage.getItem('preferredLanguage');
-                    if (savedLang === 'fa' || savedLang === 'fa-IR') {
-                        isFarsi = true;
-                    } else {
-                        isFarsi = browserLang.includes('fa') || browserLang.includes('fa-IR');
-                    }
+                    isFarsi = browserLang.includes('fa') || browserLang.includes('fa-IR');
                 }
                 
                 const translations = {
