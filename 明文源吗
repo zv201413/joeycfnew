@@ -398,8 +398,8 @@ export default {
 				}
 			}
 
-			const dc = env.qj || env.QJ;
-			if (dc && downgradeControl.toLowerCase() === 'no') {
+			const downgradeControl = getConfigValue('qj', env.qj || env.QJ);
+			if (downgradeControl && downgradeControl.toLowerCase() === 'no') {
 				enableSocksDowngrade = true;
 			}
 
