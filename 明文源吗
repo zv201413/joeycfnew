@@ -2175,6 +2175,9 @@
                 position: relative;
                 backdrop-filter: blur(10px);
                 animation: card-glow 4s ease-in-out infinite;
+                box-sizing: border-box;
+                width: 100%;
+                max-width: 100%;
             }
             @keyframes card-glow {
                 0%, 100% { box-shadow: 0 0 30px rgba(0, 255, 0, 0.5), inset 0 0 20px rgba(0, 255, 0, 0.1); }
@@ -2654,8 +2657,14 @@
                 
                 if (clientType === atob('djJyYXk=')) {
                     finalUrl = subscriptionUrl;
-                    document.getElementById("clientSubscriptionUrl").textContent = finalUrl;
-                    document.getElementById("clientSubscriptionUrl").style.display = "block";
+                    var urlElement = document.getElementById("clientSubscriptionUrl");
+                    urlElement.textContent = finalUrl;
+                    urlElement.style.display = "block";
+                    urlElement.style.overflowWrap = "break-word";
+                    urlElement.style.wordBreak = "break-all";
+                    urlElement.style.overflowX = "auto";
+                    urlElement.style.maxWidth = "100%";
+                    urlElement.style.boxSizing = "border-box";
                     
                     if (clientName === 'V2RAY') {
                         navigator.clipboard.writeText(finalUrl).then(function() {
@@ -2686,8 +2695,14 @@
                 } else {
                     var encodedUrl = encodeURIComponent(subscriptionUrl);
                     finalUrl = SUB_CONVERTER_URL + "?target=" + clientType + "&url=" + encodedUrl + "&insert=false&config=" + encodeURIComponent(REMOTE_CONFIG_URL) + "&emoji=true&list=false&xudp=false&udp=false&tfo=false&expand=true&scv=false&fdn=false&new_name=true";
-                    document.getElementById("clientSubscriptionUrl").textContent = finalUrl;
-                    document.getElementById("clientSubscriptionUrl").style.display = "block";
+                    var urlElement = document.getElementById("clientSubscriptionUrl");
+                    urlElement.textContent = finalUrl;
+                    urlElement.style.display = "block";
+                    urlElement.style.overflowWrap = "break-word";
+                    urlElement.style.wordBreak = "break-all";
+                    urlElement.style.overflowX = "auto";
+                    urlElement.style.maxWidth = "100%";
+                    urlElement.style.boxSizing = "border-box";
                     
                     if (clientType === atob('Y2xhc2g=')) {
                         if (clientName === 'STASH') {
