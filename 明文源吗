@@ -2264,7 +2264,10 @@
                 border-radius: 5px;
                 animation: url-glow 2s ease-in-out infinite alternate;
                 position: relative;
-                overflow: hidden;
+                overflow-wrap: break-word;
+                overflow-x: auto;
+                max-width: 100%;
+                box-sizing: border-box;
             }
             @keyframes url-glow {
                 from { box-shadow: inset 0 0 15px rgba(0, 255, 0, 0.4), 0 0 20px rgba(0, 255, 0, 0.3); }
