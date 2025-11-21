@@ -434,7 +434,7 @@
                 
                 scu = getConfigValue('scu', env.scu) || 'https://url.v1.mk/sub';
                 
-                const preferredDomainsControl = getConfigValue('epd', env.epd);
+                const preferredDomainsControl = getConfigValue('epd', env.epd || 'no');
                 if (preferredDomainsControl !== undefined && preferredDomainsControl !== '') {
                     epd = preferredDomainsControl !== 'no' && preferredDomainsControl !== false && preferredDomainsControl !== 'false';
                 }
@@ -4712,7 +4712,7 @@
         
         scu = getConfigValue('scu', '') || 'https://url.v1.mk/sub';
         
-        const preferredDomainsControl = getConfigValue('epd', '');
+        const preferredDomainsControl = getConfigValue('epd', 'no');
         if (preferredDomainsControl !== undefined && preferredDomainsControl !== '') {
             epd = preferredDomainsControl !== 'no' && preferredDomainsControl !== false && preferredDomainsControl !== 'false';
         }
